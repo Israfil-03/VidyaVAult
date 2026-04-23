@@ -1,0 +1,150 @@
+import { Board, Medium, Subject, UserRole } from '@prisma/client'
+import type { Request, Response } from 'express'
+import { z } from 'zod'
+
+import { hashPassword } from '../auth/password.js'
+import { prisma } from '../prisma/client.js'
+import { userRoleToTokenRole } from '../types/auth.js'
+import { ApiError } from '../utils/apiError.js'
+
+const resetTeacherPasswordSchema = z.object({
+  teacherId: z.string().min(1),
+  newPassword: z.string().min(8),
+})
+
+const updateRoleSchema = z.object({
+  role: z.nativeEnum(UserRole),
+  subject: z.nativeEnum(Subject).optional(),
+  board: z.nativeEnum(Board).optional(),
+  medium: z.nativeEnum(Medium).optional(),
+  classLevel: z.string().optional(),
+})
+
+export const getGlobalStats = async (_req: Request, res: Response): Promise<void> => {
+  const [teacherCount, studentCount, testCount, submissionCount, rewardCycleCount] = await Promise.all([
+    prisma.user.count({ where: { role: UserRole.TEACHER_ADMIN } }),
+    prisma.user.count({ where: { role: UserRole.STUDENT } }),
+    prisma.test.count(),
+    prisma.submission.count(),
+    prisma.rewardCycle.count(),
+  ])
+
+  res.json({
+    success: true,
+    data: {
+      teacherCount,
+      studentCount,
+      testCount,
+      submissionCount,
+      rewardCycleCount,
+    },
+  })
+}
+
+export const listTeachers = async (_req: Request, res: Response): Promise<void> => {
+  const teachers = await prisma.teacherProfile.findMany({
+    include: {
+      user: true,
+      _count: {
+        select: {
+          teacherStudents: true,
+          tests: true,
+          batches: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  res.json({
+    success: true,
+    data: teachers.map((teacher) => ({
+      id: teacher.id,
+      subject: teacher.subject,
+      user: {
+        id: teacher.user.id,
+        email: teacher.user.email,
+        username: teacher.user.username,
+        role: userRoleToTokenRole(teacher.user.role),
+      },
+      counts: teacher._count,
+    })),
+  })
+}
+
+export const resetTeacherPassword = async (req: Request, res: Response): Promise<void> => {
+  const { teacherId, newPassword } = resetTeacherPasswordSchema.parse(req.body)
+
+  const teacher = await prisma.teacherProfile.findUnique({
+    where: { id: teacherId },
+    include: { user: true },
+  })
+
+  if (!teacher) {
+    throw new ApiError('Teacher not found', 404)
+  }
+
+  const passwordHash = await hashPassword(newPassword)
+
+  await prisma.user.update({
+    where: { id: teacher.userId },
+    data: {
+      passwordHash,
+      forcePasswordChange: true,
+    },
+  })
+
+  res.json({
+    success: true,
+    data: { message: 'Teacher password reset successfully' },
+  })
+}
+
+export const updateUserRole = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = z.object({ userId: z.string().min(1) }).parse(req.params)
+  const body = updateRoleSchema.parse(req.body)
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      teacherProfile: true,
+      studentProfile: true,
+    },
+  })
+
+  if (!user) {
+    throw new ApiError('User not found', 404)
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { role: body.role },
+    })
+
+    if (body.role === UserRole.TEACHER_ADMIN && !user.teacherProfile) {
+      await tx.teacherProfile.create({
+        data: {
+          userId,
+          subject: body.subject ?? Subject.CHEMISTRY,
+        },
+      })
+    }
+
+    if (body.role === UserRole.STUDENT && !user.studentProfile) {
+      await tx.studentProfile.create({
+        data: {
+          userId,
+          board: body.board ?? Board.WEST_BENGAL,
+          medium: body.medium ?? Medium.ENGLISH,
+          classLevel: body.classLevel ?? '10',
+        },
+      })
+    }
+  })
+
+  res.json({
+    success: true,
+    data: { message: 'User role updated successfully' },
+  })
+}

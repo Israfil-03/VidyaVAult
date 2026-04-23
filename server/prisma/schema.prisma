@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPERADMIN
+  TEACHER_ADMIN
+  STUDENT
+}
+
+enum Board {
+  WEST_BENGAL
+  ICSE
+  CBSE
+}
+
+enum Medium {
+  ENGLISH
+  BENGALI
+}
+
+enum Subject {
+  CHEMISTRY
+  BIOLOGY
+  MATHEMATICS
+}
+
+enum TestStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum TestCreationMode {
+  MANUAL
+  AI
+}
+
+enum QuestionSource {
+  MANUAL
+  AI
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum RewardCycleStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum StudentBadgeType {
+  TOP_IMPROVER
+  CONSISTENCY_STAR
+  SUBJECT_STAR
+}
+
+model User {
+  id                  String          @id @default(cuid())
+  email               String?         @unique
+  username            String          @unique
+  passwordHash        String
+  role                UserRole
+  forcePasswordChange Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  teacherProfile      TeacherProfile?
+  studentProfile      StudentProfile?
+}
+
+model TeacherProfile {
+  id              String         @id @default(cuid())
+  userId          String         @unique
+  subject         Subject
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherStudents TeacherStudent[]
+  batches         Batch[]
+  tests           Test[]
+  rewardCycles    RewardCycle[]
+}
+
+model StudentProfile {
+  id                String           @id @default(cuid())
+  userId            String           @unique
+  board             Board
+  medium            Medium
+  classLevel        String
+  rollNo            String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherLinks      TeacherStudent[]
+  batchLinks        BatchStudent[]
+  directAssignments TestAssignment[] @relation("StudentAssignments")
+  submissions       Submission[]
+  badges            StudentBadge[]
+}
+
+model TeacherStudent {
+  id        String         @id @default(cuid())
+  teacherId String
+  studentId String
+  createdAt DateTime       @default(now())
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, studentId])
+}
+
+model Batch {
+  id            String             @id @default(cuid())
+  name          String
+  medium        Medium
+  classLevel    String
+  boardTarget   Board?
+  teacherId     String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  teacher       TeacherProfile     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  batchStudents BatchStudent[]
+  assignments   TestAssignment[]
+  rewardResults BatchRewardResult[]
+
+  @@index([teacherId, medium, classLevel])
+}
+
+model BatchStudent {
+  id        String         @id @default(cuid())
+  batchId   String
+  studentId String
+  createdAt DateTime       @default(now())
+  batch     Batch          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, studentId])
+}
+
+model Test {
+  id              String           @id @default(cuid())
+  title           String
+  subject         Subject
+  teacherId       String
+  boardTarget     Board?
+  classLevel      String
+  startTime       DateTime
+  endTime         DateTime
+  durationMinutes Int
+  status          TestStatus       @default(DRAFT)
+  creationMode    TestCreationMode @default(MANUAL)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  teacher         TeacherProfile   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  questions       Question[]
+  assignments     TestAssignment[]
+  submissions     Submission[]
+
+  @@index([teacherId, status, startTime, endTime])
+}
+
+model Question {
+  id          String         @id @default(cuid())
+  testId      String
+  text        String         @db.Text
+  chapter     String?
+  concept     String?
+  difficulty  Difficulty     @default(MEDIUM)
+  marks       Int            @default(1)
+  source      QuestionSource @default(MANUAL)
+  explanation String?        @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  test        Test           @relation(fields: [testId], references: [id], onDelete: Cascade)
+  options     Option[]
+  answers     Answer[]
+
+  @@index([testId])
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers    Answer[]
+
+  @@index([questionId])
+}
+
+model TestAssignment {
+  id        String          @id @default(cuid())
+  testId    String
+  studentId String?
+  batchId   String?
+  createdAt DateTime        @default(now())
+  test      Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  student   StudentProfile? @relation("StudentAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  batch     Batch?          @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
+  @@index([studentId])
+  @@index([batchId])
+}
+
+model Submission {
+  id                String         @id @default(cuid())
+  testId            String
+  studentId         String
+  startedAt         DateTime       @default(now())
+  submittedAt       DateTime?
+  scoreTotal        Float?
+  maxScore          Float?
+  aiAnalysisSummary String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  test              Test           @relation(fields: [testId], references: [id], onDelete: Cascade)
+  student           StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers           Answer[]
+
+  @@unique([testId, studentId])
+}
+
+model Answer {
+  id               String    @id @default(cuid())
+  submissionId     String
+  questionId       String
+  selectedOptionId String?
+  isCorrect        Boolean   @default(false)
+  marksObtained    Float     @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  submission       Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question         Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption   Option?    @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@unique([submissionId, questionId])
+}
+
+model RewardCycle {
+  id          String            @id @default(cuid())
+  teacherId   String
+  subject     Subject
+  periodStart DateTime
+  periodEnd   DateTime
+  status      RewardCycleStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  teacher     TeacherProfile    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  results     BatchRewardResult[]
+
+  @@index([teacherId, subject, status])
+}
+
+model BatchRewardResult {
+  id                     String      @id @default(cuid())
+  rewardCycleId          String
+  batchId                String
+  averageNormalizedScore Float       @default(0)
+  improvementScore       Float       @default(0)
+  isWinner               Boolean     @default(false)
+  isMostImproved         Boolean     @default(false)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  rewardCycle            RewardCycle @relation(fields: [rewardCycleId], references: [id], onDelete: Cascade)
+  batch                  Batch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([rewardCycleId, batchId])
+}
+
+model StudentBadge {
+  id          String           @id @default(cuid())
+  studentId   String
+  type        StudentBadgeType
+  periodStart DateTime
+  periodEnd   DateTime
+  description String
+  createdAt   DateTime         @default(now())
+  student     StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, type, periodStart, periodEnd])
+}

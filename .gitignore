@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+.env
+.env.local
+*.log
+.DS_Store
+
+# Client
+client/node_modules
+client/dist
+
+# Server
+server/node_modules
+server/dist
+server/.turbo
+server/prisma/dev.db
