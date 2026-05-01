@@ -184,13 +184,16 @@ export const TeacherTestWizardPage = () => {
     <DashboardLayout title="Teacher Test Wizard" navigation={navigation}>
       {error ? <p className="error-text">{error}</p> : null}
 
-      <Card title={`Step ${step} of 5`}>
+      <Card title={`Step ${step} of 5`} subtitle="Build and publish assessments with assignment targeting">
         <div className="wizard-steps">
           <span className={step === 1 ? 'active' : ''}>1. Basic Details</span>
           <span className={step === 2 ? 'active' : ''}>2. Question Mode</span>
           <span className={step === 3 ? 'active' : ''}>3. Question Editor</span>
           <span className={step === 4 ? 'active' : ''}>4. Assignment</span>
           <span className={step === 5 ? 'active' : ''}>5. Review</span>
+        </div>
+        <div className="test-progress">
+          <span style={{ width: `${(step / 5) * 100}%` }} />
         </div>
       </Card>
 
@@ -429,49 +432,57 @@ export const TeacherTestWizardPage = () => {
           <div className="two-col">
             <div>
               <h4>Students</h4>
-              <ul className="checkbox-list">
-                {students.map((student) => (
-                  <li key={student.id}>
-                    <label className="checkbox-inline">
-                      <input
-                        type="checkbox"
-                        checked={selectedStudentIds.includes(student.id)}
-                        onChange={(event) =>
-                          setSelectedStudentIds((prev) =>
-                            event.target.checked
-                              ? [...prev, student.id]
-                              : prev.filter((value) => value !== student.id),
-                          )
-                        }
-                      />
-                      {student.username}
-                    </label>
-                  </li>
-                ))}
-              </ul>
+              {students.length === 0 ? (
+                <div className="empty-state">No students available for assignment.</div>
+              ) : (
+                <ul className="checkbox-list">
+                  {students.map((student) => (
+                    <li key={student.id}>
+                      <label className="checkbox-inline">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudentIds.includes(student.id)}
+                          onChange={(event) =>
+                            setSelectedStudentIds((prev) =>
+                              event.target.checked
+                                ? [...prev, student.id]
+                                : prev.filter((value) => value !== student.id),
+                            )
+                          }
+                        />
+                        {student.username}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div>
               <h4>Batches</h4>
-              <ul className="checkbox-list">
-                {batches.map((batch) => (
-                  <li key={batch.id}>
-                    <label className="checkbox-inline">
-                      <input
-                        type="checkbox"
-                        checked={selectedBatchIds.includes(batch.id)}
-                        onChange={(event) =>
-                          setSelectedBatchIds((prev) =>
-                            event.target.checked
-                              ? [...prev, batch.id]
-                              : prev.filter((value) => value !== batch.id),
-                          )
-                        }
-                      />
-                      {batch.name}
-                    </label>
-                  </li>
-                ))}
-              </ul>
+              {batches.length === 0 ? (
+                <div className="empty-state">No batches available for assignment.</div>
+              ) : (
+                <ul className="checkbox-list">
+                  {batches.map((batch) => (
+                    <li key={batch.id}>
+                      <label className="checkbox-inline">
+                        <input
+                          type="checkbox"
+                          checked={selectedBatchIds.includes(batch.id)}
+                          onChange={(event) =>
+                            setSelectedBatchIds((prev) =>
+                              event.target.checked
+                                ? [...prev, batch.id]
+                                : prev.filter((value) => value !== batch.id),
+                            )
+                          }
+                        />
+                        {batch.name}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
           <div className="inline-actions">
@@ -497,7 +508,7 @@ export const TeacherTestWizardPage = () => {
             <Button variant="secondary" onClick={() => setStep(4)}>
               Back
             </Button>
-            <Button onClick={publishTest} disabled={saving}>
+            <Button onClick={publishTest} isLoading={saving}>
               {saving ? 'Publishing...' : 'Publish Test'}
             </Button>
           </div>
