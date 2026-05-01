@@ -33,7 +33,7 @@
   --ring: rgba(59, 130, 246, 0.35);
 
   --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.07);
-  0 12px 30px rgba(30, 64, 175, 0.08): 0 10px 24px rgba(30, 64, 175, 0.12);
+  --shadow-md: 0 12px 30px rgba(30, 64, 175, 0.08), 0 10px 24px rgba(30, 64, 175, 0.12);
   --shadow-lg: 0 16px 34px rgba(30, 64, 175, 0.16);
 
   --radius-sm: 10px;
