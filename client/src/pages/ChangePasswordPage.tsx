@@ -14,6 +14,7 @@ export const ChangePasswordPage = () => {
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   if (!user) {
     return null
@@ -36,6 +37,7 @@ export const ChangePasswordPage = () => {
     }
     setError(null)
     setSuccess(null)
+    setSaving(true)
     try {
       await apiRequest('/auth/change-password', {
         method: 'POST',
@@ -60,12 +62,17 @@ export const ChangePasswordPage = () => {
       }, 800)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Password change failed')
+    } finally {
+      setSaving(false)
     }
   }
 
   return (
     <DashboardLayout title="Change Password" navigation={navigation}>
-      <Card title="Update your password">
+      <Card
+        title="Update your password"
+        subtitle="Use a strong password with at least 8 characters and a symbol."
+      >
         <form className="form-grid" onSubmit={handleSubmit}>
           <label>
             Current password
@@ -87,7 +94,9 @@ export const ChangePasswordPage = () => {
           </label>
           {error ? <p className="error-text">{error}</p> : null}
           {success ? <p className="success-text">{success}</p> : null}
-          <Button type="submit">Change Password</Button>
+          <Button type="submit" isLoading={saving}>
+            Change Password
+          </Button>
         </form>
       </Card>
     </DashboardLayout>

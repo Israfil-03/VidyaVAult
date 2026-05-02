@@ -1,0 +1,118 @@
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches:
+      - main
+      - Update_2
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy-backend.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build backend
+        run: npm run build -w server
+
+      - name: Prune dev dependencies
+        run: npm prune --omit=dev
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r server/dist deploy/dist
+          cp -r node_modules deploy/
+          cp -r server/prisma deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          cd deploy && zip -r ../deployment.zip . && cd ..
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: vidyavault-api-israfil
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./deployment.zip
+
+      - name: Start App Service
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az webapp start -g vidyavault-rg -n vidyavault-api-israfil
+
+      - name: Wait for app to start
+        run: |
+          for i in {1..30}; do
+            if curl -s https://vidyavault-api-israfil.azurewebsites.net/api/health > /dev/null 2>&1; then
+              echo "✓ App is healthy"
+              exit 0
+            fi
+            echo "Waiting for app to start ($i/30)..."
+            sleep 10
+          done
+          echo "✗ App startup timeout"
+          exit 1
+
+      - name: Run Prisma migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate deploy --schema=server/prisma/schema.prisma || true
+
+      - name: Seed superadmin user
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPERADMIN_EMAIL: israfilhoque523@gmail.com
+          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
+          SUPERADMIN_USERNAME: superadmin
+        run: npx prisma db seed --schema=server/prisma/schema.prisma || npm run prisma:seed -w server
+
+      - name: Verify deployment
+        run: |
+          echo "=== Health Check ==="
+          curl -s https://vidyavault-api-israfil.azurewebsites.net/api/health | jq .
+
+          echo ""
+          echo "=== Login Test ==="
+          RESPONSE=$(curl -s -X POST https://vidyavault-api-israfil.azurewebsites.net/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "identity": "superadmin",
+              "password": "${{ secrets.SUPERADMIN_PASSWORD }}"
+            }')
+
+          if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
+            echo "✓ Superadmin login successful"
+            echo "$RESPONSE" | jq .
+          else
+            echo "✗ Superadmin login failed"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "✓ Backend deployed successfully!"
+          echo "API URL: https://vidyavault-api-israfil.azurewebsites.net"
+          echo "Database: mirage"
+          echo "Superadmin Email: israfilhoque523@gmail.com"

@@ -1,17 +1,28 @@
-import { Link, NavLink } from 'react-router-dom'
+import { BookOpenText, LockKeyhole, Menu, X, Bell, Search } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
 import { useAuth } from '../hooks/useAuth'
 import { Button } from './Button'
+import { PageTransition } from './PageTransition'
+
+interface NavigationItem {
+  label: string
+  to: string
+  icon?: ReactNode
+}
 
 interface DashboardLayoutProps {
   title: string
-  navigation: Array<{ label: string; to: string }>
+  navigation: NavigationItem[]
   children: ReactNode
 }
 
 export const DashboardLayout = ({ title, navigation, children }: DashboardLayoutProps) => {
   const { user, logout } = useAuth()
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const roleLabel =
     user?.role === 'superadmin'
       ? 'Super Admin'
@@ -19,9 +30,13 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
         ? 'Teacher Admin'
         : 'Student'
 
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
   return (
     <div className="dashboard-shell">
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <Link to="/" className="brand">
           <span>Vidya</span>Vault
         </Link>
@@ -31,13 +46,22 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              className={({ isActive }) => `nav-item ${item.icon ? 'nav-item-icon' : ''} ${isActive ? 'active' : ''}`}
             >
-              {item.label}
+              {item.icon} {item.label}
             </NavLink>
           ))}
-          <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            Profile & Security
+          <NavLink
+            to="/change-password"
+            className={({ isActive }) => `nav-item nav-item-icon ${isActive ? 'active' : ''}`}
+          >
+            <LockKeyhole size={16} /> Security
+          </NavLink>
+          <NavLink
+            to="/reward-explanation"
+            className={({ isActive }) => `nav-item nav-item-icon ${isActive ? 'active' : ''}`}
+          >
+            <BookOpenText size={16} /> Rewards Guide
           </NavLink>
         </nav>
         <div className="sidebar-footer">
@@ -46,19 +70,51 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
           </Button>
         </div>
       </aside>
+      <button
+        className={`sidebar-backdrop ${sidebarOpen ? 'open' : ''}`}
+        aria-label="Close navigation"
+        onClick={() => setSidebarOpen(false)}
+      />
       <div className="dashboard-main">
         <header className="topbar">
           <div className="topbar-meta">
-            <h1>{title}</h1>
-            <p>
-              {user?.username} · <span className="role-pill">{roleLabel}</span>
-            </p>
+            <div className="topbar-leading">
+              <button
+                className="menu-btn"
+                type="button"
+                aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+                onClick={() => setSidebarOpen((prev) => !prev)}
+              >
+                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+              <div>
+                <h1>{title}</h1>
+                <p>
+                  {user?.username} · <span className="role-pill">{roleLabel}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="topbar-search hide-mobile">
+               <Search size={16} className="search-icon" />
+               <input type="text" placeholder="Search..." aria-label="Global search" />
+            </div>
           </div>
-          <Link to="/profile" className="profile-shortcut">
-            View profile
-          </Link>
+          <div className="topbar-actions">
+            <button className="icon-btn" aria-label="Notifications">
+              <Bell size={18} />
+            </button>
+            <Link to="/reward-explanation" className="profile-shortcut hide-mobile">
+              Rewards
+            </Link>
+            <Link to="/change-password" className="profile-shortcut">
+              Security
+            </Link>
+          </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   )

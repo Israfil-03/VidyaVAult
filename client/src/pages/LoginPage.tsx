@@ -43,47 +43,64 @@ export const LoginPage = () => {
 
   return (
     <div className="auth-page">
-      <Card>
-        <div className="brand-login">
-          <h1>
-            <span>Vidya</span>Vault
-          </h1>
-          <p>Test, analytics, and rewards for modern tuition classrooms.</p>
-        </div>
+      <div className="auth-shell">
+        <section className="auth-hero">
+          <div className="auth-copy">
+            <h2>Powerful tuition intelligence in one dashboard.</h2>
+            <p>
+              Monitor learning outcomes, manage assessments, and run reward programs through a
+              single professional SaaS workspace.
+            </p>
+            <ul className="auth-point-list">
+              <li>Role-based workspaces for superadmin, teachers, and students</li>
+              <li>Live leaderboard insights and performance analytics</li>
+              <li>AI-assisted question generation and answer analysis</li>
+            </ul>
+          </div>
+        </section>
 
-        <form onSubmit={handleSubmit} className="form-grid">
-          <label>
-            Role view
-            <select value={roleHint} onChange={(event) => setRoleHint(event.target.value as Role)}>
-              <option value="superadmin">Superadmin</option>
-              <option value="teacher_admin">Teacher Admin</option>
-              <option value="student">Student</option>
-            </select>
-          </label>
-          <label>
-            Email or username
-            <input
-              type="text"
-              value={identity}
-              onChange={(event) => setIdentity(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </label>
-          {error ? <p className="error-text">{error}</p> : null}
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-      </Card>
+        <Card>
+          <div className="brand-login">
+            <h1>
+              <span>Vidya</span>Vault
+            </h1>
+            <p>Sign in to continue to your dashboard.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="form-grid">
+            <label>
+              Role view
+              <select value={roleHint} onChange={(event) => setRoleHint(event.target.value as Role)}>
+                <option value="superadmin">Superadmin</option>
+                <option value="teacher_admin">Teacher Admin</option>
+                <option value="student">Student</option>
+              </select>
+            </label>
+            <label>
+              Email or username
+              <input
+                type="text"
+                value={identity}
+                onChange={(event) => setIdentity(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+            {error ? <p className="error-text">{error}</p> : null}
+            <Button type="submit" isLoading={submitting}>
+              {submitting ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   )
 }

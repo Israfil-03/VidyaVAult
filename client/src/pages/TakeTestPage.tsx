@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '../components/Button'
@@ -64,26 +64,7 @@ export const TakeTestPage = () => {
     void initialize()
   }, [token, testId])
 
-  useEffect(() => {
-    if (remainingSeconds <= 0 || !submissionId) {
-      return
-    }
-    const timer = setInterval(() => {
-      setRemainingSeconds((prev) => prev - 1)
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [remainingSeconds, submissionId])
-
-  const currentQuestion = test?.questions[currentIndex]
-  const progress = useMemo(() => {
-    if (!test || test.questions.length === 0) {
-      return 0
-    }
-    const answered = Object.values(answers).filter(Boolean).length
-    return Math.round((answered / test.questions.length) * 100)
-  }, [answers, test])
-
-  const saveCurrentAnswers = async () => {
+  const saveCurrentAnswers = useCallback(async () => {
     if (!token || !submissionId) {
       return
     }
@@ -97,9 +78,9 @@ export const TakeTestPage = () => {
         })),
       }),
     })
-  }
+  }, [answers, submissionId, token])
 
-  const finalizeSubmission = async () => {
+  const finalizeSubmission = useCallback(async () => {
     if (!token || !submissionId) {
       return
     }
@@ -116,70 +97,115 @@ export const TakeTestPage = () => {
     } finally {
       setSaving(false)
     }
-  }
+  }, [navigate, saveCurrentAnswers, submissionId, token])
+
+  useEffect(() => {
+    if (remainingSeconds <= 0 || !submissionId) {
+      return
+    }
+    const timer = setInterval(() => {
+      setRemainingSeconds((prev) => Math.max(prev - 1, 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [remainingSeconds, submissionId])
+
+  useEffect(() => {
+    if (!submissionId || remainingSeconds !== 0 || saving) {
+      return
+    }
+    void finalizeSubmission()
+  }, [finalizeSubmission, remainingSeconds, saving, submissionId])
+
+  const currentQuestion = test?.questions[currentIndex]
+  const progress = useMemo(() => {
+    if (!test || test.questions.length === 0) {
+      return 0
+    }
+    const answered = Object.values(answers).filter(Boolean).length
+    return Math.round((answered / test.questions.length) * 100)
+  }, [answers, test])
 
   return (
     <DashboardLayout title="Take Test" navigation={navigation}>
-      {error ? <p className="error-text">{error}</p> : null}
-      {test ? (
-        <Card title={test.title}>
-          <div className="test-header">
-            <p>
-              Time left: {Math.floor(remainingSeconds / 60)}:{String(remainingSeconds % 60).padStart(2, '0')}
-            </p>
-            <p>Progress: {progress}%</p>
-          </div>
-
-          {currentQuestion ? (
-            <div className="question-card">
-              <h4>
-                Question {currentIndex + 1} of {test.questions.length}
-              </h4>
-              <p>{currentQuestion.text}</p>
-              <div className="options-grid">
-                {currentQuestion.options.map((option) => (
-                  <button
-                    key={option.id}
-                    className={`option-btn ${answers[currentQuestion.id] === option.id ? 'selected' : ''}`}
-                    onClick={() =>
-                      setAnswers((prev) => ({
-                        ...prev,
-                        [currentQuestion.id]: option.id,
-                      }))
-                    }
-                  >
-                    {option.text}
-                  </button>
-                ))}
-              </div>
+      <div>
+        {error ? <p className="error-text">{error}</p> : null}
+        {test ? (
+          <Card title={test.title} subtitle="Answer each question and submit before timer reaches zero">
+            <div className="test-header">
+              <p>
+                Time left: {Math.floor(remainingSeconds / 60)}:
+                {String(remainingSeconds % 60).padStart(2, '0')}
+              </p>
+              <p>Progress: {progress}%</p>
             </div>
-          ) : null}
+            <div className="test-progress">
+              <span style={{ width: `${progress}%` }} />
+            </div>
 
-          <div className="inline-actions">
-            <Button
-              variant="secondary"
-              onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-              disabled={currentIndex === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                setCurrentIndex((prev) => Math.min(prev + 1, (test.questions.length || 1) - 1))
-              }
-              disabled={currentIndex >= test.questions.length - 1}
-            >
-              Next
-            </Button>
-            <Button onClick={finalizeSubmission} disabled={saving}>
-              {saving ? 'Submitting...' : 'Submit Test'}
-            </Button>
-          </div>
-        </Card>
-      ) : (
-        <p>Loading test...</p>
-      )}
+            <div className="question-jump-grid">
+              {test.questions.map((question, index) => (
+                <button
+                  key={question.id}
+                  type="button"
+                  className={`jump-chip ${index === currentIndex ? 'active' : ''} ${
+                    answers[question.id] ? 'answered' : ''
+                  }`}
+                  onClick={() => setCurrentIndex(index)}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+
+            {currentQuestion ? (
+              <div className="question-card">
+                <h4>
+                  Question {currentIndex + 1} of {test.questions.length}
+                </h4>
+                <p>{currentQuestion.text}</p>
+                <div className="options-grid">
+                  {currentQuestion.options.map((option) => (
+                    <button
+                      key={option.id}
+                      className={`option-btn ${answers[currentQuestion.id] === option.id ? 'selected' : ''}`}
+                      onClick={() =>
+                        setAnswers((prev) => ({
+                          ...prev,
+                          [currentQuestion.id]: option.id,
+                        }))
+                      }
+                    >
+                      {option.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="inline-actions">
+              <Button
+                variant="secondary"
+                onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+                disabled={currentIndex === 0}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, (test.questions.length || 1) - 1))}
+                disabled={currentIndex >= test.questions.length - 1}
+              >
+                Next
+              </Button>
+              <Button onClick={finalizeSubmission} isLoading={saving}>
+                {saving ? 'Submitting...' : 'Submit Test'}
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <p className="muted">Loading test...</p>
+        )}
+      </div>
     </DashboardLayout>
   )
 }
