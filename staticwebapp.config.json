@@ -1,0 +1,20 @@
+{
+  "routes": [
+    {
+      "route": "/api/*",
+      "allowedRoles": []
+    },
+    {
+      "route": "/*",
+      "serve": "/index.html",
+      "statusCode": 200
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/api/*"]
+  },
+  "mimeTypes": {
+    ".json": "text/json"
+  }
+}
