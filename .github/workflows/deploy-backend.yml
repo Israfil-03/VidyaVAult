@@ -61,7 +61,7 @@ jobs:
             az webapp config set \
               -g vidyavault-rg \
               -n vidyavault-api-israfil \
-              --startup-file "sh -c 'if [ -f server/dist/src/server.js ]; then node server/dist/src/server.js; elif [ -f dist/src/server.js ]; then node dist/src/server.js; else echo Missing server entrypoint; ls -la; exit 1; fi'"
+              --startup-file "node dist/src/server.js"
 
       - name: Start App Service
         uses: azure/CLI@v2
