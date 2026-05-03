@@ -1,7 +1,10 @@
 import type { ApiEnvelope } from '../types'
 
 const configuredUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
-const API_BASE_URL = configuredUrl ? `${configuredUrl}/api` : '/api'
+const API_BASE_URL = configuredUrl 
+  ? (configuredUrl.endsWith('/api') ? configuredUrl : `${configuredUrl}/api`)
+  : '/api'
+
 
 interface ApiRequestOptions extends RequestInit {
   token?: string | null
