@@ -37,6 +37,21 @@ jobs:
       - name: Build backend
         run: npm run build -w server
 
+      - name: Verify build output
+        run: |
+          echo "=== Checking built server files ==="
+          ls -la server/dist/
+          echo "=== Checking for server.js ==="
+          if [ -f server/dist/server.js ]; then
+            echo "✓ server.js found at server/dist/server.js"
+          else
+            echo "✗ ERROR: server.js not found at server/dist/server.js"
+            ls -R server/dist/
+            exit 1
+          fi
+          echo "=== Verifying compiled TypeScript files ==="
+          find server/dist -name "*.js" | head -20
+
       - name: Create deployment package
         run: |
           mkdir -p deploy
@@ -45,6 +60,7 @@ jobs:
           cp -r server/prisma deploy/
           cp package.json deploy/
           cp package-lock.json deploy/
+          cp web.config deploy/
           cd deploy && zip -r ../deployment.zip . && cd ..
 
       - name: Deploy to Azure App Service
@@ -58,10 +74,14 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
+            echo "=== Setting startup command ==="
             az webapp config set \
               -g vidyavault-rg \
               -n vidyavault-api-israfil \
-              --startup-file "node dist/src/server.js"
+              --startup-file "node dist/server.js"
+            echo "✓ Startup command configured"
+            echo "=== Verifying configuration ==="
+            az webapp config show -g vidyavault-rg -n vidyavault-api-israfil --query "startupCommand"
 
       - name: Start App Service
         uses: azure/CLI@v2
@@ -71,15 +91,22 @@ jobs:
 
       - name: Wait for app to start
         run: |
-          for i in {1..30}; do
-            if curl -s https://vidyavault-api-israfil.azurewebsites.net/api/health > /dev/null 2>&1; then
-              echo "✓ App is healthy"
+          echo "=== Waiting for app to be healthy ==="
+          APP_URL="https://vidyavault-api-israfil.azurewebsites.net/api/health"
+          for i in {1..40}; do
+            echo "Attempt $i/40: Checking $APP_URL"
+            if curl -s -f -m 5 "$APP_URL" > /dev/null 2>&1; then
+              echo "✓ App is healthy on attempt $i"
               exit 0
             fi
-            echo "Waiting for app to start ($i/30)..."
-            sleep 10
+            if [ $i -lt 40 ]; then
+              echo "Waiting 10 seconds before retry..."
+              sleep 10
+            fi
           done
-          echo "✗ App startup timeout"
+          echo "✗ App startup timeout after 400 seconds"
+          echo "=== Getting app service logs ==="
+          az webapp log download -g vidyavault-rg -n vidyavault-api-israfil --log-file ./app-logs.zip || true
           exit 1
 
       - name: Run Prisma migrations
