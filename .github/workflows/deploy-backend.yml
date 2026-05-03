@@ -157,7 +157,7 @@ jobs:
               "password": "${{ secrets.SUPERADMIN_PASSWORD }}"
             }')
 
-          if echo "$RESPONSE" | jq -e '.token' > /dev/null 2>&1; then
+          if echo "$RESPONSE" | jq -e '.data.token' > /dev/null 2>&1; then
             echo "✓ Superadmin login successful"
             echo "$RESPONSE" | jq .
           else
