@@ -70,6 +70,11 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deployment.zip
 
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Configure startup command
         uses: azure/CLI@v2
         with:
@@ -80,6 +85,7 @@ jobs:
               -n vidyavault-api-israfil \
               --startup-file "node dist/server.js"
             echo "✓ Startup command configured"
+
             echo "=== Verifying configuration ==="
             az webapp config show -g vidyavault-rg -n vidyavault-api-israfil --query "startupCommand"
 
