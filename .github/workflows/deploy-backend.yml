@@ -58,7 +58,7 @@ jobs:
           cp -r server/dist deploy/dist
           cp -r node_modules deploy/
           cp -r server/prisma deploy/
-          cp package.json deploy/
+          cp server/package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
           cd deploy && zip -r ../deployment.zip . && cd ..
@@ -69,25 +69,7 @@ jobs:
           app-name: vidyavault-api-israfil
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deployment.zip
-
-      - name: Configure startup command
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            echo "=== Setting startup command ==="
-            az webapp config set \
-              -g vidyavault-rg \
-              -n vidyavault-api-israfil \
-              --startup-file "node dist/server.js"
-            echo "✓ Startup command configured"
-            echo "=== Verifying configuration ==="
-            az webapp config show -g vidyavault-rg -n vidyavault-api-israfil --query "startupCommand"
-
-      - name: Start App Service
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            az webapp start -g vidyavault-rg -n vidyavault-api-israfil
+          startup-command: 'node dist/server.js'
 
       - name: Wait for app to start
         run: |
