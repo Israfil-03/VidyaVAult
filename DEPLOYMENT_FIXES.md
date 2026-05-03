@@ -42,7 +42,7 @@ Before triggering deployment, ensure:
 
 1. **GitHub Secrets Set** ✅
    - [ ] `AZURE_WEBAPP_PUBLISH_PROFILE` - Added to GitHub
-   - [ ] `DATABASE_URL` - Added to GitHub  
+   - [ ] `DATABASE_URL` - Added to GitHub
    - [ ] `SUPERADMIN_PASSWORD` - Added to GitHub
    - [ ] `AZURE_STATIC_WEB_APPS_API_TOKEN` - For frontend (optional)
 
