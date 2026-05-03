@@ -21,19 +21,19 @@ echo "  JWT Secret: $([ -n "$JWT_SECRET" ] && echo "set" || echo "NOT SET")"
 echo ""
 
 echo "Checking application files..."
-if [ -f "dist/server.js" ]; then
-  echo "  ✓ dist/server.js found"
+if [ -f "dist/src/server.js" ]; then
+  echo "  ✓ dist/src/server.js found"
 else
-  echo "  ✗ ERROR: dist/server.js not found!"
+  echo "  ✗ ERROR: dist/src/server.js not found!"
   ls -la dist/ || echo "dist/ directory does not exist"
   exit 1
 fi
 
 echo ""
 echo "Starting Node.js application..."
-echo "  Command: node dist/server.js"
+echo "  Command: node dist/src/server.js"
 echo "================================"
 echo ""
 
 # Run the app
-exec node dist/server.js
+exec node dist/src/server.js
