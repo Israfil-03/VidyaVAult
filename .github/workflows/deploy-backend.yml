@@ -115,18 +115,33 @@ jobs:
           az webapp log download -g vidyavault-rg -n vidyavault-api-israfil --log-file ./app-logs.zip || true
           exit 1
 
-      - name: Run Prisma migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma migrate deploy --schema=server/prisma/schema.prisma || true
+      - name: Get App Settings
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "=== Fetching DATABASE_URL from Azure ==="
+            DB_URL=$(az webapp config appsettings show -g vidyavault-rg -n vidyavault-api-israfil --query "[?name=='DATABASE_URL'].value" -o tsv)
+            
+            if [ -z "$DB_URL" ]; then
+              echo "Error: Could not retrieve DATABASE_URL from Azure App Service"
+              exit 1
+            fi
+            
+            # Mask the URL in logs
+            echo "::add-mask::$DB_URL"
+            # Write to GITHUB_ENV for subsequent steps
+            echo "DATABASE_URL=$DB_URL" >> $GITHUB_ENV
 
-      - name: Seed superadmin user
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SUPERADMIN_EMAIL: israfilhoque523@gmail.com
-          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
-          SUPERADMIN_USERNAME: superadmin
-        run: npx prisma db seed --schema=server/prisma/schema.prisma || npm run prisma:seed -w server
+      - name: Run Migrations and Seed
+        run: |
+          echo "=== Running Migrations ==="
+          npx prisma migrate deploy --schema=server/prisma/schema.prisma
+          
+          echo "=== Seeding Database ==="
+          export SUPERADMIN_EMAIL="israfilhoque523@gmail.com"
+          export SUPERADMIN_PASSWORD="${{ secrets.SUPERADMIN_PASSWORD }}"
+          export SUPERADMIN_USERNAME="superadmin"
+          npx prisma db seed --schema=server/prisma/schema.prisma || npm run prisma:seed -w server
 
       - name: Verify deployment
         run: |
