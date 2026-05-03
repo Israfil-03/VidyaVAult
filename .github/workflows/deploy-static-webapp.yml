@@ -43,6 +43,7 @@ jobs:
           output_location: ""
           skip_app_build: true
           skip_api_build: true
+          skip_deploy_on_missing_secrets: true
 
       - name: Verify deployment
         run: |
