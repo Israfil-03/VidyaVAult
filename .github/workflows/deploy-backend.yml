@@ -120,7 +120,7 @@ jobs:
         with:
           inlineScript: |
             echo "=== Fetching DATABASE_URL from Azure ==="
-            DB_URL=$(az webapp config appsettings show -g vidyavault-rg -n vidyavault-api-israfil --query "[?name=='DATABASE_URL'].value" -o tsv)
+            DB_URL=$(az webapp config appsettings list -g vidyavault-rg -n vidyavault-api-israfil --query "[?name=='DATABASE_URL'].value" -o tsv)
             
             if [ -z "$DB_URL" ]; then
               echo "Error: Could not retrieve DATABASE_URL from Azure App Service"
