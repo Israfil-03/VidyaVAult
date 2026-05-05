@@ -12,13 +12,9 @@ VidyaVault is a premium, full-stack tuition management platform built with a hig
 - **Student**: Take tests, track performance history, and earn rewards for achievements.
 
 ### 📊 Performance Analytics
-- Real-time data visualization of test scores.
+- Real-time data visualization of test scores using Recharts.
 - Comparative analytics for teachers to track class-wide progress.
 - Personalized performance feedback for students.
-
-### 🏆 Reward System
-- Achievement-based rewards to incentivize student engagement.
-- Integrated reward service to track and distribute virtual accolades.
 
 ---
 
@@ -26,11 +22,11 @@ VidyaVault is a premium, full-stack tuition management platform built with a hig
 
 | Layer | Technology | Description |
 | :--- | :--- | :--- |
-| **Frontend** | React 19, Vite | Fast, modern UI with TypeScript |
-| **Styling** | Vanilla CSS, Framer Motion | Smooth animations and premium aesthetics |
-| **Backend** | Node.js, Express 5 | Robust API with strict TypeScript typing |
-| **ORM** | Prisma | Type-safe database access |
-| **Database** | PostgreSQL | Scalable relational database |
+| **Frontend** | React 19, Vite, TypeScript | Fast, modern UI with strict typing |
+| **Animation** | Framer Motion | Premium, smooth micro-interactions |
+| **Backend** | Node.js, Express 5 | Robust API with modular architecture |
+| **ORM** | Prisma | Type-safe database access and migrations |
+| **Database** | PostgreSQL (Azure) | Scalable relational database |
 | **Auth** | JWT, bcrypt | Secure authentication and password hashing |
 
 ---
@@ -39,84 +35,105 @@ VidyaVault is a premium, full-stack tuition management platform built with a hig
 
 ```text
 VidyaVault/
-├── .github/workflows/    # CI/CD pipelines (Frontend & Backend)
+├── .github/workflows/    # CI/CD pipelines
+│   ├── deploy-static-webapp.yml  # Frontend Deployment
+│   └── deploy-backend.yml        # Backend Deployment
 ├── client/               # Frontend React application
-│   ├── src/              # UI components and business logic
-│   └── staticwebapp.config.json # Azure Static Web App config
+│   ├── src/              # Components, Hooks, Pages
+│   └── staticwebapp.config.json # SPA Routing & API Redirects
 ├── server/               # Backend Express application
-│   ├── src/              # API controllers, middleware, and services
-│   ├── prisma/           # Database schema and migrations
-│   └── web.config        # Azure App Service configuration
+│   ├── src/              # Controllers, Services, Middleware
+│   ├── prisma/           # Schema, Migrations, Seeds
+│   └── web.config        # IIS/iisnode configuration
 ├── package.json          # Root workspace configuration
 └── README.md             # This file
 ```
 
 ---
 
-## 🚀 Local Development Setup
+## ⚙️ Configuration & Environment Variables
 
-### 1. Prerequisites
-- **Node.js**: v22.x or higher
-- **PostgreSQL**: Running instance (Local or Remote)
+The application relies on specific environment variables to function correctly across development and production.
 
-### 2. Environment Configuration
-Copy `.env.example` to `.env` in the root and fill in your credentials:
-```bash
-DATABASE_URL="postgresql://user:password@localhost:5432/vidyavault"
-JWT_SECRET="your_secret_key"
-PORT=4000
-```
+### 🏠 Local Development (.env at Root)
+| Variable | Description | Example |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | PostgreSQL Connection String | `postgresql://user:pass@localhost:5432/db` |
+| `JWT_SECRET` | Secret key for signing tokens | `super-secret-key-123` |
+| `PORT` | Backend API port | `4000` |
 
-### 3. Installation
-```bash
-npm install
-```
-
-### 4. Database Setup
-```bash
-npm run prisma:generate
-npm run prisma:migrate
-npm run prisma:seed
-```
-
-### 5. Start Development
-```bash
-npm run dev
-```
-- **Frontend**: `http://localhost:5173`
-- **Backend**: `http://localhost:4000/api`
+### 🌐 Frontend (Vite)
+| Variable | Description | Required In |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | Base URL of the Backend API | Production Build |
+| `VITE_UI_ONLY` | Enables demo mode without backend | Local Dev |
 
 ---
 
-## ☁️ Azure Deployment
+## ☁️ Azure Deployment Configuration
 
-VidyaVault is architected for seamless deployment to the Microsoft Azure ecosystem.
+VidyaVault is deployed using a decoupled architecture to maximize performance and scalability.
 
-### Azure Services Used
-- **Azure Static Web Apps**: Hosts the React frontend.
-- **Azure App Service (Linux)**: Hosts the Node.js backend.
-- **Azure Database for PostgreSQL**: Managed database.
+### 1. Frontend: Azure Static Web Apps
+- **Hosting**: Files are served from `client/dist`.
+- **Routing**: `client/staticwebapp.config.json` ensures that all frontend routes are redirected to `index.html` (supporting React Router) and permits `/api/*` traffic.
+- **CI/CD**: Managed by `deploy-static-webapp.yml`.
 
-### 🔐 Required GitHub Secrets
-Ensure the following secrets are configured in your GitHub repository (**Settings > Secrets > Actions**):
-- `AZURE_STATIC_WEB_APPS_API_TOKEN`: Deployment token for Frontend.
-- `AZURE_CREDENTIALS`: Azure login credentials for Backend.
-- `DATABASE_URL`: Production PostgreSQL connection string.
-- `SUPERADMIN_PASSWORD`: Default password for the initial superadmin user.
-- `VITE_API_URL`: The URL of your deployed backend API.
+### 2. Backend: Azure App Service (Linux)
+- **Deployment Method**: Zip Deploy via GitHub Actions.
+- **Runtime**: Node.js 22 LTS.
+- **Startup Command**: `node dist/server.js` (Configured via Azure CLI during deployment).
+- **App Settings (Secrets)**: Must be set in the Azure Portal:
+    - `DATABASE_URL`: Production PostgreSQL string.
+    - `JWT_SECRET`: Secure production secret.
+    - `NODE_ENV`: Should be `production`.
 
-### 🔄 CI/CD Process
-Deployment triggers automatically on every push to the `main` branch. 
-- **Frontend Workflow**: `.github/workflows/deploy-static-webapp.yml`
-- **Backend Workflow**: `.github/workflows/deploy-backend.yml`
+### 3. Database: Azure Database for PostgreSQL
+- **Schema Management**: Prisma handles all updates.
+- **Migrations**: `npx prisma migrate deploy` runs automatically during the backend deployment pipeline to ensure the database schema stays in sync with the code.
 
 ---
 
-## 🔒 Security
-- Strict JWT-based authentication.
-- Password encryption using `bcrypt`.
-- Environment variable isolation for sensitive data.
-- Automated Prisma migrations for safe database versioning.
+## 🔄 CI/CD Pipeline Details
+
+The deployment is fully automated via GitHub Actions.
+
+### 🎨 Frontend Pipeline (`deploy-static-webapp.yml`)
+1. **Trigger**: Push to `main` branch (specifically in `client/`).
+2. **Build**: Runs `npm run build -w client`.
+3. **Inject**: Injects `VITE_API_URL` secret into the build.
+4. **Deploy**: Uploads artifacts to Azure Static Web Apps.
+
+### ⚙️ Backend Pipeline (`deploy-backend.yml`)
+1. **Trigger**: Push to `main` branch (specifically in `server/`).
+2. **Build**: Compiles TypeScript and generates the Prisma client.
+3. **Package**: Creates a `deployment.zip` containing the compiled `dist`, `node_modules`, and `prisma` schema.
+4. **Deploy**: Uploads zip to Azure App Service.
+5. **Post-Deploy**: 
+    - Sets the startup command.
+    - Executes `prisma migrate deploy` to update the database.
+    - Runs the seeding script to ensure a `superadmin` exists.
+    - Performs a health check (`/api/health`) and a test login.
+
+---
+
+## 🛠️ Maintenance & Troubleshooting
+
+### Health Check
+Monitor the live API health at:
+`https://vidyavault-api-israfil.azurewebsites.net/api/health`
+
+### Database Updates
+To update the database schema:
+1. Modify `server/prisma/schema.prisma`.
+2. Run `npx prisma migrate dev` locally to create a migration.
+3. Commit and push the new migration file; the CI/CD pipeline will apply it to production.
+
+### Logs
+To view live logs from the backend:
+```bash
+az webapp log tail --name vidyavault-api-israfil --resource-group vidyavault-rg
+```
 
 ---
 
