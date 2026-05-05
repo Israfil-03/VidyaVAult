@@ -76,6 +76,11 @@ export const SuperadminDashboard = () => {
     newPassword: '',
   })
 
+  // Teacher Creation Feedback
+  const [teacherCreating, setTeacherCreating] = useState(false)
+  const [teacherError, setTeacherError] = useState<string | null>(null)
+  const [teacherSuccess, setTeacherSuccess] = useState<string | null>(null)
+
   const loadData = async () => {
     if (!token) {
       return
@@ -129,7 +134,9 @@ export const SuperadminDashboard = () => {
     if (!token) {
       return
     }
-    setError(null)
+    setTeacherError(null)
+    setTeacherSuccess(null)
+    setTeacherCreating(true)
     try {
       await apiRequest('/auth/register-teacher', {
         method: 'POST',
@@ -137,9 +144,14 @@ export const SuperadminDashboard = () => {
         body: JSON.stringify(teacherForm),
       })
       setTeacherForm({ email: '', username: '', password: '', subject: 'CHEMISTRY' })
+      setTeacherSuccess(`Teacher ${teacherForm.username} created successfully!`)
       await loadData()
+      // Clear success message after 5 seconds
+      setTimeout(() => setTeacherSuccess(null), 5000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create teacher')
+      setTeacherError(err instanceof Error ? err.message : 'Failed to create teacher')
+    } finally {
+      setTeacherCreating(false)
     }
   }
 
@@ -213,12 +225,16 @@ export const SuperadminDashboard = () => {
         <div className="two-col">
           <Card title="Add Teacher Admin">
             <form className="form-grid" onSubmit={handleTeacherCreate}>
+              {teacherError && <p className="error-text" style={{ fontSize: '0.85rem' }}>{teacherError}</p>}
+              {teacherSuccess && <p className="success-text" style={{ fontSize: '0.85rem' }}>{teacherSuccess}</p>}
+              
               <label>
                 Email
                 <input
                   value={teacherForm.email}
                   onChange={(event) => setTeacherForm((prev) => ({ ...prev, email: event.target.value }))}
                   required
+                  disabled={teacherCreating}
                 />
               </label>
               <label>
@@ -227,6 +243,7 @@ export const SuperadminDashboard = () => {
                   value={teacherForm.username}
                   onChange={(event) => setTeacherForm((prev) => ({ ...prev, username: event.target.value }))}
                   required
+                  disabled={teacherCreating}
                 />
               </label>
               <label>
@@ -236,6 +253,8 @@ export const SuperadminDashboard = () => {
                   value={teacherForm.password}
                   onChange={(event) => setTeacherForm((prev) => ({ ...prev, password: event.target.value }))}
                   required
+                  disabled={teacherCreating}
+                  minLength={8}
                 />
               </label>
               <label>
@@ -243,13 +262,16 @@ export const SuperadminDashboard = () => {
                 <select
                   value={teacherForm.subject}
                   onChange={(event) => setTeacherForm((prev) => ({ ...prev, subject: event.target.value }))}
+                  disabled={teacherCreating}
                 >
                   <option value="CHEMISTRY">Chemistry</option>
                   <option value="BIOLOGY">Biology</option>
                   <option value="MATHEMATICS">Mathematics</option>
                 </select>
               </label>
-              <Button type="submit">Create Teacher</Button>
+              <Button type="submit" disabled={teacherCreating}>
+                {teacherCreating ? 'Creating...' : 'Create Teacher'}
+              </Button>
             </form>
           </Card>
 

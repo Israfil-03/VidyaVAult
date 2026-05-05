@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type { NextFunction, Request, Response } from 'express'
 import { ZodError } from 'zod'
 
@@ -23,6 +24,19 @@ export const errorHandler = (
       },
     })
     return
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
+      const target = (error.meta?.target as string[])?.join(', ') ?? 'field'
+      res.status(400).json({
+        success: false,
+        error: {
+          message: `${target.charAt(0).toUpperCase() + target.slice(1)} already exists. Please use a different value.`,
+        },
+      })
+      return
+    }
   }
 
   if (error instanceof ApiError) {

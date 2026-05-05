@@ -6,7 +6,7 @@ on:
     paths:
       - 'client/**'
       - '.github/workflows/deploy-static-webapp.yml'
-      - 'staticwebapp.config.json'
+      - 'client/staticwebapp.config.json'
 
 jobs:
   build_and_deploy_job:
@@ -33,7 +33,7 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Copy staticwebapp.config.json
-        run: cp staticwebapp.config.json client/dist/
+        run: cp client/staticwebapp.config.json client/dist/
 
 
       - name: Build And Deploy
@@ -47,7 +47,8 @@ jobs:
           output_location: ""
           skip_app_build: true
           skip_api_build: true
-          skip_deploy_on_missing_secrets: true
+        env:
+          SKIP_DEPLOY_ON_MISSING_SECRETS: true
 
       - name: Verify deployment
         run: |
