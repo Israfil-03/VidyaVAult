@@ -87,29 +87,35 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
               >
                 {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
-              <div>
+              <div className="header-titles">
                 <h1>{title}</h1>
-                <p>
+                <p className="muted">
                   {user?.username} · <span className="role-pill">{roleLabel}</span>
                 </p>
               </div>
             </div>
 
             <div className="topbar-search hide-mobile">
-               <Search size={16} className="search-icon" />
-               <input type="text" placeholder="Search..." aria-label="Global search" />
+               <div className="search-box">
+                 <Search size={16} className="search-icon" />
+                 <input type="text" placeholder="Quick search..." aria-label="Global search" />
+               </div>
             </div>
           </div>
           <div className="topbar-actions">
-            <button className="icon-btn" aria-label="Notifications">
-              <Bell size={18} />
+            <button className="icon-btn-ghost" aria-label="Notifications">
+              <Bell size={20} />
+              <span className="notification-dot"></span>
             </button>
-            <Link to="/reward-explanation" className="profile-shortcut hide-mobile">
-              Rewards
-            </Link>
-            <Link to="/change-password" className="profile-shortcut">
-              Security
-            </Link>
+            <div className="v-divider hide-mobile"></div>
+            <div className="action-buttons">
+              <Link to="/reward-explanation" className="btn-action hide-mobile">
+                Rewards
+              </Link>
+              <Link to="/change-password" className="btn-action">
+                Security
+              </Link>
+            </div>
           </div>
         </header>
         <main className="content">

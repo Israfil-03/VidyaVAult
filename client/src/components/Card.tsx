@@ -7,7 +7,7 @@ interface CardProps {
   actions?: ReactNode
   subtitle?: string
   className?: string
-  variant?: 'default' | 'glass' | 'elevated'
+  variant?: 'default' | 'glass' | 'elevated' | 'gradient' | 'outline'
   tilt?: boolean
 }
 
@@ -24,8 +24,10 @@ export const Card = ({
 
   const variants = {
     default: '',
-    glass: 'glass',
-    elevated: 'shadow-lg',
+    glass: 'glass-card',
+    elevated: 'elevated-card',
+    gradient: 'gradient-card',
+    outline: 'outline-card',
   }
 
   const motionProps = tilt && !reduceMotion

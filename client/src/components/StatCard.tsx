@@ -19,32 +19,34 @@ export const StatCard = ({ label, value, trend, tone = 'primary', icon }: StatCa
 
   return (
     <Card className={`stat-card stat-${tone}`} tilt variant="glass">
-      <div className="stat-header">
-        <p className="stat-label">{label}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {icon ? (
-          <span 
-            className="stat-icon" 
+          <div 
+            className="stat-icon-wrapper" 
             style={{ 
               background: tones[tone], 
               color: 'white',
-              padding: '8px',
-              borderRadius: '12px',
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              boxShadow: '0 8px 16px -4px rgba(0,0,0,0.2)',
+              flexShrink: 0
             }}
           >
             {icon}
-          </span>
+          </div>
         ) : null}
+        <div>
+          <p className="stat-label" style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem' }}>{label}</p>
+          <p className="stat-value" style={{ margin: '4px 0', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{value}</p>
+          {trend && (
+            <p className="stat-trend" style={{ margin: 0, fontSize: '0.75rem', fontWeight: 600, opacity: 0.8 }}>{trend}</p>
+          )}
+        </div>
       </div>
-      <p className="stat-value">{value}</p>
-      {trend ? (
-        <p className="stat-trend" style={{ fontWeight: 600 }}>{trend}</p>
-      ) : (
-        <p className="stat-trend muted">No change data yet</p>
-      )}
     </Card>
   )
 }

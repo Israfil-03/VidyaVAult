@@ -1,4 +1,4 @@
-import { CalendarClock, LayoutDashboard, Medal, NotebookTabs, Trophy, ClipboardList, Zap, ArrowRight, Star } from 'lucide-react'
+import { CalendarClock, LayoutDashboard, Medal, NotebookTabs, Trophy, ClipboardList, ArrowRight, Star, CircleCheckBig, BarChart3 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -47,14 +47,20 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
+      staggerChildren: 0.15,
+      delayChildren: 0.1
     }
   }
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { type: 'spring' as const, stiffness: 100, damping: 15 }
+  }
 }
 
 export const StudentDashboard = () => {
@@ -175,58 +181,73 @@ export const StudentDashboard = () => {
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
         {error ? <p className="error-text">{error}</p> : null}
 
-        <motion.section variants={itemVariants} className="hero-welcome">
-          <div className="hero-content">
-            <h2>Welcome back, {user?.username}! 👋</h2>
-            <p>You have {activeTests.length} active tests waiting for you. Ready to sharpen your skills today?</p>
-            <div className="inline-actions" style={{ marginTop: '20px' }}>
-              <Button onClick={() => document.getElementById('active-tests')?.scrollIntoView({ behavior: 'smooth' })}>
-                View Active Tests <ArrowRight size={16} />
-              </Button>
+        <motion.section variants={itemVariants} className="hero-welcome-v2">
+          <div className="hero-grid">
+            <div className="hero-main-content">
+              <span className="hero-badge">Student Portal</span>
+              <h2>Welcome back, <span className="highlight">{user?.username}</span>! 👋</h2>
+              <p>You have <strong>{activeTests.length}</strong> active tests waiting for your attention. Ready to excel today?</p>
+              <div className="hero-actions">
+                <Button onClick={() => document.getElementById('active-tests')?.scrollIntoView({ behavior: 'smooth' })} className="pulse-btn">
+                  Launch Active Tests <ArrowRight size={18} />
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="hero-stats hide-mobile" style={{ position: 'absolute', right: '40px', bottom: '40px', display: 'flex', gap: '20px' }}>
-             <div className="glass" style={{ padding: '12px 20px', borderRadius: '16px', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 800 }}>{overview?.completed ?? 0}</span>
-                <span style={{ fontSize: '0.75rem', opacity: 0.8, textTransform: 'uppercase' }}>Completed</span>
-             </div>
-             <div className="glass" style={{ padding: '12px 20px', borderRadius: '16px', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontSize: '1.5rem', fontWeight: 800 }}>{classLeaderboard.find(e => e.username === user?.username)?.rank ?? '-'}</span>
-                <span style={{ fontSize: '0.75rem', opacity: 0.8, textTransform: 'uppercase' }}>Your Rank</span>
-             </div>
+            <div className="hero-visual hide-mobile">
+               <div className="hero-stat-blob">
+                  <div className="blob-item">
+                    <span className="blob-label">Tests Completed</span>
+                    <span className="blob-value">{overview?.completed ?? 0}</span>
+                  </div>
+                  <div className="v-line"></div>
+                  <div className="blob-item">
+                    <span className="blob-label">Current Rank</span>
+                    <span className="blob-value">#{classLeaderboard.find(e => e.username === user?.username)?.rank ?? '-'}</span>
+                  </div>
+               </div>
+            </div>
           </div>
         </motion.section>
 
-        <div className="stats-grid">
+        <div className="stats-row">
           <motion.div variants={itemVariants}>
-            <StatCard label="Active Tests" value={overview?.active ?? 0} trend="Available now" icon={<NotebookTabs size={20} />} tone="primary" />
+            <StatCard label="Active" value={overview?.active ?? 0} trend="Live tests" icon={<NotebookTabs size={24} />} tone="primary" />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <StatCard label="Upcoming Tests" value={overview?.upcoming ?? 0} trend="Scheduled ahead" icon={<CalendarClock size={20} />} tone="warning" />
+            <StatCard label="Upcoming" value={overview?.upcoming ?? 0} trend="Scheduled" icon={<CalendarClock size={24} />} tone="warning" />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <StatCard label="Performance" value={`${completedTrendData[completedTrendData.length - 1]?.value ?? 0}%`} trend="Latest score" icon={<Star size={20} />} tone="success" />
+            <StatCard label="Accuracy" value={`${completedTrendData[completedTrendData.length - 1]?.value ?? 0}%`} trend="Latest score" icon={<Star size={24} />} tone="success" />
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <StatCard label="Total Awards" value={overview?.completed ? Math.floor(overview.completed / 3) : 0} trend="Achievements" icon={<Trophy size={24} />} tone="danger" />
           </motion.div>
         </div>
 
-        <div className="bento-grid" style={{ marginTop: '24px' }}>
-          <motion.div variants={itemVariants} className="bento-item-large" id="active-tests">
-            <Card title="Active Tests" subtitle="Tests available for you to take right now" variant="glass" tilt>
+        <div className="dashboard-bento" style={{ marginTop: '32px' }}>
+          <motion.div variants={itemVariants} className="bento-large" id="active-tests">
+            <Card title="Active Assessments" subtitle="Tests available for you to take right now" variant="glass" tilt>
               {activeTests.length === 0 ? (
-                <div className="empty-state">No active tests right now. Great job staying up to date!</div>
+                <div className="empty-state-v2">
+                  <div className="empty-icon"><CircleCheckBig size={48} /></div>
+                  <h4>All Caught Up!</h4>
+                  <p>There are no active tests at the moment. Keep an eye on your schedule.</p>
+                  <Button variant="secondary" size="sm">View Schedule</Button>
+                </div>
               ) : (
-                <div className="premium-list">
+                <div className="assessment-list">
                   {activeTests.map((test) => (
-                    <div key={test.id} className="premium-item">
-                      <div>
-                        <strong style={{ fontSize: '1.1rem' }}>{test.title}</strong>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          <Zap size={14} style={{ verticalAlign: 'middle', marginRight: '4px', color: 'var(--color-warning-500)' }} />
-                          {test.subject} • {test._count.questions} Questions • {test.durationMinutes} mins
+                    <div key={test.id} className="assessment-item">
+                      <div className="item-info">
+                        <div className="item-subject">{test.subject}</div>
+                        <strong className="item-title">{test.title}</strong>
+                        <div className="item-meta">
+                          <span><ClipboardList size={14} /> {test._count.questions} Qs</span>
+                          <span><CalendarClock size={14} /> {test.durationMinutes}m</span>
                         </div>
                       </div>
                       <Link to={`/student/tests/${test.id}/take`}>
-                        <Button variant="primary" size="sm">Start Now</Button>
+                        <Button variant="primary" size="sm">Start Attempt</Button>
                       </Link>
                     </div>
                   ))}
@@ -235,62 +256,72 @@ export const StudentDashboard = () => {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            <Card title="Performance Trend" subtitle="Recent score history" variant="glass">
-              <TrendAreaChart data={completedTrendData} valueSuffix="%" />
-            </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-             <Card title="Batch Competition" subtitle="Top performing batches" variant="glass">
-                <ComparisonBarChart data={batchComparisonData} valueSuffix="%" />
-             </Card>
-          </motion.div>
-
-          <motion.div variants={itemVariants}>
-            <Card title="Upcoming Tests" subtitle="Prepare for what's next" variant="glass">
-              {upcomingTests.length === 0 ? (
-                <div className="empty-state">No upcoming tests scheduled.</div>
+          <motion.div variants={itemVariants} className="bento-medium">
+            <Card title="Performance Evolution" subtitle="Accuracy trend across recent attempts" variant="glass">
+              {completedTrendData.length > 0 ? (
+                <TrendAreaChart data={completedTrendData} valueSuffix="%" />
               ) : (
-                <ul className="plain-list">
-                  {upcomingTests.map((test) => (
-                    <li key={test.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span><strong>{test.title}</strong></span>
-                      <span className="badge badge-silver">{new Date(test.startTime).toLocaleDateString()}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="chart-empty">
+                  <BarChart3 size={40} />
+                  <p>Take your first test to see analytics</p>
+                </div>
               )}
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="bento-item-large">
-            <Card title="Competitive Edge" subtitle="Class Rankings & Batch Leaders" variant="glass">
-               <div className="two-col">
-                  <div>
-                    <h4 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Trophy size={18} color="#fbbf24" /> Class Leaderboard</h4>
-                    <ul className="plain-list">
+          <motion.div variants={itemVariants} className="bento-medium">
+             <Card title="Upcoming Schedule" subtitle="Your next academic milestones" variant="glass">
+              {upcomingTests.length === 0 ? (
+                <div className="empty-state-v2 compact">
+                  <p>No tests scheduled for this week.</p>
+                </div>
+              ) : (
+                <div className="upcoming-list">
+                  {upcomingTests.map((test) => (
+                    <div key={test.id} className="upcoming-row">
+                      <div className="date-badge">
+                        <span className="month">{new Date(test.startTime).toLocaleString('default', { month: 'short' })}</span>
+                        <span className="day">{new Date(test.startTime).getDate()}</span>
+                      </div>
+                      <div className="upcoming-info">
+                        <strong>{test.title}</strong>
+                        <p>{test.subject} · {new Date(test.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="bento-full">
+            <Card title="Competitive Intelligence" subtitle="How you compare with your peers" variant="glass">
+               <div className="intelligence-grid">
+                  <div className="intelligence-section">
+                    <h4 className="section-title"><Trophy size={18} /> Class Standings</h4>
+                    <div className="leaderboard-mini">
                       {classLeaderboard.slice(0, 5).map((entry, idx) => (
-                        <li key={entry.rank} className="premium-item" style={{ padding: '8px 12px' }}>
-                           <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span className={`badge ${idx === 0 ? 'badge-gold' : idx === 1 ? 'badge-silver' : idx === 2 ? 'badge-bronze' : ''}`} style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>{entry.rank}</span>
-                              {entry.username}
-                           </span>
-                           <span style={{ fontWeight: 700 }}>{(entry.normalizedScore * 100).toFixed(1)}%</span>
-                        </li>
+                        <div key={entry.rank} className={`leaderboard-row ${entry.username === user?.username ? 'highlight' : ''}`}>
+                           <div className="rank-indicator">
+                              <span className={`rank-badge ${idx < 3 ? `top-${idx + 1}` : ''}`}>{entry.rank}</span>
+                              <span className="username">{entry.username} {entry.username === user?.username && '(You)'}</span>
+                           </div>
+                           <span className="score">{(entry.normalizedScore * 100).toFixed(1)}%</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
-                  <div>
-                    <h4 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Medal size={18} color="#3b82f6" /> Batch Competition</h4>
-                    <ul className="plain-list">
-                      {batchLeaderboard.slice(0, 5).map((entry) => (
-                        <li key={entry.rank} className="premium-item" style={{ padding: '8px 12px' }}>
-                           <span>{entry.name} <small className="muted">({entry.medium})</small></span>
-                           <span style={{ fontWeight: 700 }}>{(entry.averageNormalizedScore * 100).toFixed(1)}%</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="intelligence-section">
+                    <h4 className="section-title"><Medal size={18} /> Batch Rivalry</h4>
+                    <div className="comparison-viz">
+                      {batchLeaderboard.length > 0 ? (
+                         <ComparisonBarChart data={batchComparisonData} valueSuffix="%" />
+                      ) : (
+                        <div className="empty-state-v2 compact">
+                          <p>Waiting for more data...</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                </div>
             </Card>
