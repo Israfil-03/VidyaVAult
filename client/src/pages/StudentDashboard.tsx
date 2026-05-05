@@ -284,7 +284,7 @@ export const StudentDashboard = () => {
                   <div>
                     <h4 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><Medal size={18} color="#3b82f6" /> Batch Competition</h4>
                     <ul className="plain-list">
-                      {batchLeaderboard.slice(0, 5).map((entry, idx) => (
+                      {batchLeaderboard.slice(0, 5).map((entry) => (
                         <li key={entry.rank} className="premium-item" style={{ padding: '8px 12px' }}>
                            <span>{entry.name} <small className="muted">({entry.medium})</small></span>
                            <span style={{ fontWeight: 700 }}>{(entry.averageNormalizedScore * 100).toFixed(1)}%</span>

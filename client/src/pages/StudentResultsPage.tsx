@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle2, XCircle, ArrowLeft, Trophy, BarChart3, ListChecks } from 'lucide-react'
+import { CheckCircle2, XCircle, Trophy, ListChecks } from 'lucide-react'
 
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
