@@ -80,14 +80,17 @@ export const generateQuestions = async (
   }
 
   const prompt = `
-    You are an expert academic content creator for the ${input.board} board.
-    Generate ${count} multiple-choice questions (MCQs) for:
-    - Subject: ${input.subject}
-    - Class Level: ${input.classLevel}
-    - Topic: ${input.topic}
-    - Difficulty: ${input.difficulty}
+    You are an expert academic content creator specializing in the ${input.board} curriculum for Class ${input.classLevel}.
+    Generate ${count} high-quality, conceptual Multiple Choice Questions (MCQs) for the topic: "${input.topic}" in ${input.subject}.
 
-    Each question must be challenging and accurate. Ensure all options are plausible but only one is correct.
+    Requirements for each question:
+    1. The question should test understanding of concepts, not just rote memorization.
+    2. Provide 4 plausible options where only one is unambiguously correct.
+    3. Include a clear, pedagogical explanation for the correct answer.
+    4. Categorize the specific sub-chapter and concept being tested.
+    5. Adhere strictly to the ${input.difficulty} difficulty level.
+
+    Ensure the language is formal and appropriate for academic assessments.
   `
 
   try {

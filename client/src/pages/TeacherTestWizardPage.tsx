@@ -24,6 +24,7 @@ const navigation = [
 ]
 
 const createEmptyQuestion = (): QuestionInput => ({
+  id: crypto.randomUUID(),
   text: '',
   chapter: '',
   concept: '',
@@ -63,6 +64,7 @@ export const TeacherTestWizardPage = () => {
     numQuestions: 5,
   })
   const [questions, setQuestions] = useState<QuestionInput[]>([createEmptyQuestion()])
+  const [aiPreviewQuestions, setAiPreviewQuestions] = useState<QuestionInput[] | null>(null)
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([])
 
@@ -129,8 +131,9 @@ export const TeacherTestWizardPage = () => {
         }),
       })
 
-      setQuestions(
+      setAiPreviewQuestions(
         generated.map((item) => ({
+          id: crypto.randomUUID(),
           text: item.question,
           chapter: item.chapter,
           concept: item.concept,
@@ -144,7 +147,6 @@ export const TeacherTestWizardPage = () => {
           })),
         })),
       )
-      setStep(3)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate AI questions')
@@ -330,11 +332,55 @@ export const TeacherTestWizardPage = () => {
             </div>
           ) : null}
 
+          {testForm.creationMode === 'AI' && aiPreviewQuestions ? (
+            <div className="ai-preview-section">
+              <h3>AI Generated Preview</h3>
+              <div className="stack-gap">
+                {aiPreviewQuestions.map((q, idx) => (
+                  <div key={q.id} className="preview-item">
+                    <p>
+                      <strong>Q{idx + 1}:</strong> {q.text}
+                    </p>
+                    <ul>
+                      {q.options.map((o, oIdx) => (
+                        <li key={oIdx} className={o.isCorrect ? 'correct-preview' : ''}>
+                          {o.text} {o.isCorrect && '(Correct)'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className="inline-actions">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setAiPreviewQuestions(null)
+                    void generateWithAi()
+                  }}
+                >
+                  Regenerate
+                </Button>
+                <Button
+                  onClick={() => {
+                    setQuestions(aiPreviewQuestions)
+                    setAiPreviewQuestions(null)
+                    setStep(3)
+                  }}
+                >
+                  Add to Editor
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="inline-actions">
             <Button variant="secondary" onClick={() => setStep(1)}>
               Back
             </Button>
-            <Button onClick={() => setStep(3)}>Continue</Button>
+            {testForm.creationMode === 'MANUAL' && (
+              <Button onClick={() => setStep(3)}>Continue</Button>
+            )}
           </div>
         </Card>
       ) : null}
@@ -350,12 +396,24 @@ export const TeacherTestWizardPage = () => {
         >
           <div className="stack-gap">
             {questions.map((question, index) => (
-              <div key={`${question.text}-${index}`} className="question-card">
-                <h4>Question {index + 1}</h4>
+              <div key={question.id} className="question-card">
+                <div className="question-card-header">
+                  <h4>Question {index + 1}</h4>
+                  <Button
+                    variant="secondary"
+                    className="delete-btn"
+                    onClick={() => {
+                      setQuestions((prev) => prev.filter((_, i) => i !== index))
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
                 <label>
                   Question text
                   <textarea
                     value={question.text}
+                    placeholder="Enter question here..."
                     onChange={(event) =>
                       updateQuestion(index, (current) => ({ ...current, text: event.target.value }))
                     }

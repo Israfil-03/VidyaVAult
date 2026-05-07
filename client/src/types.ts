@@ -25,6 +25,7 @@ export interface OptionInput {
 }
 
 export interface QuestionInput {
+  id: string
   text: string
   chapter?: string
   concept?: string
