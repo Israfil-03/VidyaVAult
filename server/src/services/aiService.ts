@@ -27,7 +27,7 @@ const questionSchema: Schema = {
 }
 
 const model = genAI?.getGenerativeModel({
-  model: 'gemini-2.5-flash-lite',
+  model: 'gemini-1.5-flash',
   generationConfig: {
     responseMimeType: 'application/json',
     responseSchema: questionSchema,
@@ -75,8 +75,7 @@ export const generateQuestions = async (
   const count = Math.min(Math.max(input.numQuestions, 1), 50)
 
   if (!model) {
-    console.warn('Gemini API key not configured, falling back to dummy questions.')
-    return getDummyQuestions(input, count)
+    throw new Error('Gemini API key is not configured. Please set GEMINI_API_KEY environment variable.')
   }
 
   const prompt = `
@@ -96,7 +95,14 @@ export const generateQuestions = async (
   try {
     const result = await model.generateContent(prompt)
     const response = result.response
-    const text = response.text()
+    let text = response.text()
+
+    // Strip markdown code blocks if the model puts them
+    if (text.startsWith('```json')) {
+      text = text.replace(/^```json\n/, '').replace(/\n```$/, '')
+    } else if (text.startsWith('```')) {
+      text = text.replace(/^```\n/, '').replace(/\n```$/, '')
+    }
 
     // In JSON mode, response.text() should already be valid JSON
     const questions = JSON.parse(text) as GeneratedQuestion[]
@@ -108,7 +114,7 @@ export const generateQuestions = async (
     }))
   } catch (error) {
     console.error('Gemini question generation failed:', error)
-    return getDummyQuestions(input, count)
+    throw new Error('AI generation failed. ' + (error instanceof Error ? error.message : 'Unknown error'))
   }
 }
 
@@ -136,7 +142,7 @@ export const analysePerformance = async (
   const accuracy = Math.round((total.correct / input.entries.length) * 100)
 
   // For analysis, we use the standard model (not JSON mode)
-  const analysisModel = genAI?.getGenerativeModel({ model: 'gemini-2.5-flash-lite' })
+  const analysisModel = genAI?.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
   if (!analysisModel) {
     return `Great effort! You scored ${percentage}% with ${accuracy}% accuracy in ${input.subject}. Keep revising chapter basics daily.`
@@ -151,14 +157,14 @@ export const analysePerformance = async (
 
   const prompt = `
     You are a supportive academic mentor. Analyze the following student performance in ${input.subject} (Class ${input.classLevel}):
-    
+
     Overall Score: ${percentage}% (${total.obtained}/${total.max})
     Accuracy: ${accuracy}%
-    
+
     Detailed Breakdown:
     ${performanceContext}
-    
-    Provide a personalized, encouraging, and actionable study plan in 3-4 sentences. 
+
+    Provide a personalized, encouraging, and actionable study plan in 3-4 sentences.
     Focus on the concepts they missed and suggest how to improve.
     Keep the tone professional yet motivating.
   `

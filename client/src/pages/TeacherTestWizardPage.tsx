@@ -363,7 +363,7 @@ export const TeacherTestWizardPage = () => {
                 </Button>
                 <Button
                   onClick={() => {
-                    setQuestions(aiPreviewQuestions)
+                    setQuestions((prev) => (prev.length === 1 && prev[0].text === '' ? aiPreviewQuestions : [...prev, ...aiPreviewQuestions]))
                     setAiPreviewQuestions(null)
                     setStep(3)
                   }}
