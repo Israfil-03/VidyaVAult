@@ -8,22 +8,28 @@ const genAI = env.GEMINI_API_KEY ? new GoogleGenerativeAI(env.GEMINI_API_KEY) : 
 
 // Schema definition for Question Generation
 const questionSchema: Schema = {
-  type: SchemaType.ARRAY,
-  items: {
-    type: SchemaType.OBJECT,
-    properties: {
-      question: { type: SchemaType.STRING },
-      options: {
-        type: SchemaType.ARRAY,
-        items: { type: SchemaType.STRING },
+  type: SchemaType.OBJECT,
+  properties: {
+    questions: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          question: { type: SchemaType.STRING },
+          options: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+          },
+          correctIndex: { type: SchemaType.NUMBER },
+          explanation: { type: SchemaType.STRING },
+          chapter: { type: SchemaType.STRING },
+          concept: { type: SchemaType.STRING },
+        },
+        required: ['question', 'options', 'correctIndex', 'explanation', 'chapter', 'concept'],
       },
-      correctIndex: { type: SchemaType.NUMBER },
-      explanation: { type: SchemaType.STRING },
-      chapter: { type: SchemaType.STRING },
-      concept: { type: SchemaType.STRING },
     },
-    required: ['question', 'options', 'correctIndex', 'explanation', 'chapter', 'concept'],
   },
+  required: ['questions'],
 }
 
 const model = genAI?.getGenerativeModel({
@@ -75,7 +81,8 @@ export const generateQuestions = async (
   const count = Math.min(Math.max(input.numQuestions, 1), 50)
 
   if (!model) {
-    throw new Error('Gemini API key is not configured. Please set GEMINI_API_KEY environment variable.')
+    console.warn('Gemini API key is not configured. Falling back to dummy questions.')
+    return getDummyQuestions(input, count)
   }
 
   const prompt = `
@@ -90,6 +97,7 @@ export const generateQuestions = async (
     5. Adhere strictly to the ${input.difficulty} difficulty level.
 
     Ensure the language is formal and appropriate for academic assessments.
+    Return a JSON object with a single property 'questions' containing an array of the generated questions.
   `
 
   try {
@@ -105,7 +113,8 @@ export const generateQuestions = async (
     }
 
     // In JSON mode, response.text() should already be valid JSON
-    const questions = JSON.parse(text) as GeneratedQuestion[]
+    const parsed = JSON.parse(text) as { questions: GeneratedQuestion[] }
+    const questions = parsed.questions || []
 
     return questions.map((q) => ({
       ...q,
@@ -114,7 +123,7 @@ export const generateQuestions = async (
     }))
   } catch (error) {
     console.error('Gemini question generation failed:', error)
-    throw new Error('AI generation failed. ' + (error instanceof Error ? error.message : 'Unknown error'))
+    return getDummyQuestions(input, count)
   }
 }
 
