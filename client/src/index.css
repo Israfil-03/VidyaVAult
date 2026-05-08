@@ -107,13 +107,27 @@
 
 @keyframes searchGlow {
   0% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.4));
+    transform: scale(1) translateZ(0);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
+    transform: scale(1.1) translateZ(10px);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.4));
+    transform: scale(1) translateZ(0);
+  }
+}
+
+@keyframes iconVanish {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(45deg);
   }
 }
 
@@ -440,10 +454,19 @@ a {
 .search-box .search-icon {
   position: absolute;
   left: 16px;
-  color: var(--text-soft);
+  color: var(--color-primary-500);
   pointer-events: none;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 2;
+  animation: searchGlow 3s infinite ease-in-out;
+  transform-style: preserve-3d;
+  will-change: transform, filter, opacity;
+}
+
+.search-box .search-icon.vanished {
+  opacity: 0;
+  transform: scale(0.4) rotate(45deg) translateX(-20px);
+  pointer-events: none;
 }
 
 .search-box input {
@@ -497,8 +520,8 @@ a {
 }
 
 .search-box:focus-within .search-icon {
-  color: var(--color-primary-500);
-  transform: scale(1.1);
+  color: var(--color-primary-600);
+  filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.9));
 }
 
 .icon-btn-ghost {

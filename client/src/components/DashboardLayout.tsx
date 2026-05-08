@@ -23,6 +23,7 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
   const { user, logout } = useAuth()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
   const roleLabel =
     user?.role === 'superadmin'
       ? 'Super Admin'
@@ -84,13 +85,19 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
             </div>
 
             <div className="topbar-search hide-mobile">
-               <div className="search-box">
-                 <Search size={18} className="search-icon" strokeWidth={2.2} />
-                 <input type="text" placeholder="Quick search..." aria-label="Global search" />
-                 <div className="search-shortcut">
-                   <kbd>⌘</kbd><kbd>K</kbd>
-                 </div>
-               </div>
+                <div className="search-box">
+                  <Search 
+                    size={18} 
+                    className={`search-icon ${searchValue ? 'vanished' : ''}`} 
+                    strokeWidth={2.2} 
+                  />
+                  <input 
+                    type="text" 
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    aria-label="Global search" 
+                  />
+                </div>
             </div>
           </div>
           <div className="topbar-actions">
