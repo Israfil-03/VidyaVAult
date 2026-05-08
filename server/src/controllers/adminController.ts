@@ -148,3 +148,62 @@ export const updateUserRole = async (req: Request, res: Response): Promise<void>
     data: { message: 'User role updated successfully' },
   })
 }
+
+export const listStudents = async (_req: Request, res: Response): Promise<void> => {
+  const students = await prisma.studentProfile.findMany({
+    include: {
+      user: true,
+      _count: {
+        select: {
+          submissions: true,
+          batchLinks: true,
+          teacherLinks: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  res.json({
+    success: true,
+    data: students.map((student) => ({
+      id: student.id,
+      board: student.board,
+      medium: student.medium,
+      classLevel: student.classLevel,
+      rollNo: student.rollNo,
+      user: {
+        id: student.user.id,
+        email: student.user.email,
+        username: student.user.username,
+        role: userRoleToTokenRole(student.user.role),
+      },
+      counts: student._count,
+    })),
+  })
+}
+
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  const { userId } = z.object({ userId: z.string().min(1) }).parse(req.params)
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  })
+
+  if (!user) {
+    throw new ApiError('User not found', 404)
+  }
+
+  if (user.role === UserRole.SUPERADMIN) {
+    throw new ApiError('Cannot delete a superadmin account', 403)
+  }
+
+  await prisma.user.delete({
+    where: { id: userId },
+  })
+
+  res.json({
+    success: true,
+    data: { message: 'User account and associated data removed successfully' },
+  })
+}

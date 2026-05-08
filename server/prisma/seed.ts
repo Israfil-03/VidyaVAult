@@ -1,6 +1,6 @@
 import 'dotenv/config'
 
-import { PrismaClient, Subject, UserRole } from '@prisma/client'
+import { Board, Medium, PrismaClient, Subject, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -32,9 +32,11 @@ async function main() {
     include: { teacherProfile: true },
   })
 
+  let teacherProfileId: string
+
   if (!existingTeacher) {
     const teacherHash = await bcrypt.hash('Teacher@123', 12)
-    await prisma.user.create({
+    const teacherUser = await prisma.user.create({
       data: {
         email: 'chemistry.teacher@vidyavault.local',
         username: 'chem_teacher',
@@ -46,7 +48,81 @@ async function main() {
           },
         },
       },
+      include: { teacherProfile: true },
     })
+    teacherProfileId = teacherUser.teacherProfile!.id
+  } else {
+    teacherProfileId = existingTeacher.teacherProfile!.id
+  }
+
+  // Ensure 2 Batches for chem_teacher
+  let batch1 = await prisma.batch.findFirst({
+    where: { name: 'Organic Chemistry Alpha', teacherId: teacherProfileId },
+  })
+  if (!batch1) {
+    batch1 = await prisma.batch.create({
+      data: {
+        name: 'Organic Chemistry Alpha',
+        medium: Medium.ENGLISH,
+        classLevel: '12',
+        boardTarget: Board.CBSE,
+        teacherId: teacherProfileId,
+      },
+    })
+  }
+
+  let batch2 = await prisma.batch.findFirst({
+    where: { name: 'Inorganic Chemistry Beta', teacherId: teacherProfileId },
+  })
+  if (!batch2) {
+    batch2 = await prisma.batch.create({
+      data: {
+        name: 'Inorganic Chemistry Beta',
+        medium: Medium.ENGLISH,
+        classLevel: '12',
+        boardTarget: Board.ICSE,
+        teacherId: teacherProfileId,
+      },
+    })
+  }
+
+  // Create 6 Students if they don't exist
+  const studentPasswordHash = await bcrypt.hash('Student@123', 12)
+
+  for (let i = 1; i <= 6; i++) {
+    const batch = i <= 3 ? batch1 : batch2
+    const username = `student_chem_${i}`
+
+    const existingStudent = await prisma.user.findUnique({
+      where: { username },
+    })
+
+    if (!existingStudent) {
+      const studentUser = await prisma.user.create({
+        data: {
+          email: `student${i}.chem@vidyavault.local`,
+          username,
+          passwordHash: studentPasswordHash,
+          role: UserRole.STUDENT,
+          forcePasswordChange: true,
+          studentProfile: {
+            create: {
+              board: batch.boardTarget ?? Board.WEST_BENGAL,
+              medium: batch.medium,
+              classLevel: batch.classLevel,
+              rollNo: `C-2024-${100 + i}`,
+              teacherLinks: {
+                create: { teacherId: teacherProfileId },
+              },
+              batchLinks: {
+                create: { batchId: batch.id },
+              },
+            },
+          },
+        },
+      })
+      console.log(`Created student: ${studentUser.username} in batch: ${batch.name}`)
+    }
   }
 
   console.log(`Seed completed. Superadmin username: ${superadmin.username}`)

@@ -1,4 +1,4 @@
-import { BarChart3, GraduationCap, ScrollText, Trophy, UserCog } from 'lucide-react'
+import { BarChart3, GraduationCap, ScrollText, Trash2, Trophy, UserCog } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import { Button } from '../components/Button'
@@ -23,6 +23,25 @@ interface TeacherRow {
     teacherStudents: number
     tests: number
     batches: number
+  }
+}
+
+interface StudentRow {
+  id: string
+  board: string
+  medium: string
+  classLevel: string
+  rollNo: string | null
+  user: {
+    id: string
+    email: string | null
+    username: string
+    role: string
+  }
+  counts: {
+    submissions: number
+    batchLinks: number
+    teacherLinks: number
   }
 }
 
@@ -62,6 +81,7 @@ export const SuperadminDashboard = () => {
   const { token } = useAuth()
   const [stats, setStats] = useState<Stats | null>(null)
   const [teachers, setTeachers] = useState<TeacherRow[]>([])
+  const [students, setStudents] = useState<StudentRow[]>([])
   const [rewardCycles, setRewardCycles] = useState<RewardCycleRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -88,13 +108,15 @@ export const SuperadminDashboard = () => {
     setLoading(true)
     setError(null)
     try {
-      const [statsData, teacherData, cycleData] = await Promise.all([
+      const [statsData, teacherData, studentData, cycleData] = await Promise.all([
         apiRequest<Stats>('/admin/stats', { method: 'GET', token }),
         apiRequest<TeacherRow[]>('/admin/teachers', { method: 'GET', token }),
+        apiRequest<StudentRow[]>('/admin/students', { method: 'GET', token }),
         apiRequest<RewardCycleRow[]>('/rewards/cycles', { method: 'GET', token }),
       ])
       setStats(statsData)
       setTeachers(teacherData)
+      setStudents(studentData)
       setRewardCycles(cycleData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load superadmin data')
@@ -186,6 +208,21 @@ export const SuperadminDashboard = () => {
       await loadData()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update role')
+    }
+  }
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    if (!token || !window.confirm(`Are you sure you want to permanently delete user "${username}"? This will remove all their associated data.`)) {
+      return
+    }
+    try {
+      await apiRequest(`/admin/users/${userId}`, {
+        method: 'DELETE',
+        token,
+      })
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user')
     }
   }
 
@@ -324,6 +361,7 @@ export const SuperadminDashboard = () => {
                     <th>Batches</th>
                     <th>Tests</th>
                     <th>Role</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -336,20 +374,88 @@ export const SuperadminDashboard = () => {
                       <td>{teacher.counts.tests}</td>
                       <td>
                         <span className="status-pill status-active">{teacher.user.role}</span>
+                      </td>
+                      <td>
                         <div className="inline-actions">
                           <Button
                             variant="secondary"
                             size="sm"
                             onClick={() => handlePromoteDemote(teacher.user.id, 'STUDENT')}
+                            title="Demote to Student"
                           >
                             Demote
                           </Button>
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => handlePromoteDemote(teacher.user.id, 'TEACHER_ADMIN')}
+                            onClick={() => handleDeleteUser(teacher.user.id, teacher.user.username)}
+                            className="error-text"
+                            title="Delete Teacher"
                           >
-                            Keep Teacher
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card title="Student Accounts" subtitle="Manage student profiles and enrollment states">
+          {students.length === 0 ? (
+            <div className="empty-state">No student accounts yet.</div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Board / Medium</th>
+                    <th>Class</th>
+                    <th>Submissions</th>
+                    <th>Teachers</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((student) => (
+                    <tr key={student.id}>
+                      <td>
+                        <div className="flex-col">
+                          <span className="font-bold">{student.user.username}</span>
+                          <span className="muted" style={{ fontSize: '0.75rem' }}>{student.rollNo || 'No Roll No'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex-col">
+                          <span>{student.board}</span>
+                          <span className="muted" style={{ fontSize: '0.75rem' }}>{student.medium}</span>
+                        </div>
+                      </td>
+                      <td>{student.classLevel}</td>
+                      <td>{student.counts.submissions}</td>
+                      <td>{student.counts.teacherLinks}</td>
+                      <td>
+                        <div className="inline-actions">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handlePromoteDemote(student.user.id, 'TEACHER_ADMIN')}
+                            title="Promote to Teacher"
+                          >
+                            Promote
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleDeleteUser(student.user.id, student.user.username)}
+                            className="error-text"
+                            title="Delete Student"
+                          >
+                            <Trash2 size={14} />
                           </Button>
                         </div>
                       </td>
