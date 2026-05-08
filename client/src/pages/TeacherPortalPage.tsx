@@ -366,26 +366,9 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
 
   const renderHomework = () => (
     <>
-      <div className="stats-grid">
-        <StatCard label="Students" value={overview?.studentCount ?? 0} icon={<Users size={18} />} />
-        <StatCard
-          label="Upcoming Homework"
-          value={overview?.upcomingTests ?? 0}
-          icon={<CalendarClock size={18} />}
-          tone="warning"
-        />
-        <StatCard label="Active Windows" value={overview?.activeTests ?? 0} icon={<BookCopy size={18} />} />
-        <StatCard
-          label="Recent Submissions"
-          value={overview?.recentSubmissions ?? 0}
-          icon={<CircleCheckBig size={18} />}
-          tone="success"
-        />
-      </div>
-
       <div className="two-col">
         <HomeworkCard tests={tests} formatShortDate={formatShortDate} getTestWindowStatus={getTestWindowStatus} />
-        <NewHomeworkCard />
+        <NewHomeworkCard batches={batches} onCreated={loadPortalData} />
       </div>
     </>
   )
