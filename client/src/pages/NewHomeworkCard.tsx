@@ -1,4 +1,4 @@
-import { Plus, Check, AlertCircle } from 'lucide-react'
+import { Plus, Check, AlertCircle, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '../components/Card'
 import { Button } from '../components/Button'
@@ -16,6 +16,15 @@ interface NewHomeworkCardProps {
   onCreated: () => void
 }
 
+type Step = 'INFO' | 'QUESTION' | 'EXPLANATION'
+
+interface Question {
+  id: string
+  text: string
+  options: { text: string; isCorrect: boolean }[]
+  explanation: string
+}
+
 export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) => {
   const { token } = useAuth()
   const [isCreating, setIsCreating] = useState(false)
@@ -23,58 +32,100 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const [form, setForm] = useState({
+  const [step, setStep] = useState<Step>('INFO')
+  
+  const [info, setInfo] = useState({
     title: '',
     subject: 'CHEMISTRY',
     classLevel: '10',
     batchId: '',
     dueDate: '',
-    questionText: '',
+  })
+
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [currentQuestion, setCurrentQuestion] = useState<Question>({
+    id: crypto.randomUUID(),
+    text: '',
     options: [
       { text: '', isCorrect: true },
       { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
     ],
+    explanation: '',
   })
 
-  const resetForm = () => {
-    setForm({
+  const resetAll = () => {
+    setStep('INFO')
+    setInfo({
       title: '',
       subject: 'CHEMISTRY',
       classLevel: '10',
       batchId: '',
       dueDate: '',
-      questionText: '',
+    })
+    setQuestions([])
+    setCurrentQuestion({
+      id: crypto.randomUUID(),
+      text: '',
       options: [
         { text: '', isCorrect: true },
         { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
       ],
+      explanation: '',
     })
     setError(null)
+  }
+
+  const handleNextFromInfo = () => {
+    if (!info.title || !info.batchId || !info.dueDate) {
+      setError('Please fill in all basic details.')
+      return
+    }
+    setError(null)
+    setStep('QUESTION')
+  }
+
+  const handleNextFromQuestion = () => {
+    if (!currentQuestion.text) {
+      setError('Please enter the question text.')
+      return
+    }
+    if (currentQuestion.options.some(o => !o.text)) {
+      setError('All options must have text.')
+      return
+    }
+    if (!currentQuestion.options.some(o => o.isCorrect)) {
+      setError('Please select a correct answer.')
+      return
+    }
+    setError(null)
+    setStep('EXPLANATION')
+  }
+
+  const handleAddMoreQuestions = () => {
+    setQuestions(prev => [...prev, currentQuestion])
+    setCurrentQuestion({
+      id: crypto.randomUUID(),
+      text: '',
+      options: [
+        { text: '', isCorrect: true },
+        { text: '', isCorrect: false },
+      ],
+      explanation: '',
+    })
+    setStep('QUESTION')
   }
 
   const handlePublish = async () => {
     if (!token) return
 
-    if (!form.title || !form.batchId || !form.questionText || !form.dueDate) {
-      setError('Please fill in all required fields.')
-      return
-    }
-
-    if (form.options.some((o) => !o.text)) {
-      setError('All 4 options must have text.')
-      return
-    }
-
+    const finalQuestions = [...questions, currentQuestion]
+    
     setLoading(true)
     setError(null)
 
     try {
       const startTime = new Date()
-      const endTime = new Date(form.dueDate)
+      const endTime = new Date(info.dueDate)
 
       if (endTime <= startTime) {
         throw new Error('Due date must be in the future.')
@@ -84,23 +135,22 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
         method: 'POST',
         token,
         body: JSON.stringify({
-          title: form.title,
-          subject: form.subject,
-          classLevel: form.classLevel,
+          title: info.title,
+          subject: info.subject,
+          classLevel: info.classLevel,
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
-          durationMinutes: 60, // Default duration
+          durationMinutes: 60,
           status: 'PUBLISHED',
           creationMode: 'MANUAL',
-          questions: [
-            {
-              text: form.questionText,
-              difficulty: 'MEDIUM',
-              marks: 1,
-              options: form.options,
-            },
-          ],
-          assignments: [{ batchId: form.batchId }],
+          questions: finalQuestions.map(q => ({
+            text: q.text,
+            difficulty: 'MEDIUM',
+            marks: 1,
+            options: q.options,
+            explanation: q.explanation
+          })),
+          assignments: [{ batchId: info.batchId }],
         }),
       })
 
@@ -108,7 +158,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
       setTimeout(() => {
         setSuccess(false)
         setIsCreating(false)
-        resetForm()
+        resetAll()
         onCreated()
       }, 2000)
     } catch (err) {
@@ -116,6 +166,26 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     } finally {
       setLoading(false)
     }
+  }
+
+  const addOption = () => {
+    if (currentQuestion.options.length >= 10) return
+    setCurrentQuestion(prev => ({
+      ...prev,
+      options: [...prev.options, { text: '', isCorrect: false }]
+    }))
+  }
+
+  const removeOption = (index: number) => {
+    if (currentQuestion.options.length <= 2) return
+    setCurrentQuestion(prev => {
+      const newOptions = prev.options.filter((_, i) => i !== index)
+      // Ensure at least one is correct if we removed the correct one
+      if (!newOptions.some(o => o.isCorrect)) {
+        newOptions[0].isCorrect = true
+      }
+      return { ...prev, options: newOptions }
+    })
   }
 
   if (!isCreating) {
@@ -171,14 +241,27 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
 
   return (
     <Card 
-      title="Create Homework" 
-      subtitle="Simple MCQ Publisher" 
+      title={step === 'INFO' ? "Homework Details" : `Question ${questions.length + 1}`} 
+      subtitle={step === 'INFO' ? "Basic setup for your assignment" : step === 'QUESTION' ? "Enter question and options" : "Add an explanation (optional)"}
       variant="glass"
       actions={
-        <Button variant="secondary" size="sm" onClick={() => { setIsCreating(false); resetForm(); }}>Cancel</Button>
+        <Button variant="secondary" size="sm" onClick={() => { setIsCreating(false); resetAll(); }}>Cancel</Button>
       }
     >
       <div className="stack-gap" style={{ gap: '20px' }}>
+        {/* Progress Dots */}
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '4px' }}>
+          {(['INFO', 'QUESTION', 'EXPLANATION'] as Step[]).map(s => (
+            <div key={s} style={{ 
+              width: '8px', 
+              height: '8px', 
+              borderRadius: '50%', 
+              background: step === s ? 'var(--color-primary-500)' : 'var(--border-soft)',
+              transition: 'all 0.3s'
+            }} />
+          ))}
+        </div>
+
         {error && (
           <div style={{ 
             padding: '12px', 
@@ -188,7 +271,8 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
             display: 'flex',
             gap: '10px',
             color: '#ef4444',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            animation: 'slideInUp 0.3s ease-out'
           }}>
             <AlertCircle size={18} style={{ flexShrink: 0 }} />
             {error}
@@ -212,113 +296,189 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
           </div>
         )}
 
-        <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
-          <label>
-            Assignment Title
-            <input 
-              placeholder="e.g. Chemical Bonding Worksheet"
-              value={form.title}
-              onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
-            />
-          </label>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {step === 'INFO' && (
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
             <label>
-              Subject
-              <select 
-                value={form.subject}
-                onChange={(e) => setForm(f => ({ ...f, subject: e.target.value }))}
-              >
-                <option value="CHEMISTRY">Chemistry</option>
-                <option value="BIOLOGY">Biology</option>
-                <option value="MATHEMATICS">Mathematics</option>
-                <option value="PHYSICS">Physics</option>
-              </select>
-            </label>
-            <label>
-              Batch
-              <select 
-                value={form.batchId}
-                onChange={(e) => {
-                  const b = batches.find(x => x.id === e.target.value)
-                  setForm(f => ({ ...f, batchId: e.target.value, classLevel: b?.classLevel || '10' }))
-                }}
-              >
-                <option value="">Select Batch</option>
-                {batches.map(b => (
-                  <option key={b.id} value={b.id}>{b.name} (Class {b.classLevel})</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <label>
-            Due Date & Time
-            <input 
-              type="datetime-local"
-              value={form.dueDate}
-              onChange={(e) => setForm(f => ({ ...f, dueDate: e.target.value }))}
-            />
-          </label>
-
-          <div style={{ 
-            marginTop: '8px',
-            padding: '16px',
-            background: 'rgba(0, 0, 0, 0.02)',
-            borderRadius: '12px',
-            border: '1px solid var(--border-soft)'
-          }}>
-            <label style={{ marginBottom: '12px', fontWeight: '700', fontSize: '0.95rem', display: 'block' }}>
-              Question Text
-              <textarea 
-                placeholder="Type your question here..."
-                style={{ height: '80px', marginTop: '8px' }}
-                value={form.questionText}
-                onChange={(e) => setForm(f => ({ ...f, questionText: e.target.value }))}
+              Assignment Title
+              <input 
+                placeholder="e.g. Chemical Bonding Worksheet"
+                value={info.title}
+                onChange={(e) => setInfo(f => ({ ...f, title: e.target.value }))}
               />
             </label>
 
-            <div className="stack-gap" style={{ gap: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-soft)', fontWeight: '600', marginBottom: '4px', display: 'block' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <label>
+                Subject
+                <select 
+                  value={info.subject}
+                  onChange={(e) => setInfo(f => ({ ...f, subject: e.target.value }))}
+                >
+                  <option value="CHEMISTRY">Chemistry</option>
+                  <option value="BIOLOGY">Biology</option>
+                  <option value="MATHEMATICS">Mathematics</option>
+                  <option value="PHYSICS">Physics</option>
+                </select>
+              </label>
+              <label>
+                Batch
+                <select 
+                  value={info.batchId}
+                  onChange={(e) => {
+                    const b = batches.find(x => x.id === e.target.value)
+                    setInfo(f => ({ ...f, batchId: e.target.value, classLevel: b?.classLevel || '10' }))
+                  }}
+                >
+                  <option value="">Select Batch</option>
+                  {batches.map(b => (
+                    <option key={b.id} value={b.id}>{b.name} (Class {b.classLevel})</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Due Date & Time
+              <input 
+                type="datetime-local"
+                value={info.dueDate}
+                onChange={(e) => setInfo(f => ({ ...f, dueDate: e.target.value }))}
+              />
+            </label>
+
+            <Button onClick={handleNextFromInfo} style={{ marginTop: '12px' }}>
+              Next <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+            </Button>
+          </div>
+        )}
+
+        {step === 'QUESTION' && (
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
+            <label>
+              Question Text
+              <textarea 
+                placeholder="Type your question here..."
+                style={{ height: '100px' }}
+                value={currentQuestion.text}
+                onChange={(e) => setCurrentQuestion(q => ({ ...q, text: e.target.value }))}
+              />
+            </label>
+
+            <div className="stack-gap" style={{ gap: '10px' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-soft)', fontWeight: '600' }}>
                 Options (Select the correct one)
               </span>
-              {form.options.map((opt, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {currentQuestion.options.map((opt, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <input 
                     type="radio" 
                     name="correct-opt"
                     checked={opt.isCorrect}
                     onChange={() => {
-                      setForm(f => ({
-                        ...f,
-                        options: f.options.map((o, i) => ({ ...o, isCorrect: i === idx }))
+                      setCurrentQuestion(q => ({
+                        ...q,
+                        options: q.options.map((o, i) => ({ ...o, isCorrect: i === idx }))
                       }))
                     }}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                   />
                   <input 
                     placeholder={`Option ${idx + 1}`}
                     value={opt.text}
                     onChange={(e) => {
-                      const newOpts = [...form.options]
+                      const newOpts = [...currentQuestion.options]
                       newOpts[idx].text = e.target.value
-                      setForm(f => ({ ...f, options: newOpts }))
+                      setCurrentQuestion(q => ({ ...q, options: newOpts }))
                     }}
                     style={{ flex: 1 }}
                   />
+                  {currentQuestion.options.length > 2 && (
+                    <button 
+                      onClick={() => removeOption(idx)}
+                      style={{ 
+                        background: 'transparent', 
+                        border: 'none', 
+                        color: 'var(--text-soft)', 
+                        cursor: 'pointer',
+                        padding: '4px'
+                      }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               ))}
+              
+              {currentQuestion.options.length < 10 && (
+                <button 
+                  onClick={addOption}
+                  style={{ 
+                    background: 'transparent', 
+                    border: '1px dashed var(--border-strong)', 
+                    borderRadius: '10px',
+                    padding: '8px',
+                    color: 'var(--color-primary-600)',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Plus size={16} /> Add Option
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <Button variant="secondary" onClick={() => setStep('INFO')} style={{ flex: 1 }}>
+                <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back
+              </Button>
+              <Button onClick={handleNextFromQuestion} style={{ flex: 1 }}>
+                Next <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+              </Button>
             </div>
           </div>
+        )}
 
-          <Button 
-            onClick={handlePublish} 
-            isLoading={loading}
-            style={{ marginTop: '8px' }}
-          >
-            {loading ? 'Publishing...' : 'Publish Homework'}
-          </Button>
-        </div>
+        {step === 'EXPLANATION' && (
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
+            <label>
+              Explanation (Optional)
+              <p style={{ margin: '0 0 8px', fontSize: '0.8rem', color: 'var(--text-soft)' }}>
+                This will be shown to students after they answer or when the test ends.
+              </p>
+              <textarea 
+                placeholder="Explain why the answer is correct..."
+                style={{ height: '120px' }}
+                value={currentQuestion.explanation}
+                onChange={(e) => setCurrentQuestion(q => ({ ...q, explanation: e.target.value }))}
+              />
+            </label>
+
+            <div className="stack-gap" style={{ gap: '12px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <Button variant="secondary" onClick={() => setStep('QUESTION')} style={{ flex: 1 }}>
+                  <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back
+                </Button>
+                <Button variant="secondary" onClick={handleAddMoreQuestions} style={{ flex: 1 }}>
+                  <Plus size={18} style={{ marginRight: '8px' }} /> Add More
+                </Button>
+              </div>
+              
+              <Button 
+                onClick={handlePublish} 
+                isLoading={loading}
+                className="btn-primary"
+                style={{ width: '100%', padding: '14px' }}
+              >
+                {loading ? 'Publishing...' : `Publish Homework (${questions.length + 1} Question${questions.length > 0 ? 's' : ''})`}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   )

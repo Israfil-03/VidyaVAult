@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, ArrowRight, Trash2, Plus } from 'lucide-react'
 
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
@@ -31,7 +32,7 @@ const createEmptyQuestion = (): QuestionInput => ({
   source: 'MANUAL',
   explanation: '',
   options: [
-    { text: '', isCorrect: false },
+    { text: '', isCorrect: true },
     { text: '', isCorrect: false },
     { text: '', isCorrect: false },
     { text: '', isCorrect: false },
@@ -66,6 +67,10 @@ export const TeacherTestWizardPage = () => {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([])
 
+  // Sub-wizard state for Step 3
+  const [currentQIndex, setCurrentQIndex] = useState(0)
+  const [qEditorStep, setQEditorStep] = useState<'DETAILS' | 'EXPLANATION'>('DETAILS')
+
   const assignmentPreview = useMemo(
     () => ({
       students: selectedStudentIds.length,
@@ -92,10 +97,6 @@ export const TeacherTestWizardPage = () => {
     }
     void loadOptions()
   }, [token])
-
-  const addQuestion = () => {
-    setQuestions((prev) => [...prev, createEmptyQuestion()])
-  }
 
   const updateQuestion = (index: number, updater: (current: QuestionInput) => QuestionInput) => {
     setQuestions((prev) => prev.map((question, idx) => (idx === index ? updater(question) : question)))
@@ -217,6 +218,7 @@ export const TeacherTestWizardPage = () => {
                   <option value="CHEMISTRY">Chemistry</option>
                   <option value="BIOLOGY">Biology</option>
                   <option value="MATHEMATICS">Mathematics</option>
+                  <option value="PHYSICS">Physics</option>
                 </select>
               </label>
               <label>
@@ -385,35 +387,75 @@ export const TeacherTestWizardPage = () => {
 
       {step === 3 ? (
         <Card
-          title="Question editor"
+          title={`Question ${currentQIndex + 1} of ${questions.length}`}
+          subtitle={qEditorStep === 'DETAILS' ? "Enter question text and options" : "Provide an explanation for this question"}
           actions={
-            <Button variant="secondary" onClick={addQuestion}>
-              + Add Question
-            </Button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => {
+                  const newQ = createEmptyQuestion()
+                  setQuestions([...questions, newQ])
+                  setCurrentQIndex(questions.length)
+                  setQEditorStep('DETAILS')
+                }}
+              >
+                + Add New
+              </Button>
+              {questions.length > 1 && (
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  className="delete-btn"
+                  onClick={() => {
+                    const newQs = questions.filter((_, i) => i !== currentQIndex)
+                    setQuestions(newQs)
+                    setCurrentQIndex(Math.max(0, currentQIndex - 1))
+                    setQEditorStep('DETAILS')
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
           }
         >
           <div className="stack-gap">
-            {questions.map((question, index) => (
-              <div key={question.id} className="question-card">
-                <div className="question-card-header">
-                  <h4>Question {index + 1}</h4>
-                  <Button
-                    variant="secondary"
-                    className="delete-btn"
-                    onClick={() => {
-                      setQuestions((prev) => prev.filter((_, i) => i !== index))
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
+            {/* Sub-step indicator */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <div 
+                onClick={() => setQEditorStep('DETAILS')}
+                style={{ 
+                  flex: 1, 
+                  height: '4px', 
+                  borderRadius: '2px', 
+                  background: qEditorStep === 'DETAILS' ? 'var(--color-primary-500)' : 'var(--border-soft)',
+                  cursor: 'pointer'
+                }} 
+              />
+              <div 
+                onClick={() => setQEditorStep('EXPLANATION')}
+                style={{ 
+                  flex: 1, 
+                  height: '4px', 
+                  borderRadius: '2px', 
+                  background: qEditorStep === 'EXPLANATION' ? 'var(--color-primary-500)' : 'var(--border-soft)',
+                  cursor: 'pointer'
+                }} 
+              />
+            </div>
+
+            {qEditorStep === 'DETAILS' ? (
+              <div className="form-grid" style={{ animation: 'fadeIn 0.3s ease-out' }}>
                 <label>
                   Question text
                   <textarea
-                    value={question.text}
+                    value={questions[currentQIndex].text}
                     placeholder="Enter question here..."
+                    style={{ height: '100px' }}
                     onChange={(event) =>
-                      updateQuestion(index, (current) => ({ ...current, text: event.target.value }))
+                      updateQuestion(currentQIndex, (current) => ({ ...current, text: event.target.value }))
                     }
                   />
                 </label>
@@ -421,30 +463,48 @@ export const TeacherTestWizardPage = () => {
                   <label>
                     Chapter
                     <input
-                      value={question.chapter}
+                      value={questions[currentQIndex].chapter}
                       onChange={(event) =>
-                        updateQuestion(index, (current) => ({ ...current, chapter: event.target.value }))
+                        updateQuestion(currentQIndex, (current) => ({ ...current, chapter: event.target.value }))
                       }
                     />
                   </label>
                   <label>
                     Concept
                     <input
-                      value={question.concept}
+                      value={questions[currentQIndex].concept}
                       onChange={(event) =>
-                        updateQuestion(index, (current) => ({ ...current, concept: event.target.value }))
+                        updateQuestion(currentQIndex, (current) => ({ ...current, concept: event.target.value }))
                       }
                     />
                   </label>
                 </div>
-                {question.options.map((option, optionIndex) => (
-                  <label key={`${index}-${optionIndex}`}>
-                    Option {optionIndex + 1}
-                    <div className="inline-grid">
+                <div className="stack-gap" style={{ gap: '10px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-soft)', fontWeight: '600' }}>
+                    Options (Select the correct one)
+                  </span>
+                  {questions[currentQIndex].options.map((option, optionIndex) => (
+                    <div key={optionIndex} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <input
+                        type="radio"
+                        name={`correct-${currentQIndex}`}
+                        checked={option.isCorrect}
+                        onChange={() =>
+                          updateQuestion(currentQIndex, (current) => ({
+                            ...current,
+                            options: current.options.map((entry, idx) =>
+                              idx === optionIndex ? { ...entry, isCorrect: true } : { ...entry, isCorrect: false },
+                            ),
+                          }))
+                        }
+                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                      />
                       <input
                         value={option.text}
+                        placeholder={`Option ${optionIndex + 1}`}
+                        style={{ flex: 1 }}
                         onChange={(event) =>
-                          updateQuestion(index, (current) => ({
+                          updateQuestion(currentQIndex, (current) => ({
                             ...current,
                             options: current.options.map((entry, idx) =>
                               idx === optionIndex ? { ...entry, text: event.target.value } : entry,
@@ -452,33 +512,129 @@ export const TeacherTestWizardPage = () => {
                           }))
                         }
                       />
-                      <label className="checkbox-inline">
-                        <input
-                          type="checkbox"
-                          checked={option.isCorrect}
-                          onChange={(event) =>
-                            updateQuestion(index, (current) => ({
+                      {questions[currentQIndex].options.length > 2 && (
+                        <button 
+                          onClick={() => {
+                            updateQuestion(currentQIndex, (current) => ({
                               ...current,
-                              options: current.options.map((entry, idx) =>
-                                idx === optionIndex ? { ...entry, isCorrect: event.target.checked } : entry,
-                              ),
+                              options: current.options.filter((_, i) => i !== optionIndex)
                             }))
-                          }
-                        />
-                        Correct
-                      </label>
+                          }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-soft)', cursor: 'pointer' }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
-                  </label>
-                ))}
+                  ))}
+                  {questions[currentQIndex].options.length < 10 && (
+                    <button 
+                      onClick={() => {
+                        updateQuestion(currentQIndex, (current) => ({
+                          ...current,
+                          options: [...current.options, { text: '', isCorrect: false }]
+                        }))
+                      }}
+                      style={{ 
+                        background: 'transparent', 
+                        border: '1px dashed var(--border-strong)', 
+                        borderRadius: '10px',
+                        padding: '8px',
+                        color: 'var(--color-primary-600)',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Plus size={16} /> Add Option
+                    </button>
+                  )}
+                </div>
               </div>
-            ))}
+            ) : (
+              <div className="form-grid" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                <label>
+                  Explanation (Optional)
+                  <textarea
+                    value={questions[currentQIndex].explanation}
+                    placeholder="Explain why the answer is correct..."
+                    style={{ height: '150px' }}
+                    onChange={(event) =>
+                      updateQuestion(currentQIndex, (current) => ({ ...current, explanation: event.target.value }))
+                    }
+                  />
+                </label>
+                <div className="inline-grid">
+                  <label>
+                    Difficulty
+                    <select
+                      value={questions[currentQIndex].difficulty}
+                      onChange={(event) =>
+                        updateQuestion(currentQIndex, (current) => ({ ...current, difficulty: event.target.value as any }))
+                      }
+                    >
+                      <option value="EASY">Easy</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HARD">Hard</option>
+                    </select>
+                  </label>
+                  <label>
+                    Marks
+                    <input
+                      type="number"
+                      value={questions[currentQIndex].marks}
+                      onChange={(event) =>
+                        updateQuestion(currentQIndex, (current) => ({ ...current, marks: Number(event.target.value) }))
+                      }
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="inline-actions">
-            <Button variant="secondary" onClick={() => setStep(2)}>
-              Back
-            </Button>
-            <Button onClick={() => setStep(4)}>Continue</Button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', borderTop: '1px solid var(--border-soft)', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Button 
+                variant="secondary" 
+                disabled={currentQIndex === 0 && qEditorStep === 'DETAILS'}
+                onClick={() => {
+                  if (qEditorStep === 'EXPLANATION') {
+                    setQEditorStep('DETAILS')
+                  } else {
+                    setCurrentQIndex(currentQIndex - 1)
+                    setQEditorStep('EXPLANATION')
+                  }
+                }}
+              >
+                <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back
+              </Button>
+              <Button 
+                variant="secondary"
+                disabled={currentQIndex === questions.length - 1 && qEditorStep === 'EXPLANATION'}
+                onClick={() => {
+                  if (qEditorStep === 'DETAILS') {
+                    setQEditorStep('EXPLANATION')
+                  } else {
+                    setCurrentQIndex(currentQIndex + 1)
+                    setQEditorStep('DETAILS')
+                  }
+                }}
+              >
+                Next <ArrowRight size={18} style={{ marginLeft: '8px' }} />
+              </Button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Button variant="secondary" onClick={() => setStep(2)}>
+                Back to Mode
+              </Button>
+              <Button onClick={() => setStep(4)}>Assign Students</Button>
+            </div>
           </div>
         </Card>
       ) : null}
