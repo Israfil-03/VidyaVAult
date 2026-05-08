@@ -1197,32 +1197,46 @@ th {
   border: none;
   background: transparent;
   outline: none;
-  padding: 6px 8px 6px 4px;
+  padding: 8px 12px 8px 6px;
   width: 100%;
   color: var(--text-main);
-  font-size: 0.95rem;
+  font-size: 0.96rem;
   transition: all 0.3s ease;
   font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .topbar-search input::placeholder {
   color: var(--text-soft);
   font-weight: 400;
   transition: color 0.3s ease;
+  font-size: 0.95rem;
+  letter-spacing: 0.2px;
 }
 
 .topbar-search input:focus::placeholder {
   color: rgba(100, 116, 139, 0.5);
+  font-weight: 400;
+}
+
+.topbar-search input:hover::placeholder {
+  color: rgba(100, 116, 139, 0.7);
 }
 
 .topbar-search .search-icon {
   color: var(--text-soft);
-  margin-right: 10px;
+  margin-right: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.topbar-search:hover .search-icon {
+  color: rgba(100, 116, 139, 0.8);
 }
 
 .topbar-search:has(input:focus) .search-icon {
