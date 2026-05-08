@@ -1,7 +1,4 @@
 import {
-  BookCopy,
-  CalendarClock,
-  CircleCheckBig,
   Gauge,
   Layers2,
   Sparkles,

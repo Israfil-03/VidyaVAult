@@ -1,4 +1,4 @@
-import { Plus, Check, AlertCircle, Calendar, BookOpen, User } from 'lucide-react'
+import { Plus, Check, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '../components/Card'
 import { Button } from '../components/Button'
