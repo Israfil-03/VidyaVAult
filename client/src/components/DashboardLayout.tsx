@@ -85,7 +85,7 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
 
             <div className="topbar-search hide-mobile">
                <div className="search-box">
-                 <Search size={16} className="search-icon" />
+                 <Search size={18} className="search-icon" strokeWidth={2.2} />
                  <input type="text" placeholder="Quick search..." aria-label="Global search" />
                </div>
             </div>

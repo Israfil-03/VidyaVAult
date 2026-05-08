@@ -105,10 +105,43 @@
   }
 }
 
+@keyframes searchGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+@keyframes searchPulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+  }
+}
+
+@keyframes iconFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   @keyframes slideInLeft { from { transform: translateX(-20px); } }
   @keyframes slideInUp { from { transform: translateY(10px); } }
   @keyframes pulseGlow { 0%, 100% { box-shadow: none; } }
+  @keyframes searchGlow { from { box-shadow: none; } to { box-shadow: none; } }
+  @keyframes searchPulse { 0%, 100% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); } }
+  @keyframes iconFloat { from { transform: translateY(0); } to { transform: translateY(0); } }
 }
 
 * {
@@ -1117,52 +1150,85 @@ th {
 .topbar-search {
   display: flex;
   align-items: center;
-  background: var(--surface-soft);
+  background: linear-gradient(135deg, var(--surface-soft) 0%, rgba(248, 251, 255, 0.8) 100%);
   border: 1px solid var(--border-soft);
-  border-radius: 20px;
-  padding: 8px 14px;
+  border-radius: 50px;
+  padding: 10px 18px;
   margin-left: auto;
-  max-width: 300px;
+  max-width: 320px;
   width: 100%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.topbar-search::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.05) 100%);
+  pointer-events: none;
+  border-radius: 50px;
+  transition: opacity 0.3s ease;
+  opacity: 0;
 }
 
 .topbar-search:hover {
-  border-color: rgba(59, 130, 246, 0.3);
-  background: var(--surface);
+  border-color: rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(255, 255, 255, 0.95) 100%);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08);
 }
 
 .topbar-search:has(input:focus) {
   border-color: var(--color-primary-500);
-  background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(255, 255, 255, 1) 100%);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 8px 24px rgba(59, 130, 246, 0.15);
+  animation: searchPulse 0.6s ease-out;
+}
+
+.topbar-search:has(input:focus)::before {
+  opacity: 1;
 }
 
 .topbar-search input {
   border: none;
   background: transparent;
   outline: none;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 4px;
   width: 100%;
   color: var(--text-main);
   font-size: 0.95rem;
   transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .topbar-search input::placeholder {
   color: var(--text-soft);
+  font-weight: 400;
+  transition: color 0.3s ease;
+}
+
+.topbar-search input:focus::placeholder {
+  color: rgba(100, 116, 139, 0.5);
 }
 
 .topbar-search .search-icon {
   color: var(--text-soft);
-  margin-right: 8px;
-  transition: all 0.3s ease;
+  margin-right: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .topbar-search:has(input:focus) .search-icon {
   color: var(--color-primary-500);
-  transform: scale(1.1);
+  transform: scale(1.15) translateY(-1px);
+  animation: iconFloat 1.5s ease-in-out infinite;
 }
 
 .icon-btn {
