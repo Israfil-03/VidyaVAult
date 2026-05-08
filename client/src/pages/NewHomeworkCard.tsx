@@ -39,7 +39,8 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     subject: 'CHEMISTRY',
     classLevel: '10',
     batchId: '',
-    dueDate: '',
+    publishAt: new Date().toISOString().slice(0, 16),
+    durationHours: 24,
   })
 
   const [questions, setQuestions] = useState<Question[]>([])
@@ -60,7 +61,8 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
       subject: 'CHEMISTRY',
       classLevel: '10',
       batchId: '',
-      dueDate: '',
+      publishAt: new Date().toISOString().slice(0, 16),
+      durationHours: 24,
     })
     setQuestions([])
     setCurrentQuestion({
@@ -76,7 +78,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
   }
 
   const handleNextFromInfo = () => {
-    if (!info.title || !info.batchId || !info.dueDate) {
+    if (!info.title || !info.batchId || !info.publishAt || !info.durationHours) {
       setError('Please fill in all basic details.')
       return
     }
@@ -124,11 +126,11 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     setError(null)
 
     try {
-      const startTime = new Date()
-      const endTime = new Date(info.dueDate)
+      const startTime = new Date(info.publishAt)
+      const endTime = new Date(startTime.getTime() + info.durationHours * 60 * 60 * 1000)
 
       if (endTime <= startTime) {
-        throw new Error('Due date must be in the future.')
+        throw new Error('End time must be after publish time.')
       }
 
       await apiRequest('/tests', {
@@ -337,14 +339,26 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               </label>
             </div>
 
-            <label>
-              Due Date & Time
-              <input 
-                type="datetime-local"
-                value={info.dueDate}
-                onChange={(e) => setInfo(f => ({ ...f, dueDate: e.target.value }))}
-              />
-            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <label>
+                Published At
+                <input 
+                  type="datetime-local"
+                  value={info.publishAt}
+                  onChange={(e) => setInfo(f => ({ ...f, publishAt: e.target.value }))}
+                />
+              </label>
+              <label>
+                Duration (Hours)
+                <input 
+                  type="number"
+                  min="1"
+                  max="72"
+                  value={info.durationHours}
+                  onChange={(e) => setInfo(f => ({ ...f, durationHours: parseInt(e.target.value) || 0 }))}
+                />
+              </label>
+            </div>
 
             <Button onClick={handleNextFromInfo} style={{ marginTop: '12px' }}>
               Next <ArrowRight size={18} style={{ marginLeft: '8px' }} />

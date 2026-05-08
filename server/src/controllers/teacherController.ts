@@ -89,7 +89,9 @@ export const listTeacherStudents = async (req: Request, res: Response): Promise<
       medium: link.student.medium,
       classLevel: link.student.classLevel,
       rollNo: link.student.rollNo,
-      batchIds: link.student.batchLinks.map((item) => item.batchId),
+      batchIds: link.student.batchLinks
+        .filter((item) => item.batch.teacherId === teacherId)
+        .map((item) => item.batchId),
     })),
   })
 }
@@ -181,15 +183,23 @@ export const addStudentToBatch = async (req: Request, res: Response): Promise<vo
     throw new ApiError('Student does not belong to your scope', 403)
   }
 
-  await prisma.batchStudent.upsert({
+  // Remove from any existing batches managed by this teacher
+  const teacherBatches = await prisma.batch.findMany({
+    where: { teacherId },
+    select: { id: true },
+  })
+  const teacherBatchIds = teacherBatches.map((b) => b.id)
+
+  await prisma.batchStudent.deleteMany({
     where: {
-      batchId_studentId: {
-        batchId,
-        studentId,
-      },
+      studentId,
+      batchId: { in: teacherBatchIds },
     },
-    update: {},
-    create: {
+  })
+
+  // Add to the new batch
+  await prisma.batchStudent.create({
+    data: {
       batchId,
       studentId,
     },

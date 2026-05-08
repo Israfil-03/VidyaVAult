@@ -512,7 +512,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
                     <td>{student.classLevel}</td>
                     <td>
                       <select
-                        defaultValue=""
+                        value={student.batchIds[0] || ''}
                         onChange={(event) => {
                           if (event.target.value) {
                             void assignToBatch(event.target.value, student.id)
