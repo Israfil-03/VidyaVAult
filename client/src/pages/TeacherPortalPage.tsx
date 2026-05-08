@@ -20,6 +20,8 @@ import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import type { DashboardSection } from './shared/dashboardNavigation'
 import { getDashboardNavigation } from './shared/dashboardNavigation'
+import { HomeworkCard } from './HomeworkCard'
+import { NewHomeworkCard } from './NewHomeworkCard'
 
 interface TeacherOverview {
   studentCount: number
@@ -311,14 +313,6 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
 
   const navigation = getDashboardNavigation('teacher')
 
-  const upcomingTests = useMemo(
-    () => tests.filter((test) => getTestWindowStatus(test) === 'upcoming').slice(0, 6),
-    [tests],
-  )
-  const activeTests = useMemo(
-    () => tests.filter((test) => getTestWindowStatus(test) === 'active').slice(0, 6),
-    [tests],
-  )
   const testStatusCounts = useMemo(() => {
     const countByStatus = new Map<string, number>()
     for (const test of tests) {
@@ -390,73 +384,9 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
       </div>
 
       <div className="two-col">
-        <Card title="Upcoming Homework Windows" subtitle="Tests scheduled ahead" variant="glass">
-          {upcomingTests.length === 0 ? (
-            <div className="empty-state">No upcoming homework tests.</div>
-          ) : (
-            <ul className="plain-list">
-              {upcomingTests.map((test) => (
-                <li key={test.id}>
-                  <strong>{test.title}</strong>
-                  <div className="muted">
-                    {test.subject} • {formatShortDate(test.startTime)} • {test._count.assignments} assignments
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card title="Active Homework Windows" subtitle="Live tests running now" variant="glass">
-          {activeTests.length === 0 ? (
-            <div className="empty-state">No active homework windows.</div>
-          ) : (
-            <ul className="plain-list">
-              {activeTests.map((test) => (
-                <li key={test.id}>
-                  <strong>{test.title}</strong>
-                  <div className="muted">
-                    {test.subject} • {test._count.submissions} submissions • ends {formatShortDate(test.endTime)}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <HomeworkCard tests={tests} formatShortDate={formatShortDate} getTestWindowStatus={getTestWindowStatus} />
+        <NewHomeworkCard />
       </div>
-
-      <Card title="Homework Assignment Coverage" subtitle="Published tests and distribution status" variant="glass">
-        {tests.length === 0 ? (
-          <div className="empty-state">No tests published yet.</div>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Test</th>
-                  <th>Subject</th>
-                  <th>Status</th>
-                  <th>Assignments</th>
-                  <th>Submissions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tests.map((test) => (
-                  <tr key={test.id}>
-                    <td>{test.title}</td>
-                    <td>{test.subject}</td>
-                    <td>
-                      <span className={`status-pill status-${test.status.toLowerCase()}`}>{test.status}</span>
-                    </td>
-                    <td>{test._count.assignments}</td>
-                    <td>{test._count.submissions}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
     </>
   )
 
