@@ -1,4 +1,4 @@
-import { BarChart3, GraduationCap, ScrollText, Trash2, Trophy, UserCog } from 'lucide-react'
+import { BarChart3, GraduationCap, Plus, Search, ScrollText, Trash2, Trophy, UserCog, Users } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import { Button } from '../components/Button'
@@ -96,10 +96,12 @@ export const SuperadminDashboard = () => {
     newPassword: '',
   })
 
-  // Teacher Creation Feedback
+  // Feedback & State
   const [teacherCreating, setTeacherCreating] = useState(false)
   const [teacherError, setTeacherError] = useState<string | null>(null)
   const [teacherSuccess, setTeacherSuccess] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'teachers' | 'students'>('overview')
+  const [userSearch, setUserSearch] = useState('')
 
   const loadData = async () => {
     if (!token) {
@@ -149,6 +151,27 @@ export const SuperadminDashboard = () => {
           value: cycle.results.length,
         })),
     [rewardCycles],
+  )
+
+  const filteredTeachers = useMemo(
+    () =>
+      teachers.filter(
+        (t) =>
+          t.user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+          t.subject.toLowerCase().includes(userSearch.toLowerCase()),
+      ),
+    [teachers, userSearch],
+  )
+
+  const filteredStudents = useMemo(
+    () =>
+      students.filter(
+        (s) =>
+          s.user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+          s.rollNo?.toLowerCase().includes(userSearch.toLowerCase()) ||
+          s.classLevel.includes(userSearch),
+      ),
+    [students, userSearch],
   )
 
   const handleTeacherCreate = async (event: FormEvent<HTMLFormElement>) => {
@@ -227,288 +250,324 @@ export const SuperadminDashboard = () => {
   }
 
   return (
-    <DashboardLayout title="Superadmin Command Center" navigation={navigation}>
-      <div>
-        {loading ? <p className="muted">Loading dashboard...</p> : null}
-        {error ? <p className="error-text">{error}</p> : null}
+    <DashboardLayout title="Superadmin Control Center" navigation={navigation}>
+      <div className="space-y-6">
+        <header className="flex justify-between items-center mb-6">
+          <div className="tab-switcher flex gap-4 border-b border-white/10 pb-2">
+            <button 
+              className={`tab-btn pb-2 px-4 transition-colors ${activeTab === 'overview' ? 'active border-b-2 border-primary' : 'text-muted hover:text-white'}`}
+              onClick={() => setActiveTab('overview')}
+            >
+              Overview
+            </button>
+            <button 
+              className={`tab-btn pb-2 px-4 transition-colors ${activeTab === 'teachers' ? 'active border-b-2 border-primary' : 'text-muted hover:text-white'}`}
+              onClick={() => setActiveTab('teachers')}
+            >
+              Teachers
+            </button>
+            <button 
+              className={`tab-btn pb-2 px-4 transition-colors ${activeTab === 'students' ? 'active border-b-2 border-primary' : 'text-muted hover:text-white'}`}
+              onClick={() => setActiveTab('students')}
+            >
+              Students
+            </button>
+          </div>
+          
+          <div className="search-wrap relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search accounts..." 
+              className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-primary transition-all w-64"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
+          </div>
+        </header>
 
-        <div className="stats-grid">
-          <StatCard label="Teacher Admins" value={stats?.teacherCount ?? 0} icon={<UserCog size={18} />} />
-          <StatCard label="Students" value={stats?.studentCount ?? 0} icon={<GraduationCap size={18} />} />
-          <StatCard label="Tests" value={stats?.testCount ?? 0} icon={<ScrollText size={18} />} />
-          <StatCard
-            label="Submissions"
-            value={stats?.submissionCount ?? 0}
-            icon={<BarChart3 size={18} />}
-            tone="success"
-          />
-          <StatCard
-            label="Reward Cycles"
-            value={stats?.rewardCycleCount ?? 0}
-            icon={<Trophy size={18} />}
-            tone="warning"
-          />
-        </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <p className="muted">Synchronizing learning data...</p>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <Card className="border-error/30 bg-error/5 mb-6">
+                <div className="flex items-center gap-3 text-error">
+                  <div className="bg-error/20 p-2 rounded-full">
+                    <Trash2 size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">System Sync Alert</h3>
+                    <p className="text-sm opacity-90">{error}</p>
+                  </div>
+                </div>
+              </Card>
+            )}
 
-        <div className="two-col">
-          <Card title="Teacher Test Activity" subtitle="Top teachers by published test volume">
-            <ComparisonBarChart data={teacherChartData} />
-          </Card>
-          <Card title="Reward Outcomes Trend" subtitle="Winning result volume over recent cycles">
-            <TrendAreaChart data={rewardTrendData} />
-          </Card>
-        </div>
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                <div className="stats-grid">
+                  <StatCard label="Total Teachers" value={stats?.teacherCount ?? 0} icon={<UserCog size={18} />} />
+                  <StatCard label="Enrolled Students" value={stats?.studentCount ?? 0} icon={<GraduationCap size={18} />} />
+                  <StatCard label="Live Tests" value={stats?.testCount ?? 0} icon={<ScrollText size={18} />} />
+                  <StatCard
+                    label="Submissions"
+                    value={stats?.submissionCount ?? 0}
+                    icon={<BarChart3 size={18} />}
+                    tone="success"
+                  />
+                  <StatCard
+                    label="Active Rewards"
+                    value={stats?.rewardCycleCount ?? 0}
+                    icon={<Trophy size={18} />}
+                    tone="warning"
+                  />
+                </div>
 
-        <div className="two-col">
-          <Card title="Add Teacher Admin">
-            <form className="form-grid" onSubmit={handleTeacherCreate}>
-              {teacherError && <p className="error-text" style={{ fontSize: '0.85rem' }}>{teacherError}</p>}
-              {teacherSuccess && <p className="success-text" style={{ fontSize: '0.85rem' }}>{teacherSuccess}</p>}
-              
-              <label>
-                Email
-                <input
-                  value={teacherForm.email}
-                  onChange={(event) => setTeacherForm((prev) => ({ ...prev, email: event.target.value }))}
-                  required
-                  disabled={teacherCreating}
-                />
-              </label>
-              <label>
-                Username
-                <input
-                  value={teacherForm.username}
-                  onChange={(event) => setTeacherForm((prev) => ({ ...prev, username: event.target.value }))}
-                  required
-                  disabled={teacherCreating}
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  type="password"
-                  value={teacherForm.password}
-                  onChange={(event) => setTeacherForm((prev) => ({ ...prev, password: event.target.value }))}
-                  required
-                  disabled={teacherCreating}
-                  minLength={8}
-                />
-              </label>
-              <label>
-                Subject
-                <select
-                  value={teacherForm.subject}
-                  onChange={(event) => setTeacherForm((prev) => ({ ...prev, subject: event.target.value }))}
-                  disabled={teacherCreating}
-                >
-                  <option value="CHEMISTRY">Chemistry</option>
-                  <option value="BIOLOGY">Biology</option>
-                  <option value="MATHEMATICS">Mathematics</option>
-                </select>
-              </label>
-              <Button type="submit" disabled={teacherCreating}>
-                {teacherCreating ? 'Creating...' : 'Create Teacher'}
-              </Button>
-            </form>
-          </Card>
+                <div className="two-col">
+                  <Card title="Teacher Engagement" subtitle="Content distribution by teacher">
+                    <ComparisonBarChart data={teacherChartData} />
+                  </Card>
+                  <Card title="Institutional Velocity" subtitle="Rewards and growth trends">
+                    <TrendAreaChart data={rewardTrendData} />
+                  </Card>
+                </div>
 
-          <Card title="Reset Teacher Password">
-            <form className="form-grid" onSubmit={handleResetTeacherPassword}>
-              <label>
-                Teacher
-                <select
-                  value={passwordReset.teacherId}
-                  onChange={(event) =>
-                    setPasswordReset((prev) => ({ ...prev, teacherId: event.target.value }))
-                  }
-                  required
-                >
-                  <option value="">Select teacher</option>
-                  {teachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id}>
-                      {teacher.user.username} ({teacher.subject})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                New password
-                <input
-                  type="password"
-                  value={passwordReset.newPassword}
-                  onChange={(event) =>
-                    setPasswordReset((prev) => ({ ...prev, newPassword: event.target.value }))
-                  }
-                  required
-                />
-              </label>
-              <Button type="submit">Reset Password</Button>
-            </form>
-          </Card>
-        </div>
-
-        <Card title="Teacher Accounts" subtitle="Manage role state, workload, and student scopes">
-          {teachers.length === 0 ? (
-            <div className="empty-state">No teacher accounts yet.</div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Teacher</th>
-                    <th>Subject</th>
-                    <th>Students</th>
-                    <th>Batches</th>
-                    <th>Tests</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teachers.map((teacher) => (
-                    <tr key={teacher.id}>
-                      <td>{teacher.user.username}</td>
-                      <td>{teacher.subject}</td>
-                      <td>{teacher.counts.teacherStudents}</td>
-                      <td>{teacher.counts.batches}</td>
-                      <td>{teacher.counts.tests}</td>
-                      <td>
-                        <span className="status-pill status-active">{teacher.user.role}</span>
-                      </td>
-                      <td>
-                        <div className="inline-actions">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handlePromoteDemote(teacher.user.id, 'STUDENT')}
-                            title="Demote to Student"
+                <div className="two-col">
+                  <Card title="Quick Register: Teacher">
+                    <form className="form-grid" onSubmit={handleTeacherCreate}>
+                      {teacherError && <p className="error-text text-xs">{teacherError}</p>}
+                      {teacherSuccess && <p className="success-text text-xs">{teacherSuccess}</p>}
+                      
+                      <div className="form-row flex gap-4">
+                        <label className="flex-1">
+                          Email
+                          <input
+                            value={teacherForm.email}
+                            onChange={(e) => setTeacherForm(prev => ({ ...prev, email: e.target.value }))}
+                            required
+                            disabled={teacherCreating}
+                            className="w-full"
+                          />
+                        </label>
+                        <label className="flex-1">
+                          Username
+                          <input
+                            value={teacherForm.username}
+                            onChange={(e) => setTeacherForm(prev => ({ ...prev, username: e.target.value }))}
+                            required
+                            disabled={teacherCreating}
+                            className="w-full"
+                          />
+                        </label>
+                      </div>
+                      <div className="form-row flex gap-4 mt-2">
+                        <label className="flex-1">
+                          Password
+                          <input
+                            type="password"
+                            value={teacherForm.password}
+                            onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
+                            required
+                            disabled={teacherCreating}
+                            minLength={8}
+                            className="w-full"
+                          />
+                        </label>
+                        <label className="flex-1">
+                          Subject
+                          <select
+                            value={teacherForm.subject}
+                            onChange={(e) => setTeacherForm(prev => ({ ...prev, subject: e.target.value }))}
+                            disabled={teacherCreating}
+                            className="w-full"
                           >
-                            Demote
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleDeleteUser(teacher.user.id, teacher.user.username)}
-                            className="error-text"
-                            title="Delete Teacher"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                            <option value="CHEMISTRY">Chemistry</option>
+                            <option value="BIOLOGY">Biology</option>
+                            <option value="MATHEMATICS">Mathematics</option>
+                          </select>
+                        </label>
+                      </div>
+                      <Button type="submit" disabled={teacherCreating} className="mt-4 w-full">
+                        {teacherCreating ? 'Provisioning...' : 'Provision Teacher Account'}
+                      </Button>
+                    </form>
+                  </Card>
 
-        <Card title="Student Accounts" subtitle="Manage student profiles and enrollment states">
-          {students.length === 0 ? (
-            <div className="empty-state">No student accounts yet.</div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Board / Medium</th>
-                    <th>Class</th>
-                    <th>Submissions</th>
-                    <th>Teachers</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id}>
-                      <td>
-                        <div className="flex-col">
-                          <span className="font-bold">{student.user.username}</span>
-                          <span className="muted" style={{ fontSize: '0.75rem' }}>{student.rollNo || 'No Roll No'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex-col">
-                          <span>{student.board}</span>
-                          <span className="muted" style={{ fontSize: '0.75rem' }}>{student.medium}</span>
-                        </div>
-                      </td>
-                      <td>{student.classLevel}</td>
-                      <td>{student.counts.submissions}</td>
-                      <td>{student.counts.teacherLinks}</td>
-                      <td>
-                        <div className="inline-actions">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handlePromoteDemote(student.user.id, 'TEACHER_ADMIN')}
-                            title="Promote to Teacher"
-                          >
-                            Promote
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleDeleteUser(student.user.id, student.user.username)}
-                            className="error-text"
-                            title="Delete Student"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                  <Card title="Security: Password Override">
+                    <form className="form-grid" onSubmit={handleResetTeacherPassword}>
+                      <label>
+                        Target Account
+                        <select
+                          value={passwordReset.teacherId}
+                          onChange={(e) => setPasswordReset(prev => ({ ...prev, teacherId: e.target.value }))}
+                          required
+                          className="w-full"
+                        >
+                          <option value="">Select teacher account</option>
+                          {teachers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.user.username} ({t.subject})
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="mt-2">
+                        New Security Credential
+                        <input
+                          type="password"
+                          value={passwordReset.newPassword}
+                          onChange={(e) => setPasswordReset(prev => ({ ...prev, newPassword: e.target.value }))}
+                          required
+                          className="w-full"
+                        />
+                      </label>
+                      <Button type="submit" variant="secondary" className="mt-4 w-full">Force Reset Credentials</Button>
+                    </form>
+                  </Card>
+                </div>
+              </div>
+            )}
 
-        <Card title="Reward Cycles Overview" subtitle="Cycle status and winning batch outcomes">
-          {rewardCycles.length === 0 ? (
-            <div className="empty-state">No reward cycles created yet.</div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Teacher</th>
-                    <th>Subject</th>
-                    <th>Period</th>
-                    <th>Status</th>
-                    <th>Outcomes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rewardCycles.map((cycle) => (
-                    <tr key={cycle.id}>
-                      <td>{cycle.teacher.user.username}</td>
-                      <td>{cycle.subject}</td>
-                      <td>
-                        {new Date(cycle.periodStart).toLocaleDateString()} -{' '}
-                        {new Date(cycle.periodEnd).toLocaleDateString()}
-                      </td>
-                      <td>
-                        <span className={`status-pill status-${cycle.status.toLowerCase()}`}>
-                          {cycle.status}
-                        </span>
-                      </td>
-                      <td>
-                        {cycle.results
-                          .filter((result) => result.isWinner || result.isMostImproved)
-                          .map((result) => `${result.batch.name} (${result.batch.medium})`)
-                          .join(', ') || 'Pending'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+            {activeTab === 'teachers' && (
+              <Card title="Teacher Management" icon={<UserCog size={18} />}>
+                <div className="table-wrap">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th>Account</th>
+                        <th>Expertise</th>
+                        <th className="hide-mobile">Metrics</th>
+                        <th>Role State</th>
+                        <th className="text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredTeachers.map((teacher) => (
+                        <tr key={teacher.id}>
+                          <td>
+                            <div className="flex flex-col">
+                              <span className="font-bold">{teacher.user.username}</span>
+                              <span className="text-xs muted">{teacher.user.email}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="subject-pill">{teacher.subject}</span>
+                          </td>
+                          <td className="hide-mobile">
+                            <div className="flex gap-4 text-xs">
+                              <span title="Students"><Users size={12} className="inline mr-1" /> {teacher.counts.teacherStudents}</span>
+                              <span title="Tests"><ScrollText size={12} className="inline mr-1" /> {teacher.counts.tests}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="status-pill status-active uppercase text-[10px]">{teacher.user.role}</span>
+                          </td>
+                          <td>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handlePromoteDemote(teacher.user.id, 'STUDENT')}
+                                title="Demote to Student"
+                              >
+                                Demote
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleDeleteUser(teacher.user.id, teacher.user.username)}
+                                className="btn-error-ghost"
+                                title="Delete Account"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredTeachers.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="text-center py-8 muted">No matching teacher accounts found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            {activeTab === 'students' && (
+              <Card title="Student Enrollment" icon={<GraduationCap size={18} />}>
+                <div className="table-wrap">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th>Account</th>
+                        <th>Educational Context</th>
+                        <th className="hide-mobile">Engagement</th>
+                        <th className="text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredStudents.map((student) => (
+                        <tr key={student.id}>
+                          <td>
+                            <div className="flex flex-col">
+                              <span className="font-bold">{student.user.username}</span>
+                              <span className="text-xs muted">{student.rollNo || 'UNASSIGNED ROLL'}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex flex-col text-xs">
+                              <span>{student.board} · {student.medium}</span>
+                              <span className="muted font-bold">GRADE {student.classLevel}</span>
+                            </div>
+                          </td>
+                          <td className="hide-mobile">
+                            <div className="flex gap-4 text-xs">
+                              <span title="Submissions"><BarChart3 size={12} className="inline mr-1" /> {student.counts.submissions}</span>
+                              <span title="Teachers"><Plus size={12} className="inline mr-1" /> {student.counts.teacherLinks}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handlePromoteDemote(student.user.id, 'TEACHER_ADMIN')}
+                                title="Promote to Teacher"
+                              >
+                                Promote
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleDeleteUser(student.user.id, student.user.username)}
+                                className="btn-error-ghost"
+                                title="Delete Account"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredStudents.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="text-center py-8 muted">No matching student accounts found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </>
+        )}
       </div>
     </DashboardLayout>
   )

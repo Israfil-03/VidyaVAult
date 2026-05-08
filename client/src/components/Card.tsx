@@ -9,6 +9,7 @@ interface CardProps {
   className?: string
   variant?: 'default' | 'glass' | 'elevated' | 'gradient' | 'outline'
   tilt?: boolean
+  icon?: ReactNode
 }
 
 export const Card = ({
@@ -19,6 +20,7 @@ export const Card = ({
   className = '',
   variant = 'default',
   tilt = false,
+  icon,
 }: CardProps) => {
   const reduceMotion = useReducedMotion()
 
@@ -54,8 +56,11 @@ export const Card = ({
     >
       {(title || actions || subtitle) && (
         <header className="card-header">
-          <div style={{ transform: tilt ? 'translateZ(30px)' : 'none' }}>
-            {title ? <h3>{title}</h3> : null}
+          <div className="card-header-titles" style={{ transform: tilt ? 'translateZ(30px)' : 'none' }}>
+            <div className="flex items-center gap-2">
+              {icon && <span className="text-primary">{icon}</span>}
+              {title ? <h3>{title}</h3> : null}
+            </div>
             {subtitle ? <p className="card-subtitle">{subtitle}</p> : null}
           </div>
           <div style={{ transform: tilt ? 'translateZ(40px)' : 'none' }}>
