@@ -574,7 +574,10 @@ export const TeacherTestWizardPage = () => {
                     <select
                       value={questions[currentQIndex].difficulty}
                       onChange={(event) =>
-                        updateQuestion(currentQIndex, (current) => ({ ...current, difficulty: event.target.value as any }))
+                        updateQuestion(currentQIndex, (current) => ({
+                          ...current,
+                          difficulty: event.target.value as QuestionInput['difficulty'],
+                        }))
                       }
                     >
                       <option value="EASY">Easy</option>
