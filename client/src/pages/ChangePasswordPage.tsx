@@ -6,6 +6,7 @@ import { Card } from '../components/Card'
 import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
+import { getDashboardNavigation } from './shared/dashboardNavigation'
 
 export const ChangePasswordPage = () => {
   const navigate = useNavigate()
@@ -24,11 +25,8 @@ export const ChangePasswordPage = () => {
     user.role === 'superadmin'
       ? [{ label: 'Dashboard', to: '/superadmin' }]
       : user.role === 'teacher_admin'
-        ? [{ label: 'Dashboard', to: '/teacher' }]
-        : [
-            { label: 'Dashboard', to: '/student' },
-            { label: 'Results', to: '/student/results' },
-          ]
+        ? getDashboardNavigation('teacher')
+        : getDashboardNavigation('student')
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -56,8 +54,8 @@ export const ChangePasswordPage = () => {
           user.role === 'superadmin'
             ? '/superadmin'
             : user.role === 'teacher_admin'
-              ? '/teacher'
-              : '/student',
+              ? '/teacher/homework'
+              : '/student/homework',
         )
       }, 800)
     } catch (err) {

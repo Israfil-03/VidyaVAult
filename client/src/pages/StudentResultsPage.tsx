@@ -9,6 +9,7 @@ import { TrendAreaChart } from '../components/charts/TrendAreaChart'
 import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
+import { getDashboardNavigation } from './shared/dashboardNavigation'
 
 interface ResultListItem {
   id: string
@@ -35,10 +36,7 @@ interface ResultDetail extends ResultListItem {
   }>
 }
 
-const navigation = [
-  { label: 'Dashboard', to: '/student' },
-  { label: 'Results', to: '/student/results' },
-]
+const navigation = getDashboardNavigation('student')
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -99,7 +97,7 @@ export const StudentResultsPage = () => {
     : '0'
 
   return (
-    <DashboardLayout title="Performance Insights" navigation={navigation}>
+    <DashboardLayout title="Student Performance Details" navigation={navigation}>
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
         {error ? <p className="error-text">{error}</p> : null}
 
@@ -143,7 +141,7 @@ export const StudentResultsPage = () => {
                         <strong>{item.test.title}</strong>
                         <div className="muted" style={{ fontSize: '0.8rem' }}>Score: {item.scoreTotal ?? 0}/{item.maxScore ?? 0} • {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : 'N/A'}</div>
                       </div>
-                      <Link to={`/student/results/${item.id}`}>
+                      <Link to={`/student/performance/${item.id}`}>
                         <Button variant={submissionId === item.id ? 'primary' : 'secondary'} size="sm">
                           {submissionId === item.id ? 'Viewing' : 'Open'}
                         </Button>
@@ -163,7 +161,7 @@ export const StudentResultsPage = () => {
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Trophy size={18} color="var(--color-warning-500)" /> AI Insights</h4>
                     <p style={{ marginTop: '10px', fontSize: '0.95rem', lineHeight: '1.6' }}>{detail.aiAnalysisSummary ?? 'AI analysis is processing your attempt. Check back soon for personalized feedback!'}</p>
                   </div>
-                  
+
                   <div style={{ marginTop: '20px' }}>
                     <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><ListChecks size={18} /> Review Questions</h4>
                     <div style={{ display: 'grid', gap: '16px' }}>

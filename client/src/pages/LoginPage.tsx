@@ -9,8 +9,8 @@ import './Login.css'
 
 const rolePath: Record<Role, string> = {
   superadmin: '/superadmin',
-  teacher_admin: '/teacher',
-  student: '/student',
+  teacher_admin: '/teacher/homework',
+  student: '/student/homework',
 }
 
 const containerVariants: Variants = {
@@ -71,7 +71,7 @@ export const LoginPage = () => {
         <div className="blob blob-4"></div>
       </div>
 
-      <motion.div 
+      <motion.div
         className="login-card"
         initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -102,8 +102,8 @@ export const LoginPage = () => {
           </motion.p>
         </header>
 
-        <motion.form 
-          onSubmit={handleSubmit} 
+        <motion.form
+          onSubmit={handleSubmit}
           className="login-form"
           variants={containerVariants}
           initial="hidden"
@@ -160,7 +160,7 @@ export const LoginPage = () => {
 
           <AnimatePresence>
             {error && (
-              <motion.div 
+              <motion.div
                 className="login-error"
                 initial={{ opacity: 0, height: 0, y: -10, marginBottom: 0 }}
                 animate={{ opacity: 1, height: 'auto', y: 0, marginBottom: 16 }}
@@ -171,9 +171,9 @@ export const LoginPage = () => {
             )}
           </AnimatePresence>
 
-          <motion.button 
-            type="submit" 
-            className="login-button" 
+          <motion.button
+            type="submit"
+            className="login-button"
             disabled={submitting}
             variants={itemVariants}
             whileHover={{ scale: 1.02 }}

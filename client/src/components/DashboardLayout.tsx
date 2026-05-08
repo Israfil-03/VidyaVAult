@@ -1,4 +1,4 @@
-import { BookOpenText, LockKeyhole, Menu, X, Bell, Search } from 'lucide-react'
+import { Bell, Menu, Search, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
@@ -51,18 +51,6 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
               {item.icon} {item.label}
             </NavLink>
           ))}
-          <NavLink
-            to="/change-password"
-            className={({ isActive }) => `nav-item nav-item-icon ${isActive ? 'active' : ''}`}
-          >
-            <LockKeyhole size={16} /> Security
-          </NavLink>
-          <NavLink
-            to="/reward-explanation"
-            className={({ isActive }) => `nav-item nav-item-icon ${isActive ? 'active' : ''}`}
-          >
-            <BookOpenText size={16} /> Rewards Guide
-          </NavLink>
         </nav>
         <div className="sidebar-footer">
           <Button variant="secondary" onClick={logout}>
@@ -107,15 +95,6 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
               <Bell size={20} />
               <span className="notification-dot"></span>
             </button>
-            <div className="v-divider hide-mobile"></div>
-            <div className="action-buttons">
-              <Link to="/reward-explanation" className="btn-action hide-mobile">
-                Rewards
-              </Link>
-              <Link to="/change-password" className="btn-action">
-                Security
-              </Link>
-            </div>
           </div>
         </header>
         <main className="content">

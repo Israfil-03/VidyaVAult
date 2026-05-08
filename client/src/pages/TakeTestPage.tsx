@@ -6,6 +6,7 @@ import { Card } from '../components/Card'
 import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
+import { getDashboardNavigation } from './shared/dashboardNavigation'
 
 interface TestDetail {
   id: string
@@ -22,10 +23,7 @@ interface TestDetail {
   }>
 }
 
-const navigation = [
-  { label: 'Dashboard', to: '/student' },
-  { label: 'Results', to: '/student/results' },
-]
+const navigation = getDashboardNavigation('student')
 
 export const TakeTestPage = () => {
   const { token } = useAuth()
@@ -91,7 +89,7 @@ export const TakeTestPage = () => {
         method: 'POST',
         token,
       })
-      navigate(`/student/results/${submissionId}`)
+      navigate(`/student/performance/${submissionId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit test')
     } finally {

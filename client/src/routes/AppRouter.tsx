@@ -6,17 +6,17 @@ import { useAuth } from '../hooks/useAuth'
 import { ChangePasswordPage } from '../pages/ChangePasswordPage'
 import { LoginPage } from '../pages/LoginPage'
 import { RewardExplanationPage } from '../pages/RewardExplanationPage'
-import { StudentDashboard } from '../pages/StudentDashboard'
+import { StudentPortalPage } from '../pages/StudentPortalPage'
 import { StudentResultsPage } from '../pages/StudentResultsPage'
 import { SuperadminDashboard } from '../pages/SuperadminDashboard'
 import { TakeTestPage } from '../pages/TakeTestPage'
-import { TeacherDashboard } from '../pages/TeacherDashboard'
+import { TeacherPortalPage } from '../pages/TeacherPortalPage'
 import { TeacherTestWizardPage } from '../pages/TeacherTestWizardPage'
 
 const homePathByRole = {
   superadmin: '/superadmin',
-  teacher_admin: '/teacher',
-  student: '/student',
+  teacher_admin: '/teacher/homework',
+  student: '/student/homework',
 } as const
 
 export const AppRouter = () => {
@@ -47,7 +47,63 @@ export const AppRouter = () => {
         path="/teacher"
         element={
           <ProtectedRoute roles={['teacher_admin']}>
-            <TeacherDashboard />
+            <Navigate to="/teacher/homework" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/homework"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherPortalPage section="homework" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/practice"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherPortalPage section="practice" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/test"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherPortalPage section="test" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/leaderboard"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherPortalPage section="leaderboard" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/performance"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherPortalPage section="performance" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/profile"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherPortalPage section="profile" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/test/new"
+        element={
+          <ProtectedRoute roles={['teacher_admin']}>
+            <TeacherTestWizardPage />
           </ProtectedRoute>
         }
       />
@@ -55,7 +111,7 @@ export const AppRouter = () => {
         path="/teacher/tests/new"
         element={
           <ProtectedRoute roles={['teacher_admin']}>
-            <TeacherTestWizardPage />
+            <Navigate to="/teacher/test/new" replace />
           </ProtectedRoute>
         }
       />
@@ -64,7 +120,55 @@ export const AppRouter = () => {
         path="/student"
         element={
           <ProtectedRoute roles={['student']}>
-            <StudentDashboard />
+            <Navigate to="/student/homework" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/homework"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <StudentPortalPage section="homework" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/practice"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <StudentPortalPage section="practice" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/test"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <StudentPortalPage section="test" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/leaderboard"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <StudentPortalPage section="leaderboard" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/performance"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <StudentPortalPage section="performance" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/profile"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <StudentPortalPage section="profile" />
           </ProtectedRoute>
         }
       />
@@ -77,10 +181,18 @@ export const AppRouter = () => {
         }
       />
       <Route
-        path="/student/results"
+        path="/student/performance/:submissionId"
         element={
           <ProtectedRoute roles={['student']}>
             <StudentResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/results"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <Navigate to="/student/performance" replace />
           </ProtectedRoute>
         }
       />

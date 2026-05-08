@@ -55,9 +55,9 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
+  visible: {
+    opacity: 1,
+    y: 0,
     scale: 1,
     transition: { type: 'spring' as const, stiffness: 100, damping: 15 }
   }
@@ -83,23 +83,23 @@ export const StudentDashboard = () => {
       if (import.meta.env.VITE_UI_ONLY === 'true') {
         setOverview({ active: 3, upcoming: 2, completed: 12 })
         setActiveTests([
-          { 
-            id: 'mock-1', 
-            title: 'Advanced Mathematics Quiz', 
-            subject: 'Mathematics', 
-            _count: { questions: 15 }, 
-            durationMinutes: 45, 
+          {
+            id: 'mock-1',
+            title: 'Advanced Mathematics Quiz',
+            subject: 'Mathematics',
+            _count: { questions: 15 },
+            durationMinutes: 45,
             submissions: [],
             startTime: new Date().toISOString(),
             endTime: new Date().toISOString(),
             classLevel: '10'
           },
-          { 
-            id: 'mock-2', 
-            title: 'Physics Concept Test', 
-            subject: 'Physics', 
-            _count: { questions: 10 }, 
-            durationMinutes: 20, 
+          {
+            id: 'mock-2',
+            title: 'Physics Concept Test',
+            subject: 'Physics',
+            _count: { questions: 10 },
+            durationMinutes: 20,
             submissions: [],
             startTime: new Date().toISOString(),
             endTime: new Date().toISOString(),
@@ -107,13 +107,13 @@ export const StudentDashboard = () => {
           }
         ])
         setUpcomingTests([
-          { 
-            id: 'mock-3', 
-            title: 'History Finals Preparation', 
+          {
+            id: 'mock-3',
+            title: 'History Finals Preparation',
             startTime: new Date(Date.now() + 86400000).toISOString(),
-            subject: 'History', 
-            _count: { questions: 25 }, 
-            durationMinutes: 90, 
+            subject: 'History',
+            _count: { questions: 25 },
+            durationMinutes: 90,
             submissions: [],
             endTime: new Date().toISOString(),
             classLevel: '10'
@@ -159,7 +159,7 @@ export const StudentDashboard = () => {
       }
     }
     void loadData()
-  }, [token])
+  }, [token, user?.username])
 
   const completedTrendData = useMemo(() =>
     completedTests.slice(0, 8).map((test, index) => {

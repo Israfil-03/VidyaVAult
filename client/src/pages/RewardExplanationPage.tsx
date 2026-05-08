@@ -1,6 +1,7 @@
 import { Card } from '../components/Card'
 import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
+import { getDashboardNavigation } from './shared/dashboardNavigation'
 
 export const RewardExplanationPage = () => {
   const { user } = useAuth()
@@ -13,11 +14,8 @@ export const RewardExplanationPage = () => {
     user.role === 'superadmin'
       ? [{ label: 'Dashboard', to: '/superadmin' }]
       : user.role === 'teacher_admin'
-        ? [{ label: 'Dashboard', to: '/teacher' }]
-        : [
-            { label: 'Dashboard', to: '/student' },
-            { label: 'Results', to: '/student/results' },
-          ]
+        ? getDashboardNavigation('teacher')
+        : getDashboardNavigation('student')
 
   return (
     <DashboardLayout title="How VidyaVault Rewards Work" navigation={navigation}>

@@ -7,6 +7,7 @@ import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import type { QuestionInput } from '../types'
+import { getDashboardNavigation } from './shared/dashboardNavigation'
 
 interface BatchOption {
   id: string
@@ -18,10 +19,7 @@ interface StudentOption {
   username: string
 }
 
-const navigation = [
-  { label: 'Dashboard', to: '/teacher' },
-  { label: 'Create Test Wizard', to: '/teacher/tests/new' },
-]
+const navigation = getDashboardNavigation('teacher')
 
 const createEmptyQuestion = (): QuestionInput => ({
   id: crypto.randomUUID(),
@@ -174,7 +172,7 @@ export const TeacherTestWizardPage = () => {
           ],
         }),
       })
-      navigate('/teacher')
+      navigate('/teacher/test')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish test')
     } finally {
@@ -571,7 +569,7 @@ export const TeacherTestWizardPage = () => {
             </Button>
           </div>
           <p>
-            <Link to="/teacher">Cancel and return to dashboard</Link>
+            <Link to="/teacher/test">Cancel and return to dashboard</Link>
           </p>
         </Card>
       ) : null}
