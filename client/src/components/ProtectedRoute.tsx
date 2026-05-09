@@ -23,7 +23,12 @@ export const ProtectedRoute = ({ roles, children }: ProtectedRouteProps) => {
   }
 
   if (!roles.includes(user.role)) {
-    return <Navigate to={`/${user.role === 'teacher_admin' ? 'teacher' : user.role}`} replace />
+    const redirectPath = user.role === 'teacher_admin' 
+      ? '/teacher' 
+      : user.role === 'institute_admin' 
+        ? '/institute-admin' 
+        : `/${user.role}`
+    return <Navigate to={redirectPath} replace />
   }
 
   return <>{children}</>

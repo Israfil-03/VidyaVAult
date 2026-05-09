@@ -9,6 +9,7 @@ import './Login.css'
 
 const rolePath: Record<Role, string> = {
   superadmin: '/superadmin',
+  institute_admin: '/institute-admin',
   teacher_admin: '/teacher/homework',
   student: '/student/homework',
 }
@@ -120,6 +121,7 @@ export const LoginPage = () => {
                 onChange={(event) => setRoleHint(event.target.value as Role)}
               >
                 <option value="superadmin">Superadmin</option>
+                <option value="institute_admin">Institute Admin</option>
                 <option value="teacher_admin">Teacher Admin</option>
                 <option value="student">Student</option>
               </select>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { User, Phone, Layers, ArrowRight, Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
 

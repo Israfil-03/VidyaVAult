@@ -27,11 +27,14 @@ const inferRoleFromPath = (): Role | null => {
   if (pathname.startsWith('/superadmin')) {
     return 'superadmin'
   }
+  if (pathname.startsWith('/institute-admin')) {
+    return 'institute_admin'
+  }
   return null
 }
 
 const isRole = (value: string | null): value is Role =>
-  value === 'superadmin' || value === 'teacher_admin' || value === 'student'
+  value === 'superadmin' || value === 'institute_admin' || value === 'teacher_admin' || value === 'student'
 
 const getUiOnlyRole = (): Role => {
   const fromPath = inferRoleFromPath()

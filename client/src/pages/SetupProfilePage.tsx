@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { Lock, ArrowRight, Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
 

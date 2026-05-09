@@ -1,4 +1,4 @@
-import { Check, X, User, Phone, UserCheck, Loader2 } from 'lucide-react'
+import { User, Phone, UserCheck, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
