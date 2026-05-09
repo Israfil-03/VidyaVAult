@@ -68,7 +68,7 @@ interface TestRow {
 const sectionTitle: Record<DashboardSection, string> = {
   homework: 'Homework Section',
   practice: 'Practice',
-  test: 'School Test',
+  test: 'Assessments',
   leaderboard: 'Leaderboard',
   performance: 'Student Performance',
   profile: 'Profile',
@@ -77,7 +77,7 @@ const sectionTitle: Record<DashboardSection, string> = {
 const sectionSubtitle: Record<DashboardSection, string> = {
   homework: 'Plan, publish, and track assigned homework.',
   practice: 'Manage student and batch setup for guided practice.',
-  test: 'Create and monitor test lifecycle in one place.',
+  test: 'Create and monitor Weekly and Monthly assessments.',
   leaderboard: 'Review class and batch ranking insights.',
   performance: 'Inspect submission trends and learner outcomes.',
   profile: 'Profile, security, and account-level actions.',
@@ -578,52 +578,69 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   )
 
   const renderTest = () => {
-    const schoolTests = tests.filter(t => t.category !== 'HOMEWORK')
+    const weeklyTests = tests.filter((t) => t.category === 'WEEKLY_TEST')
+    const monthlyTests = tests.filter((t) => t.category === 'MONTHLY_TEST')
+    
+    const renderTable = (testList: TestRow[], emptyMsg: string) => (
+      testList.length === 0 ? (
+        <div className="empty-state">{emptyMsg}</div>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Submissions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {testList.map((test) => (
+                <tr key={test.id}>
+                  <td>{test.title}</td>
+                  <td>{test.subject}</td>
+                  <td>
+                    <span className={`status-pill status-${test.status.toLowerCase()}`}>{test.status}</span>
+                  </td>
+                  <td>{test._count.submissions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    )
+
     return (
       <>
-        <Card
-          title="Test Inventory"
-          subtitle="Formal assessments (Class/Unit tests)"
-          variant="glass"
-          actions={
-            <Link to="/teacher/test/new">
-              <Button>Create New Test</Button>
-            </Link>
-          }
-        >
-          {schoolTests.length === 0 ? (
-            <div className="empty-state">No tests yet. Create your first test from the wizard.</div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Subject</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Submissions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {schoolTests.map((test) => (
-                    <tr key={test.id}>
-                      <td>{test.title}</td>
-                      <td>{test.subject}</td>
-                      <td>
-                        <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{test.category.replace('_', ' ')}</span>
-                      </td>
-                      <td>
-                        <span className={`status-pill status-${test.status.toLowerCase()}`}>{test.status}</span>
-                      </td>
-                      <td>{test._count.submissions}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+        <div className="stack-gap">
+          <Card
+            title="Weekly Test Inventory"
+            subtitle="Regular progress checks"
+            variant="glass"
+            actions={
+              <Link to="/teacher/test/new">
+                <Button size="sm">New Weekly Test</Button>
+              </Link>
+            }
+          >
+            {renderTable(weeklyTests, "No weekly tests created yet.")}
+          </Card>
+
+          <Card
+            title="Monthly Test Inventory"
+            subtitle="Monthly milestone assessments"
+            variant="glass"
+            actions={
+              <Link to="/teacher/test/new">
+                <Button size="sm">New Monthly Test</Button>
+              </Link>
+            }
+          >
+            {renderTable(monthlyTests, "No monthly tests created yet.")}
+          </Card>
+        </div>
 
         <div className="two-col">
           <Card title="Test Activity Trend" subtitle="Submission movement across recent tests" variant="glass">

@@ -111,7 +111,7 @@ export const TakeTestPage = () => {
           <div className="header-content">
             <div>
               <h2 className="fade-in-up">{test.title}</h2>
-              <div className="muted">{isHomework ? 'Daily Homework Assignment' : 'Formal Assessment'}</div>
+              <div className="muted">{isHomework ? 'Daily Homework Assignment' : test.category.replace('_', ' ')}</div>
             </div>
             <div className="timer-box">
               <Timer size={18} /> {formatTime(timeLeft)}

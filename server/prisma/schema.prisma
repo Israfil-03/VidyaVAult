@@ -102,7 +102,7 @@ model Test {
   endTime         DateTime
   durationMinutes Int
   status          TestStatus       @default(DRAFT)
-  category        TestCategory     @default(TEST)
+  category        TestCategory     @default(WEEKLY_TEST)
   isDaily         Boolean          @default(false)
   creationMode    TestCreationMode @default(MANUAL)
   createdAt       DateTime         @default(now())
@@ -270,8 +270,8 @@ enum TestStatus {
 enum TestCategory {
   HOMEWORK
   PRACTICE
-  TEST
-  UNIT_TEST
+  WEEKLY_TEST
+  MONTHLY_TEST
 }
 
 enum TestCreationMode {

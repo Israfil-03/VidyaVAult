@@ -51,7 +51,7 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
       where: {
         id: { in: assignedTestIds },
         status: TestStatus.PUBLISHED,
-        category: { in: [TestCategory.TEST, TestCategory.UNIT_TEST] },
+        category: { in: [TestCategory.WEEKLY_TEST, TestCategory.MONTHLY_TEST] },
         startTime: { lte: now },
         endTime: { gte: now },
       },
@@ -60,7 +60,7 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
       where: {
         id: { in: assignedTestIds },
         status: TestStatus.PUBLISHED,
-        category: { in: [TestCategory.TEST, TestCategory.UNIT_TEST] },
+        category: { in: [TestCategory.WEEKLY_TEST, TestCategory.MONTHLY_TEST] },
         startTime: { gt: now },
       },
     }),

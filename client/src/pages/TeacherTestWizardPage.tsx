@@ -50,7 +50,7 @@ export const TeacherTestWizardPage = () => {
   const [testForm, setTestForm] = useState({
     title: '',
     subject: 'CHEMISTRY',
-    category: 'TEST',
+    category: 'WEEKLY_TEST',
     isDaily: false,
     boardTarget: 'WEST_BENGAL',
     classLevel: '10',
@@ -244,8 +244,8 @@ export const TeacherTestWizardPage = () => {
                   onChange={(event) => setTestForm((prev) => ({ ...prev, category: event.target.value }))}
                 >
                   <option value="HOMEWORK">Daily Homework</option>
-                  <option value="TEST">Class Test</option>
-                  <option value="UNIT_TEST">Unit Test</option>
+                  <option value="WEEKLY_TEST">Weekly Test</option>
+                  <option value="MONTHLY_TEST">Monthly Test</option>
                   <option value="PRACTICE">Practice Drill</option>
                 </select>
               </label>

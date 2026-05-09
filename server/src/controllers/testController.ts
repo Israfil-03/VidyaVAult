@@ -57,7 +57,7 @@ const createTestSchema = z.object({
   endTime: z.coerce.date(),
   durationMinutes: z.number().int().positive(),
   status: z.nativeEnum(TestStatus).default(TestStatus.DRAFT),
-  category: z.nativeEnum(TestCategory).default(TestCategory.TEST),
+  category: z.nativeEnum(TestCategory).default(TestCategory.WEEKLY_TEST),
   isDaily: z.boolean().default(false),
   creationMode: z.nativeEnum(TestCreationMode).default(TestCreationMode.MANUAL),
   questions: z.array(questionSchema).optional(),

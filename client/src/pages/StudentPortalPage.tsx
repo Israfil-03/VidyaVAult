@@ -66,7 +66,7 @@ interface ResultRow {
 const sectionTitle: Record<DashboardSection, string> = {
   homework: 'Homework Section',
   practice: 'Practice',
-  test: 'School Test',
+  test: 'Assessments',
   leaderboard: 'Leaderboard',
   performance: 'Student Performance',
   profile: 'Profile',
@@ -75,7 +75,7 @@ const sectionTitle: Record<DashboardSection, string> = {
 const sectionSubtitle: Record<DashboardSection, string> = {
   homework: 'Track assigned work and upcoming deadlines.',
   practice: 'Build mastery through targeted practice cards.',
-  test: 'Start tests and monitor active assessments.',
+  test: 'Start Weekly and Monthly tests and monitor active assessments.',
   leaderboard: 'See class and batch rank insights.',
   performance: 'Review growth and submission outcomes.',
   profile: 'Manage account and quick learning summary.',
@@ -394,19 +394,19 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
       </Card>
     </>
   )
-
   const renderTest = () => {
-    const schoolTests = activeTests.filter(t => t.category !== 'HOMEWORK')
-    const upcomingSchoolTests = upcomingTests.filter(t => t.category !== 'HOMEWORK')
+    const weeklyTests = activeTests.filter((t) => t.category === 'WEEKLY_TEST')
+    const monthlyTests = activeTests.filter((t) => t.category === 'MONTHLY_TEST')
+    const upcomingSchoolTests = upcomingTests.filter((t) => t.category === 'WEEKLY_TEST' || t.category === 'MONTHLY_TEST')
     return (
       <>
         <div className="two-col">
-          <Card title="Active School Tests" subtitle="Formal assessments" variant="glass">
-            {schoolTests.length === 0 ? (
-              <div className="empty-state">No active tests right now.</div>
+          <Card title="Weekly Assessments" subtitle="Regular progress checks" variant="glass">
+            {weeklyTests.length === 0 ? (
+              <div className="empty-state">No active weekly tests.</div>
             ) : (
               <div className="premium-list">
-                {schoolTests.map((test) => (
+                {weeklyTests.map((test) => (
                   <div key={test.id} className="premium-item">
                     <div>
                       <strong>{test.title}</strong>
@@ -423,21 +423,59 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             )}
           </Card>
 
-          <Card title="Upcoming Test Calendar" subtitle="Plan your revision" variant="glass">
+          <Card title="Monthly Assessments" subtitle="Monthly milestone tests" variant="glass">
+            {monthlyTests.length === 0 ? (
+              <div className="empty-state">No active monthly tests.</div>
+            ) : (
+              <div className="premium-list">
+                {monthlyTests.map((test) => (
+                  <div key={test.id} className="premium-item">
+                    <div>
+                      <strong>{test.title}</strong>
+                      <div className="muted">
+                        {test.subject} • {test._count.questions} Qs • ends {formatShortDate(test.endTime)}
+                      </div>
+                    </div>
+                    <Link to={`/student/tests/${test.id}/take`}>
+                      <Button size="sm">Attempt</Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div className="two-col">
+          <Card title="Upcoming Assessments" subtitle="Plan your revision" variant="glass">
             {upcomingSchoolTests.length === 0 ? (
-              <div className="empty-state">No upcoming tests.</div>
+              <div className="empty-state">No upcoming assessments.</div>
             ) : (
               <ul className="plain-list">
                 {upcomingSchoolTests.map((test) => (
                   <li key={test.id}>
                     <strong>{test.title}</strong>
                     <div className="muted">
-                      {test.subject} • {formatShortDate(test.startTime)} • {test.durationMinutes} min
+                      {test.subject} • {test.category.replace('_', ' ')} • {formatShortDate(test.startTime)}
                     </div>
                   </li>
                 ))}
               </ul>
             )}
+          </Card>
+
+          <Card title="Readiness Snapshot" subtitle="Quick indicators before you start" variant="glass">
+            <div className="stats-grid">
+              <StatCard label="Ready Now" value={weeklyTests.length + monthlyTests.length} icon={<Clock3 size={18} />} />
+              <StatCard label="Upcoming" value={upcomingSchoolTests.length} icon={<CalendarClock size={18} />} tone="warning" />
+              <StatCard
+                label="Avg. Performance"
+                value={`${averageScore.toFixed(1)}%`}
+                icon={<Sparkles size={18} />}
+                tone="success"
+              />
+              <StatCard label="Streak Points" value={Math.max(1, completedTests.length)} icon={<Flame size={18} />} />
+            </div>
           </Card>
         </div>
 
