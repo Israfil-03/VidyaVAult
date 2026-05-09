@@ -76,27 +76,26 @@ export const HomeworkStatusModal = ({ testId, testTitle, onClose }: HomeworkStat
 
   return (
     <div style={{
-      position: 'fixed',
+      position: 'absolute',
       top: 0,
       left: 0,
-      width: '100vw',
-      height: '100vh',
-      background: 'rgba(0, 0, 0, 0.4)',
-      backdropFilter: 'blur(8px)',
+      width: '100%',
+      height: '100%',
+      background: 'rgba(255, 255, 255, 0.2)',
+      backdropFilter: 'blur(12px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
+      zIndex: 50,
+      borderRadius: '24px',
+      animation: 'fadeIn 0.2s ease-out'
     }}>
       <div style={{
-        width: '100%',
-        maxWidth: '900px',
-        maxHeight: '90vh',
-        overflow: 'hidden',
+        width: '95%',
+        height: '95%',
         display: 'flex',
         flexDirection: 'column',
-        animation: 'scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        animation: 'slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
         <Card 
           title={`Submission Status: ${testTitle}`} 
@@ -108,7 +107,7 @@ export const HomeworkStatusModal = ({ testId, testTitle, onClose }: HomeworkStat
             </Button>
           }
         >
-          <div style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: '4px' }} className="stack-gap">
+          <div style={{ height: 'calc(100% - 20px)', overflowY: 'auto', paddingRight: '4px' }} className="stack-gap">
             {loading && <div className="empty-state">Loading submission data...</div>}
             {error && <div className="error-text">{error}</div>}
             
