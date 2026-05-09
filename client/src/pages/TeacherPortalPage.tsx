@@ -248,7 +248,20 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
       })
       await loadPortalData()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create student')
+      if (err instanceof Error) {
+        try {
+          const parsed = JSON.parse(err.message)
+          if (parsed.error && parsed.error.message) {
+            setError(parsed.error.message)
+            return
+          }
+        } catch {
+          // ignore parse error, use fallback
+        }
+        setError(err.message)
+      } else {
+        setError('Failed to create student')
+      }
     }
   }
 
@@ -271,7 +284,20 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
       })
       await loadPortalData()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create batch')
+      if (err instanceof Error) {
+        try {
+          const parsed = JSON.parse(err.message)
+          if (parsed.error && parsed.error.message) {
+            setError(parsed.error.message)
+            return
+          }
+        } catch {
+          // ignore
+        }
+        setError(err.message)
+      } else {
+        setError('Failed to create batch')
+      }
     }
   }
 
@@ -392,12 +418,15 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
             </label>
             <label>
               Temporary Password
-              <input
+               <input
                 type="password"
                 value={studentForm.password}
                 onChange={(event) => setStudentForm((prev) => ({ ...prev, password: event.target.value }))}
                 required
               />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-soft)', marginTop: '4px', display: 'block' }}>
+                Must be at least 8 characters
+              </span>
             </label>
             <div className="inline-grid">
               <label>

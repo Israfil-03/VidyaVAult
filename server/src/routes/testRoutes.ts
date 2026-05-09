@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import {
   createTest,
+  getDetailedSubmissions,
   getTestAnalytics,
   getTestById,
   listTests,
@@ -20,3 +21,4 @@ testRouter.get('/:testId', asyncHandler(getTestById))
 testRouter.patch('/:testId', asyncHandler(updateTest))
 testRouter.post('/:testId/assignments', asyncHandler(replaceAssignments))
 testRouter.get('/:testId/analytics', asyncHandler(getTestAnalytics))
+testRouter.get('/:testId/submissions', asyncHandler(getDetailedSubmissions))

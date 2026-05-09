@@ -33,7 +33,8 @@ const questionSchema = z.object({
         isCorrect: z.boolean(),
       }),
     )
-    .length(4),
+    .min(2)
+    .max(10),
 })
 
 const assignmentSchema = z
@@ -390,10 +391,112 @@ export const getTestAnalytics = async (req: Request, res: Response): Promise<voi
         })),
       questionWise: [...questionAggregation.entries()].map(([questionId, stat]) => ({
         questionId,
-        averageMarks: Number((stat.marksTotal / stat.attempts).toFixed(2)),
+        averageMarks: stat.attempts === 0 ? 0 : Number((stat.marksTotal / stat.attempts).toFixed(2)),
         correctCount: stat.correctCount,
         attempts: stat.attempts,
       })),
     },
+  })
+}
+
+export const getDetailedSubmissions = async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    throw new ApiError('Unauthorized', 401)
+  }
+
+  const { testId } = z.object({ testId: z.string().min(1) }).parse(req.params)
+  await ensureTeacherOwnsTest(prisma, req.user, testId)
+
+  const test = await prisma.test.findUnique({
+    where: { id: testId },
+    include: {
+      assignments: {
+        include: {
+          student: { include: { user: true } },
+          batch: {
+            include: {
+              batchStudents: {
+                include: {
+                  student: { include: { user: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+      submissions: {
+        include: {
+          student: { include: { user: true } },
+          answers: {
+            include: {
+              question: true,
+              selectedOption: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  if (!test) {
+    throw new ApiError('Test not found', 404)
+  }
+
+  // Flatten all assigned students
+  const assignedStudentMap = new Map<string, { id: string; username: string; email: string | null }>()
+
+  for (const assignment of test.assignments) {
+    if (assignment.student) {
+      assignedStudentMap.set(assignment.student.id, {
+        id: assignment.student.id,
+        username: assignment.student.user.username,
+        email: assignment.student.user.email,
+      })
+    }
+    if (assignment.batch) {
+      for (const bs of assignment.batch.batchStudents) {
+        assignedStudentMap.set(bs.student.id, {
+          id: bs.student.id,
+          username: bs.student.user.username,
+          email: bs.student.user.email,
+        })
+      }
+    }
+  }
+
+  const submissions = test.submissions.map((s) => ({
+    studentId: s.studentId,
+    username: s.student.user.username,
+    status: s.submittedAt ? 'SUBMITTED' : 'IN_PROGRESS',
+    submittedAt: s.submittedAt,
+    score: s.scoreTotal,
+    maxScore: s.maxScore,
+    answers: s.answers.map((a) => ({
+      questionText: a.question.text,
+      selectedOption: a.selectedOption?.text,
+      isCorrect: a.isCorrect,
+      marks: a.marksObtained,
+    })),
+  }))
+
+  const submissionMap = new Map(submissions.map((s) => [s.studentId, s]))
+
+  const report = Array.from(assignedStudentMap.values()).map((student) => {
+    const submission = submissionMap.get(student.id)
+    return {
+      studentId: student.id,
+      username: student.username,
+      email: student.email,
+      status: submission ? submission.status : 'NOT_STARTED',
+      submittedAt: submission?.submittedAt || null,
+      score: submission?.score || 0,
+      maxScore: submission?.maxScore || 0,
+      answers: submission?.answers || [],
+    }
+  })
+
+  res.json({
+    success: true,
+    data: report,
   })
 }

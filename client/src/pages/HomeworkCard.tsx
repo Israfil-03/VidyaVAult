@@ -1,7 +1,8 @@
-import { FileText, Search } from 'lucide-react'
+import { FileText, Search, Eye } from 'lucide-react'
 import { useState, useMemo } from 'react'
 
 import { Card } from '../components/Card'
+import { HomeworkStatusModal } from '../components/HomeworkStatusModal'
 
 interface TestRow {
   id: string
@@ -29,6 +30,7 @@ type FilterStatus = 'all' | 'upcoming' | 'active' | 'closed'
 export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: HomeworkCardProps) => {
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTest, setSelectedTest] = useState<{ id: string; title: string } | null>(null)
 
   const filteredTests = useMemo(() => {
     return tests.filter((test) => {
@@ -133,6 +135,7 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
                   <th style={{ textAlign: 'center' }}>Assignments</th>
                   <th style={{ textAlign: 'center' }}>Submissions</th>
                   <th style={{ textAlign: 'center' }}>Due</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +164,27 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
                         {formatShortDate(test.endTime)}
                       </span>
                     </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        onClick={() => setSelectedTest({ id: test.id, title: test.title })}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--color-primary-600)',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: '600',
+                          fontSize: '0.85rem'
+                        }}
+                        title="View Submission Status"
+                      >
+                        <Eye size={18} />
+                        Status
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -172,6 +196,13 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
           Showing {filteredTests.length} of {tests.length} homework assignments
         </div>
       </div>
+      {selectedTest && (
+        <HomeworkStatusModal 
+          testId={selectedTest.id} 
+          testTitle={selectedTest.title} 
+          onClose={() => setSelectedTest(null)} 
+        />
+      )}
     </Card>
   )
 }
