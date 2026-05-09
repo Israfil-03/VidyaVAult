@@ -14,9 +14,9 @@ model User {
   passwordHash        String
   role                UserRole
   forcePasswordChange Boolean         @default(false)
-  isTestAccount       Boolean         @default(false)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+  isTestAccount       Boolean         @default(false)
   studentProfile      StudentProfile?
   teacherProfile      TeacherProfile?
 }
@@ -41,25 +41,25 @@ model StudentProfile {
   medium            Medium
   classLevel        String
   rollNo            String?
-  phone             String?
-  overallSerial     Int?             @unique
-  shortId           String?          @unique
-  longId            String?          @unique
-  batchNo           String?
-  batchSerialNo     Int?
-  year              Int?
-  subjects          Subject[]
-  isTestAccount     Boolean          @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+  lastHomeworkDate  DateTime?
+  streakCount       Int              @default(0)
+  batchNo           String?
+  batchSerialNo     Int?
+  isTestAccount     Boolean          @default(false)
+  longId            String?          @unique
+  overallSerial     Int?             @unique
+  phone             String?
+  shortId           String?          @unique
+  subjects          Subject[]
+  year              Int?
   batchLinks        BatchStudent[]
   badges            StudentBadge[]
   user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   submissions       Submission[]
   teacherLinks      TeacherStudent[]
   directAssignments TestAssignment[] @relation("StudentAssignments")
-  streakCount       Int              @default(0)
-  lastHomeworkDate  DateTime?
 }
 
 model RegistrationRequest {
@@ -75,12 +75,6 @@ model RegistrationRequest {
   updatedAt  DateTime      @updatedAt
 
   @@index([phone, status])
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  DECLINED
 }
 
 model TeacherStudent {
@@ -133,11 +127,11 @@ model Test {
   endTime         DateTime
   durationMinutes Int
   status          TestStatus       @default(DRAFT)
-  category        TestCategory     @default(WEEKLY_TEST)
-  isDaily         Boolean          @default(false)
   creationMode    TestCreationMode @default(MANUAL)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  category        TestCategory     @default(WEEKLY_TEST)
+  isDaily         Boolean          @default(false)
   questions       Question[]
   submissions     Submission[]
   teacher         TeacherProfile   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -269,11 +263,17 @@ model StudentBadge {
   @@index([studentId, type, periodStart, periodEnd])
 }
 
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
 enum UserRole {
   SUPERADMIN
-  INSTITUTE_ADMIN
   TEACHER_ADMIN
   STUDENT
+  INSTITUTE_ADMIN
 }
 
 enum Board {
@@ -288,10 +288,10 @@ enum Medium {
 }
 
 enum Subject {
-  PHYSICS
   CHEMISTRY
   BIOLOGY
   MATHEMATICS
+  PHYSICS
 }
 
 enum TestStatus {
