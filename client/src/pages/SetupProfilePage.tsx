@@ -27,7 +27,6 @@ const itemVariants: Variants = {
 }
 
 export const SetupProfilePage = () => {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [shortId, setShortId] = useState(searchParams.get('id') || '')
   const [password, setPassword] = useState('')

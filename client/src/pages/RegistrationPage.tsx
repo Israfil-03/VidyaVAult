@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { User, Phone, BookOpen, Layers, Globe, ArrowRight, Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
+import { User, Phone, Layers, ArrowRight, Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
 
 import { apiRequest } from '../services/api'
 import './Login.css'
@@ -27,7 +27,6 @@ const itemVariants: Variants = {
 }
 
 export const RegistrationPage = () => {
-  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',

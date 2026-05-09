@@ -74,15 +74,6 @@ export const TeacherDashboard = () => {
   >([])
   const [error, setError] = useState<string | null>(null)
 
-  const [studentForm, setStudentForm] = useState({
-    email: '',
-    username: '',
-    password: '',
-    board: 'WEST_BENGAL',
-    medium: 'ENGLISH',
-    classLevel: '10',
-    rollNo: '',
-  })
   const [batchForm, setBatchForm] = useState({
     name: '',
     medium: 'ENGLISH',
@@ -151,36 +142,6 @@ export const TeacherDashboard = () => {
     void loadDashboard()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
-
-  const createStudent = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!token) {
-      return
-    }
-    try {
-      await apiRequest('/auth/register-student', {
-        method: 'POST',
-        token,
-        body: JSON.stringify({
-          ...studentForm,
-          rollNo: studentForm.rollNo || undefined,
-          email: studentForm.email || undefined,
-        }),
-      })
-      setStudentForm({
-        email: '',
-        username: '',
-        password: '',
-        board: 'WEST_BENGAL',
-        medium: 'ENGLISH',
-        classLevel: '10',
-        rollNo: '',
-      })
-      await loadDashboard()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create student')
-    }
-  }
 
   const createBatch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

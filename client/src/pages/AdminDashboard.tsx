@@ -1,5 +1,6 @@
-import { Check, X, User, Phone, BookOpen, Layers, Globe, Calendar, Loader2, Search, UserCheck } from 'lucide-react'
+import { Check, X, User, Phone, UserCheck, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
@@ -35,7 +36,6 @@ export const AdminDashboard = () => {
   const [requests, setRequests] = useState<RegistrationRequest[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   
   // Approval state
   const [approvingId, setApprovingId] = useState<string | null>(null)
@@ -56,7 +56,7 @@ export const AdminDashboard = () => {
       setRequests(reqData)
       setTeachers(teacherData)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data')
+      console.error('Failed to load data:', err)
     } finally {
       setLoading(false)
     }
@@ -164,7 +164,6 @@ export const AdminDashboard = () => {
                             variant="primary" 
                             size="sm" 
                             onClick={() => setApprovingId(req.id)}
-                            icon={<Check size={14} />}
                           >
                             Approve
                           </Button>
@@ -173,7 +172,6 @@ export const AdminDashboard = () => {
                             size="sm" 
                             className="btn-error-ghost"
                             onClick={() => handleDecline(req.id)}
-                            icon={<X size={14} />}
                           >
                             Decline
                           </Button>
