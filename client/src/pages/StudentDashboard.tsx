@@ -329,15 +329,40 @@ export const StudentDashboard = () => {
         </div>
 
         <motion.div variants={itemVariants} style={{ marginTop: '24px' }}>
-          <Card title="Achievement Guide" variant="glass">
-            <div className="inline-actions" style={{ alignItems: 'center' }}>
-              <Trophy size={24} style={{ color: 'var(--color-warning-500)' }} />
-              <div style={{ marginLeft: '12px' }}>
-                <p style={{ fontWeight: 600, margin: 0 }}>Climb the rankings!</p>
-                <p className="muted" style={{ margin: 0 }}>Focus on consistency: attempt active tests on time and review explanations to boost your score.</p>
+          <div className="two-col">
+            <Card title="My Registration Profile" variant="glass">
+              <div className="space-y-4">
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                  <span className="muted">Short ID (Username)</span>
+                  <span className="font-mono text-primary font-bold">{(user as any)?.shortId || user?.username}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                  <span className="muted">Permanent Long ID</span>
+                  <span className="font-mono text-xs">{(user as any)?.longId || 'N/A'}</span>
+                </div>
+                <div className="flex flex-col gap-2 pt-2">
+                  <span className="muted text-xs uppercase tracking-wider font-bold">Enrolled Subjects</span>
+                  <div className="flex flex-wrap gap-2">
+                    {(user as any)?.subjects?.map((s: string) => (
+                      <span key={s} className="bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full text-xs font-bold">
+                        {s}
+                      </span>
+                    )) || <span className="muted text-xs">General enrollment</span>}
+                  </div>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+
+            <Card title="Achievement Guide" variant="glass">
+              <div className="inline-actions" style={{ alignItems: 'center' }}>
+                <Trophy size={24} style={{ color: 'var(--color-warning-500)' }} />
+                <div style={{ marginLeft: '12px' }}>
+                  <p style={{ fontWeight: 600, margin: 0 }}>Climb the rankings!</p>
+                  <p className="muted" style={{ margin: 0 }}>Focus on consistency: attempt active tests on time and review explanations to boost your score.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </motion.div>
       </motion.div>
     </DashboardLayout>

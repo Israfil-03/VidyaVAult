@@ -12,6 +12,12 @@ const resetTeacherPasswordSchema = z.object({
   newPassword: z.string().min(8),
 })
 
+const createAdminSchema = z.object({
+  email: z.string().email().optional(),
+  username: z.string().min(3),
+  password: z.string().min(8),
+})
+
 const updateRoleSchema = z.object({
   role: z.nativeEnum(UserRole),
   subject: z.nativeEnum(Subject).optional(),
@@ -97,6 +103,55 @@ export const resetTeacherPassword = async (req: Request, res: Response): Promise
   res.json({
     success: true,
     data: { message: 'Teacher password reset successfully' },
+  })
+}
+
+export const createAdmin = async (req: Request, res: Response): Promise<void> => {
+  const body = createAdminSchema.parse(req.body)
+
+  const passwordHash = await hashPassword(body.password)
+
+  const user = await prisma.user.create({
+    data: {
+      email: body.email,
+      username: body.username,
+      passwordHash,
+      role: UserRole.INSTITUTE_ADMIN,
+    },
+  })
+
+  res.status(201).json({
+    success: true,
+    data: {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: userRoleToTokenRole(user.role),
+      },
+    },
+  })
+}
+
+export const listAdmins = async (_req: Request, res: Response): Promise<void> => {
+  const admins = await prisma.user.findMany({
+    where: { role: UserRole.INSTITUTE_ADMIN },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      role: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  res.json({
+    success: true,
+    data: admins.map((admin) => ({
+      ...admin,
+      role: userRoleToTokenRole(admin.role),
+    })),
   })
 }
 

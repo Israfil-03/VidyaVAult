@@ -3,6 +3,7 @@ import { Router } from 'express'
 import { adminRouter } from './adminRoutes.js'
 import { aiRouter } from './aiRoutes.js'
 import { authRouter } from './authRoutes.js'
+import { instituteAdminRouter } from './instituteAdminRoutes.js'
 import { leaderboardRouter } from './leaderboardRoutes.js'
 import { rewardRouter } from './rewardRoutes.js'
 import { studentRouter } from './studentRoutes.js'
@@ -25,4 +26,5 @@ apiRouter.use('/tests', testRouter)
 apiRouter.use('/student', studentRouter)
 apiRouter.use('/rewards', rewardRouter)
 apiRouter.use('/leaderboards', leaderboardRouter)
+apiRouter.use('/institute-admin', instituteAdminRouter)
 apiRouter.use('/ai', aiRouter)

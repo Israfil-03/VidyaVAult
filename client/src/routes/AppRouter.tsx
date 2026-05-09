@@ -12,9 +12,13 @@ import { SuperadminDashboard } from '../pages/SuperadminDashboard'
 import { TakeTestPage } from '../pages/TakeTestPage'
 import { TeacherPortalPage } from '../pages/TeacherPortalPage'
 import { TeacherTestWizardPage } from '../pages/TeacherTestWizardPage'
+import { RegistrationPage } from '../pages/RegistrationPage'
+import { SetupProfilePage } from '../pages/SetupProfilePage'
+import { AdminDashboard } from '../pages/AdminDashboard'
 
 const homePathByRole = {
   superadmin: '/superadmin',
+  institute_admin: '/institute-admin',
   teacher_admin: '/teacher/homework',
   student: '/student/homework',
 } as const
@@ -33,12 +37,23 @@ export const AppRouter = () => {
         element={<Navigate to={user ? homePathByRole[user.role] : '/login'} replace />}
       />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegistrationPage />} />
+      <Route path="/setup-profile" element={<SetupProfilePage />} />
 
       <Route
         path="/superadmin"
         element={
           <ProtectedRoute roles={['superadmin']}>
             <SuperadminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/institute-admin"
+        element={
+          <ProtectedRoute roles={['institute_admin']}>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />

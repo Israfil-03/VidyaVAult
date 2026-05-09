@@ -42,6 +42,19 @@ const resetPasswordSchema = z.object({
   newPassword: z.string().min(8),
 })
 
+const registrationRequestSchema = z.object({
+  fullName: z.string().min(1),
+  subjects: z.array(z.nativeEnum(Subject)).min(1),
+  classLevel: z.string().min(1),
+  medium: z.nativeEnum(Medium),
+  phone: z.string().min(10),
+})
+
+const setupProfileSchema = z.object({
+  shortId: z.string().min(1),
+  password: z.string().min(8),
+})
+
 const serializeUser = (
   user: {
     id: string
@@ -50,7 +63,12 @@ const serializeUser = (
     role: UserRole
     forcePasswordChange: boolean
     teacherProfile?: { id: string } | null
-    studentProfile?: { id: string } | null
+    studentProfile?: { 
+      id: string
+      shortId: string | null
+      longId: string | null
+      subjects: Subject[]
+    } | null
   },
 ) => ({
   id: user.id,
@@ -59,6 +77,9 @@ const serializeUser = (
   role: userRoleToTokenRole(user.role),
   teacherId: user.teacherProfile?.id,
   studentId: user.studentProfile?.id,
+  shortId: user.studentProfile?.shortId,
+  longId: user.studentProfile?.longId,
+  subjects: user.studentProfile?.subjects,
   forcePasswordChange: user.forcePasswordChange,
 })
 
@@ -71,7 +92,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     },
     include: {
       teacherProfile: { select: { id: true } },
-      studentProfile: { select: { id: true } },
+      studentProfile: { 
+        select: { 
+          id: true,
+          shortId: true,
+          longId: true,
+          subjects: true
+        } 
+      },
     },
   })
 
@@ -113,7 +141,14 @@ export const me = async (req: Request, res: Response): Promise<void> => {
     where: { id: req.user.userId },
     include: {
       teacherProfile: { select: { id: true } },
-      studentProfile: { select: { id: true } },
+      studentProfile: { 
+        select: { 
+          id: true,
+          shortId: true,
+          longId: true,
+          subjects: true
+        } 
+      },
     },
   })
 
@@ -267,10 +302,6 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 }
 
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
-  if (!req.user) {
-    throw new ApiError('Unauthorized', 401)
-  }
-
   const { studentId, newPassword } = resetPasswordSchema.parse(req.body)
 
   const student = await prisma.studentProfile.findUnique({
@@ -285,7 +316,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     throw new ApiError('Student not found', 404)
   }
 
-  if (req.user.role === 'teacher_admin') {
+  if (req.user?.role === 'teacher_admin') {
     const ownsStudent = student.teacherLinks.some((link) => link.teacherId === req.user!.teacherId)
     if (!ownsStudent) {
       throw new ApiError('You cannot reset password for this student', 403)
@@ -305,5 +336,69 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   res.json({
     success: true,
     data: { message: 'Student password reset successfully' },
+  })
+}
+
+export const submitRegistration = async (req: Request, res: Response): Promise<void> => {
+  const body = registrationRequestSchema.parse(req.body)
+
+  // Check if a pending or approved request exists for this phone
+  const existingRequest = await prisma.registrationRequest.findFirst({
+    where: {
+      phone: body.phone,
+      status: { in: ['PENDING', 'APPROVED'] },
+    },
+  })
+
+  if (existingRequest) {
+    throw new ApiError('A registration request for this phone number already exists.', 400)
+  }
+
+  const request = await prisma.registrationRequest.create({
+    data: {
+      fullName: body.fullName,
+      subjects: body.subjects,
+      classLevel: body.classLevel,
+      medium: body.medium,
+      phone: body.phone,
+      year: new Date().getFullYear(),
+      status: 'PENDING',
+    },
+  })
+
+  res.status(201).json({
+    success: true,
+    data: request,
+  })
+}
+
+export const setupStudentProfile = async (req: Request, res: Response): Promise<void> => {
+  const { shortId, password } = setupProfileSchema.parse(req.body)
+
+  const user = await prisma.user.findFirst({
+    where: {
+      username: shortId,
+      passwordHash: 'PENDING_SETUP',
+      role: UserRole.STUDENT,
+    },
+  })
+
+  if (!user) {
+    throw new ApiError('Invalid ID or profile already set up.', 400)
+  }
+
+  const passwordHash = await hashPassword(password)
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      forcePasswordChange: false,
+    },
+  })
+
+  res.json({
+    success: true,
+    data: { message: 'Profile created successfully! You can now log in.' },
   })
 }

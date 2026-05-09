@@ -282,76 +282,6 @@ export const TeacherDashboard = () => {
         </div>
 
         <div className="two-col">
-          <Card title="Create Student Account">
-            <form className="form-grid" onSubmit={createStudent}>
-              <label>
-                Username
-                <input
-                  value={studentForm.username}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, username: event.target.value }))}
-                  required
-                />
-              </label>
-              <label>
-                Email (optional)
-                <input
-                  value={studentForm.email}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, email: event.target.value }))}
-                />
-              </label>
-              <label>
-                Temporary Password
-                <input
-                  type="password"
-                  value={studentForm.password}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, password: event.target.value }))}
-                  required
-                />
-              </label>
-              <div className="inline-grid">
-                <label>
-                  Board
-                  <select
-                    value={studentForm.board}
-                    onChange={(event) => setStudentForm((prev) => ({ ...prev, board: event.target.value }))}
-                  >
-                    <option value="WEST_BENGAL">West Bengal</option>
-                    <option value="ICSE">ICSE</option>
-                    <option value="CBSE">CBSE</option>
-                  </select>
-                </label>
-                <label>
-                  Medium
-                  <select
-                    value={studentForm.medium}
-                    onChange={(event) => setStudentForm((prev) => ({ ...prev, medium: event.target.value }))}
-                  >
-                    <option value="ENGLISH">English</option>
-                    <option value="BENGALI">Bengali</option>
-                  </select>
-                </label>
-              </div>
-              <div className="inline-grid">
-                <label>
-                  Class
-                  <input
-                    value={studentForm.classLevel}
-                    onChange={(event) => setStudentForm((prev) => ({ ...prev, classLevel: event.target.value }))}
-                    required
-                  />
-                </label>
-                <label>
-                  Roll No
-                  <input
-                    value={studentForm.rollNo}
-                    onChange={(event) => setStudentForm((prev) => ({ ...prev, rollNo: event.target.value }))}
-                  />
-                </label>
-              </div>
-              <Button type="submit">Create Student</Button>
-            </form>
-          </Card>
-
           <Card title="Create Batch">
             <form className="form-grid" onSubmit={createBatch}>
               <label>
@@ -396,6 +326,19 @@ export const TeacherDashboard = () => {
               </label>
               <Button type="submit">Create Batch</Button>
             </form>
+          </Card>
+
+          <Card title="Batch Overview" subtitle="Quick stats on your teaching groups">
+             <div className="p-4 space-y-4">
+                <div className="flex justify-between items-center">
+                   <span className="muted">Total Batches</span>
+                   <span className="font-bold">{batches.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                   <span className="muted">Students in Batches</span>
+                   <span className="font-bold">{batches.reduce((acc, b) => acc + (b._count?.batchStudents || 0), 0)}</span>
+                </div>
+             </div>
           </Card>
         </div>
 

@@ -1,6 +1,6 @@
 import type { UserRole } from '@prisma/client'
 
-export type TokenRole = 'superadmin' | 'teacher_admin' | 'student'
+export type TokenRole = 'superadmin' | 'institute_admin' | 'teacher_admin' | 'student'
 
 export interface AuthTokenPayload {
   userId: string
@@ -15,6 +15,10 @@ export interface AuthTokenPayload {
 export const userRoleToTokenRole = (role: UserRole): TokenRole => {
   if (role === 'SUPERADMIN') {
     return 'superadmin'
+  }
+
+  if (role === 'INSTITUTE_ADMIN') {
+    return 'institute_admin'
   }
 
   if (role === 'TEACHER_ADMIN') {

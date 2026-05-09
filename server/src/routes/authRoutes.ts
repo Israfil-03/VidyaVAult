@@ -4,9 +4,10 @@ import {
   changePassword,
   login,
   me,
-  registerStudent,
   registerTeacher,
   resetPassword,
+  setupStudentProfile,
+  submitRegistration,
 } from '../controllers/authController.js'
 import { authMiddleware, requireRole } from '../middleware/auth.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
@@ -39,3 +40,6 @@ authRouter.post(
   requireRole('superadmin', 'teacher_admin'),
   asyncHandler(resetPassword),
 )
+
+authRouter.post('/register', asyncHandler(submitRegistration))
+authRouter.post('/setup-profile', asyncHandler(setupStudentProfile))

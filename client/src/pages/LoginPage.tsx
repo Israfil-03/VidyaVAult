@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import { UserCircle, Lock, Mail, ArrowRight, Loader2, Sparkles } from 'lucide-react'
 
@@ -191,6 +191,10 @@ export const LoginPage = () => {
               </>
             )}
           </motion.button>
+
+          <motion.p className="text-center mt-6 text-sm text-muted" variants={itemVariants}>
+            Don't have an account? <Link to="/register" className="text-primary hover:underline">Apply here</Link>
+          </motion.p>
         </motion.form>
       </motion.div>
     </div>

@@ -14,6 +14,7 @@ model User {
   passwordHash        String
   role                UserRole
   forcePasswordChange Boolean         @default(false)
+  isTestAccount       Boolean         @default(false)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   studentProfile      StudentProfile?
@@ -40,6 +41,15 @@ model StudentProfile {
   medium            Medium
   classLevel        String
   rollNo            String?
+  phone             String?
+  overallSerial     Int?             @unique
+  shortId           String?          @unique
+  longId            String?          @unique
+  batchNo           String?
+  batchSerialNo     Int?
+  year              Int?
+  subjects          Subject[]
+  isTestAccount     Boolean          @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   batchLinks        BatchStudent[]
@@ -50,6 +60,27 @@ model StudentProfile {
   directAssignments TestAssignment[] @relation("StudentAssignments")
   streakCount       Int              @default(0)
   lastHomeworkDate  DateTime?
+}
+
+model RegistrationRequest {
+  id         String        @id @default(cuid())
+  fullName   String
+  subjects   Subject[]
+  classLevel String
+  medium     Medium
+  phone      String
+  year       Int
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([phone, status])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
 }
 
 model TeacherStudent {
@@ -240,6 +271,7 @@ model StudentBadge {
 
 enum UserRole {
   SUPERADMIN
+  INSTITUTE_ADMIN
   TEACHER_ADMIN
   STUDENT
 }
@@ -256,6 +288,7 @@ enum Medium {
 }
 
 enum Subject {
+  PHYSICS
   CHEMISTRY
   BIOLOGY
   MATHEMATICS
@@ -270,6 +303,8 @@ enum TestStatus {
 enum TestCategory {
   HOMEWORK
   PRACTICE
+  TEST
+  UNIT_TEST
   WEEKLY_TEST
   MONTHLY_TEST
 }

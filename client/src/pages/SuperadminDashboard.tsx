@@ -75,6 +75,14 @@ interface RewardCycleRow {
   }>
 }
 
+interface AdminRow {
+  id: string
+  email: string | null
+  username: string
+  role: string
+  createdAt: string
+}
+
 const navigation = [{ label: 'Dashboard', to: '/superadmin', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> }]
 
 export const SuperadminDashboard = () => {
@@ -100,8 +108,17 @@ export const SuperadminDashboard = () => {
   const [teacherCreating, setTeacherCreating] = useState(false)
   const [teacherError, setTeacherError] = useState<string | null>(null)
   const [teacherSuccess, setTeacherSuccess] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'teachers' | 'students'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'teachers' | 'students' | 'admins'>('overview')
   const [userSearch, setUserSearch] = useState('')
+  const [admins, setAdmins] = useState<AdminRow[]>([])
+  const [adminForm, setAdminForm] = useState({
+    email: '',
+    username: '',
+    password: '',
+  })
+  const [adminCreating, setAdminCreating] = useState(false)
+  const [adminError, setAdminError] = useState<string | null>(null)
+  const [adminSuccess, setAdminSuccess] = useState<string | null>(null)
 
   const loadData = async () => {
     if (!token) {
@@ -110,16 +127,18 @@ export const SuperadminDashboard = () => {
     setLoading(true)
     setError(null)
     try {
-      const [statsData, teacherData, studentData, cycleData] = await Promise.all([
+      const [statsData, teacherData, studentData, cycleData, adminData] = await Promise.all([
         apiRequest<Stats>('/admin/stats', { method: 'GET', token }),
         apiRequest<TeacherRow[]>('/admin/teachers', { method: 'GET', token }),
         apiRequest<StudentRow[]>('/admin/students', { method: 'GET', token }),
         apiRequest<RewardCycleRow[]>('/rewards/cycles', { method: 'GET', token }),
+        apiRequest<AdminRow[]>('/admin/admins', { method: 'GET', token }),
       ])
       setStats(statsData)
       setTeachers(teacherData)
       setStudents(studentData)
       setRewardCycles(cycleData)
+      setAdmins(adminData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load superadmin data')
     } finally {
@@ -200,6 +219,29 @@ export const SuperadminDashboard = () => {
     }
   }
 
+  const handleAdminCreate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!token) return
+    setAdminError(null)
+    setAdminSuccess(null)
+    setAdminCreating(true)
+    try {
+      await apiRequest('/admin/admins', {
+        method: 'POST',
+        token,
+        body: JSON.stringify(adminForm),
+      })
+      setAdminForm({ email: '', username: '', password: '' })
+      setAdminSuccess(`Admin ${adminForm.username} created successfully!`)
+      await loadData()
+      setTimeout(() => setAdminSuccess(null), 5000)
+    } catch (err) {
+      setAdminError(err instanceof Error ? err.message : 'Failed to create admin')
+    } finally {
+      setAdminCreating(false)
+    }
+  }
+
   const handleResetTeacherPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!token) {
@@ -271,6 +313,12 @@ export const SuperadminDashboard = () => {
               onClick={() => setActiveTab('students')}
             >
               Students
+            </button>
+            <button 
+              className={`tab-btn pb-2 px-4 transition-colors ${activeTab === 'admins' ? 'active border-b-2 border-primary' : 'text-muted hover:text-white'}`}
+              onClick={() => setActiveTab('admins')}
+            >
+              Admins
             </button>
           </div>
           
@@ -429,6 +477,54 @@ export const SuperadminDashboard = () => {
                     </form>
                   </Card>
                 </div>
+
+                <div className="two-col">
+                   <Card title="Quick Register: Institute Admin">
+                    <form className="form-grid" onSubmit={handleAdminCreate}>
+                      {adminError && <p className="error-text text-xs">{adminError}</p>}
+                      {adminSuccess && <p className="success-text text-xs">{adminSuccess}</p>}
+                      
+                      <div className="form-row flex gap-4">
+                        <label className="flex-1">
+                          Email (Optional)
+                          <input
+                            value={adminForm.email}
+                            onChange={(e) => setAdminForm(prev => ({ ...prev, email: e.target.value }))}
+                            disabled={adminCreating}
+                            className="w-full"
+                          />
+                        </label>
+                        <label className="flex-1">
+                          Username
+                          <input
+                            value={adminForm.username}
+                            onChange={(e) => setAdminForm(prev => ({ ...prev, username: e.target.value }))}
+                            required
+                            disabled={adminCreating}
+                            className="w-full"
+                          />
+                        </label>
+                      </div>
+                      <div className="form-row mt-2">
+                        <label className="w-full">
+                          Password
+                          <input
+                            type="password"
+                            value={adminForm.password}
+                            onChange={(e) => setAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                            required
+                            disabled={adminCreating}
+                            minLength={8}
+                            className="w-full"
+                          />
+                        </label>
+                      </div>
+                      <Button type="submit" disabled={adminCreating} className="mt-4 w-full">
+                        {adminCreating ? 'Provisioning...' : 'Provision Admin Account'}
+                      </Button>
+                    </form>
+                  </Card>
+                </div>
               </div>
             )}
 
@@ -559,6 +655,55 @@ export const SuperadminDashboard = () => {
                       {filteredStudents.length === 0 && (
                         <tr>
                           <td colSpan={4} className="text-center py-8 muted">No matching student accounts found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
+            {activeTab === 'admins' && (
+              <Card title="Institute Admin Management" icon={<UserCog size={18} />}>
+                <div className="table-wrap">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th>Account</th>
+                        <th>Created At</th>
+                        <th className="text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {admins.map((admin) => (
+                        <tr key={admin.id}>
+                          <td>
+                            <div className="flex flex-col">
+                              <span className="font-bold">{admin.username}</span>
+                              <span className="text-xs muted">{admin.email || 'No email provided'}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="text-xs muted">{new Date(admin.createdAt).toLocaleDateString()}</span>
+                          </td>
+                          <td>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleDeleteUser(admin.id, admin.username)}
+                                className="btn-error-ghost"
+                                title="Delete Account"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {admins.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="text-center py-8 muted">No institute admin accounts found.</td>
                         </tr>
                       )}
                     </tbody>
