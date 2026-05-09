@@ -53,7 +53,7 @@ export const getSubjectBatchNo = (subjects: Subject[]): string => {
 }
 
 /**
- * Long ID Formula: [Overall Serial 2 digits] + [Subject Code 3 chars] + [Class 2 digits] + [Medium 1 char] + [Batch No 3 digits] + [Year 4 digits as 0026] + [Batch Serial No 6 digits]
+ * Long ID Formula: [Overall Serial 2 digits] + [Subject Code 3 chars] + [Class 2 digits] + [Medium 1 char] + [Batch No 3 digits] + [Year 2 digits] + [Batch Serial No 6 digits]
  */
 export const generateLongId = (params: {
   overallSerial: number
@@ -69,7 +69,7 @@ export const generateLongId = (params: {
   const classStr = params.classLevel.padStart(2, '0')
   const mediumChar = params.medium === 'BENGALI' ? 'B' : 'E'
   const batchNoStr = params.batchNo.padStart(3, '0')
-  const yearStr = params.year.toString().padStart(4, '0').replace(/^20/, '00') // Year 2026 -> 0026 as per requirement
+  const yearStr = (params.year % 100).toString().padStart(2, '0')
   const batchSerialStr = params.batchSerialNo.toString().padStart(6, '0')
 
   return `${serialStr}${subjectCode}${classStr}${mediumChar}${batchNoStr}${yearStr}${batchSerialStr}`

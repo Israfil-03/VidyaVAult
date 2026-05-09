@@ -79,7 +79,7 @@ const buildRegistrationPreview = async (
     }),
   ])
 
-  const overallSerial = Math.max((maxSerial._max.overallSerial ?? 0) + 1, 50)
+  const overallSerial = (maxSerial._max.overallSerial ?? 0) + 1
 
   const pPart = request.subjects.includes(Subject.PHYSICS) ? pCount + 1 : 0
   const cPart = request.subjects.includes(Subject.CHEMISTRY) ? cCount + 1 : 0
