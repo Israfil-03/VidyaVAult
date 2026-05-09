@@ -77,9 +77,9 @@ const serializeUser = (
   role: userRoleToTokenRole(user.role),
   teacherId: user.teacherProfile?.id,
   studentId: user.studentProfile?.id,
-  shortId: user.studentProfile?.shortId,
-  longId: user.studentProfile?.longId,
-  subjects: user.studentProfile?.subjects,
+  shortId: user.studentProfile?.shortId ?? undefined,
+  longId: user.studentProfile?.longId ?? undefined,
+  subjects: user.studentProfile?.subjects ?? undefined,
   forcePasswordChange: user.forcePasswordChange,
 })
 
@@ -118,7 +118,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     teacherId: user.teacherProfile?.id,
     studentId: user.studentProfile?.id,
     forcePasswordChange: user.forcePasswordChange,
-  } as const
+  }
 
   const token = signJwt(payload)
 
