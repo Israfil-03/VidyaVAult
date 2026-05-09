@@ -4,8 +4,6 @@ import {
   Clock3,
   Flame,
   ListChecks,
-  Medal,
-  PlayCircle,
   Sparkles,
   Trophy,
   UserRound,
@@ -28,6 +26,8 @@ interface StudentOverview {
   active: number
   upcoming: number
   completed: number
+  activeHomework: number
+  streakCount: number
 }
 
 interface TestCard {
@@ -38,6 +38,8 @@ interface TestCard {
   startTime: string
   endTime: string
   durationMinutes: number
+  category: string
+  isDaily: boolean
   _count: {
     questions: number
   }
@@ -106,7 +108,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
   useEffect(() => {
     const loadData = async () => {
       if (import.meta.env.VITE_UI_ONLY === 'true') {
-        setOverview({ active: 2, upcoming: 3, completed: 16 })
+        setOverview({ active: 2, upcoming: 3, completed: 16, activeHomework: 1, streakCount: 5 })
         setActiveTests([
           {
             id: 'ui-1',
@@ -116,6 +118,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             startTime: new Date().toISOString(),
             endTime: new Date(Date.now() + 5400000).toISOString(),
             durationMinutes: 45,
+            category: 'HOMEWORK',
+            isDaily: true,
             _count: { questions: 20 },
             submissions: [],
           },
@@ -127,6 +131,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             startTime: new Date().toISOString(),
             endTime: new Date(Date.now() + 3600000).toISOString(),
             durationMinutes: 30,
+            category: 'PRACTICE',
+            isDaily: false,
             _count: { questions: 15 },
             submissions: [],
           },
@@ -140,6 +146,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             startTime: new Date(Date.now() + 86400000).toISOString(),
             endTime: new Date(Date.now() + 90000000).toISOString(),
             durationMinutes: 40,
+            category: 'HOMEWORK',
+            isDaily: false,
             _count: { questions: 18 },
             submissions: [],
           },
@@ -153,6 +161,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             startTime: new Date().toISOString(),
             endTime: new Date().toISOString(),
             durationMinutes: 35,
+            category: 'TEST',
+            isDaily: false,
             _count: { questions: 12 },
             submissions: [{ id: 'sub-1', submittedAt: new Date().toISOString(), scoreTotal: 9, maxScore: 12 }],
           },
@@ -271,66 +281,48 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
   const renderHomework = () => (
     <>
       <div className="stats-grid">
-        <StatCard label="Active Homework" value={overview?.active ?? 0} icon={<ListChecks size={18} />} />
+        <div className="streak-badge" style={{ gridColumn: 'span 2' }}>
+           <Flame size={20} fill="currentColor" /> {overview?.streakCount ?? 0} Day Streak!
+        </div>
+        <StatCard label="Homework Today" value={overview?.activeHomework ?? 0} icon={<ListChecks size={18} />} />
         <StatCard
-          label="Upcoming Deadlines"
-          value={overview?.upcoming ?? 0}
+          label="Tests Pending"
+          value={overview?.active ?? 0}
           icon={<CalendarClock size={18} />}
           tone="warning"
         />
-        <StatCard
-          label="Completed Tasks"
-          value={overview?.completed ?? 0}
-          icon={<CircleCheckBig size={18} />}
-          tone="success"
-        />
-        <StatCard label="Class Rank" value={classRank ? `#${classRank}` : '-'} icon={<Medal size={18} />} />
       </div>
 
       <div className="two-col">
-        <Card title="Homework Queue" subtitle="Assigned tasks you can solve now" variant="glass">
-          {activeTests.length === 0 ? (
-            <div className="empty-state">No active homework right now.</div>
+        <Card title="Today's Homework" subtitle="Complete these to maintain your streak" variant="glass">
+          {activeTests.filter(t => t.category === 'HOMEWORK').length === 0 ? (
+            <div className="empty-state">All caught up! No homework for today.</div>
           ) : (
             <div className="premium-list">
-              {activeTests.map((test) => (
-                <div key={test.id} className="premium-item">
+              {activeTests.filter(t => t.category === 'HOMEWORK').map((test) => (
+                <div key={test.id} className="daily-item">
                   <div>
                     <strong>{test.title}</strong>
-                    <div className="muted">
-                      {test.subject} • {test._count.questions} questions • {test.durationMinutes} min
-                    </div>
+                    <div className="muted">{test.subject} • {test.durationMinutes} min</div>
                   </div>
-                  {test.submissions?.[0]?.submittedAt ? (
-                    <Link to={`/student/performance/${test.submissions[0].id}`}>
-                      <Button variant="secondary" size="sm">
-                        Review <CircleCheckBig size={14} />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link to={`/student/tests/${test.id}/take`}>
-                      <Button size="sm">
-                        Start <PlayCircle size={14} />
-                      </Button>
-                    </Link>
-                  )}
+                  <Link to={`/student/tests/${test.id}/take`}>
+                    <Button size="sm">Start</Button>
+                  </Link>
                 </div>
               ))}
             </div>
           )}
         </Card>
 
-        <Card title="Upcoming Homework Plan" subtitle="Prepare before deadlines" variant="glass">
+        <Card title="Upcoming Work" subtitle="Plan your week ahead" variant="glass">
           {upcomingTests.length === 0 ? (
-            <div className="empty-state">No upcoming items scheduled.</div>
+            <div className="empty-state">No upcoming tasks.</div>
           ) : (
             <ul className="plain-list">
-              {upcomingTests.slice(0, 6).map((test) => (
+              {upcomingTests.slice(0, 4).map((test) => (
                 <li key={test.id}>
                   <strong>{test.title}</strong>
-                  <div className="muted">
-                    {test.subject} • {formatShortDate(test.startTime)} • {test.durationMinutes} min
-                  </div>
+                  <div className="muted">{test.category.replace('_', ' ')} • {formatShortDate(test.startTime)}</div>
                 </li>
               ))}
             </ul>
@@ -379,48 +371,51 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     </>
   )
 
-  const renderTest = () => (
-    <>
-      <div className="two-col">
-        <Card title="Active Tests" subtitle="Live exams ready for submission" variant="glass">
-          {activeTests.length === 0 ? (
-            <div className="empty-state">No active tests right now.</div>
-          ) : (
-            <div className="premium-list">
-              {activeTests.map((test) => (
-                <div key={test.id} className="premium-item">
-                  <div>
+  const renderTest = () => {
+    const schoolTests = activeTests.filter(t => t.category !== 'HOMEWORK')
+    const upcomingSchoolTests = upcomingTests.filter(t => t.category !== 'HOMEWORK')
+    return (
+      <>
+        <div className="two-col">
+          <Card title="Active School Tests" subtitle="Formal assessments" variant="glass">
+            {schoolTests.length === 0 ? (
+              <div className="empty-state">No active tests right now.</div>
+            ) : (
+              <div className="premium-list">
+                {schoolTests.map((test) => (
+                  <div key={test.id} className="premium-item">
+                    <div>
+                      <strong>{test.title}</strong>
+                      <div className="muted">
+                        {test.subject} • {test._count.questions} Qs • ends {formatShortDate(test.endTime)}
+                      </div>
+                    </div>
+                    <Link to={`/student/tests/${test.id}/take`}>
+                      <Button size="sm">Attempt</Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card title="Upcoming Test Calendar" subtitle="Plan your revision" variant="glass">
+            {upcomingSchoolTests.length === 0 ? (
+              <div className="empty-state">No upcoming tests.</div>
+            ) : (
+              <ul className="plain-list">
+                {upcomingSchoolTests.map((test) => (
+                  <li key={test.id}>
                     <strong>{test.title}</strong>
                     <div className="muted">
-                      {test.subject} • {test._count.questions} questions • ends {formatShortDate(test.endTime)}
+                      {test.subject} • {formatShortDate(test.startTime)} • {test.durationMinutes} min
                     </div>
-                  </div>
-                  <Link to={`/student/tests/${test.id}/take`}>
-                    <Button size="sm">Attempt</Button>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <Card title="Upcoming Test Calendar" subtitle="Plan your revision window" variant="glass">
-          {upcomingTests.length === 0 ? (
-            <div className="empty-state">No upcoming tests available.</div>
-          ) : (
-            <ul className="plain-list">
-              {upcomingTests.map((test) => (
-                <li key={test.id}>
-                  <strong>{test.title}</strong>
-                  <div className="muted">
-                    {test.subject} • {formatShortDate(test.startTime)} • {test.durationMinutes} min
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
 
       <Card title="Readiness Snapshot" subtitle="Quick indicators before you start" variant="glass">
         <div className="stats-grid">
@@ -436,7 +431,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         </div>
       </Card>
     </>
-  )
+    )
+  }
 
   const renderLeaderboard = () => (
     <>

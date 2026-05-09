@@ -3,6 +3,7 @@ import {
   Difficulty,
   QuestionSource,
   Subject,
+  TestCategory,
   TestCreationMode,
   TestStatus,
 } from '@prisma/client'
@@ -56,6 +57,8 @@ const createTestSchema = z.object({
   endTime: z.coerce.date(),
   durationMinutes: z.number().int().positive(),
   status: z.nativeEnum(TestStatus).default(TestStatus.DRAFT),
+  category: z.nativeEnum(TestCategory).default(TestCategory.TEST),
+  isDaily: z.boolean().default(false),
   creationMode: z.nativeEnum(TestCreationMode).default(TestCreationMode.MANUAL),
   questions: z.array(questionSchema).optional(),
   assignments: z.array(assignmentSchema).optional(),
@@ -100,6 +103,7 @@ export const listTests = async (req: Request, res: Response): Promise<void> => {
   const query = z
     .object({
       status: z.nativeEnum(TestStatus).optional(),
+      category: z.nativeEnum(TestCategory).optional(),
       subject: z.nativeEnum(Subject).optional(),
       classLevel: z.string().optional(),
       teacherId: z.string().optional(),
@@ -109,6 +113,7 @@ export const listTests = async (req: Request, res: Response): Promise<void> => {
   const tests = await prisma.test.findMany({
     where: {
       status: query.status,
+      category: query.category,
       subject: query.subject,
       classLevel: query.classLevel,
       teacherId:
@@ -207,6 +212,8 @@ export const createTest = async (req: Request, res: Response): Promise<void> => 
       endTime: payload.endTime,
       durationMinutes: payload.durationMinutes,
       status: payload.status,
+      category: payload.category,
+      isDaily: payload.isDaily,
       creationMode: payload.creationMode,
       questions:
         payload.questions && payload.questions.length > 0

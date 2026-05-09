@@ -54,6 +54,7 @@ interface TestRow {
   title: string
   subject: string
   status: string
+  category: string
   classLevel: string
   startTime: string
   endTime: string
@@ -167,6 +168,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
           title: 'Weekly Chemistry Homework',
           subject: 'CHEMISTRY',
           status: 'PUBLISHED',
+          category: 'HOMEWORK',
           classLevel: '10',
           startTime: new Date().toISOString(),
           endTime: new Date(Date.now() + 7200000).toISOString(),
@@ -387,14 +389,17 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
     return [...boardCounts.entries()].map(([label, value]) => ({ label, value }))
   }, [students])
 
-  const renderHomework = () => (
-    <div className="fade-in-up">
-      <div className="two-col" style={{ alignItems: 'start' }}>
-        <HomeworkCard tests={tests} formatShortDate={formatShortDate} getTestWindowStatus={getTestWindowStatus} />
-        <NewHomeworkCard batches={batches} onCreated={loadPortalData} />
+  const renderHomework = () => {
+    const homeworkTests = tests.filter(t => t.category === 'HOMEWORK')
+    return (
+      <div className="fade-in-up">
+        <div className="two-col" style={{ alignItems: 'start' }}>
+          <HomeworkCard tests={homeworkTests} formatShortDate={formatShortDate} getTestWindowStatus={getTestWindowStatus} />
+          <NewHomeworkCard batches={batches} onCreated={loadPortalData} />
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderPractice = () => (
     <>
@@ -566,62 +571,65 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
     </>
   )
 
-  const renderTest = () => (
-    <>
-      <Card
-        title="Test Inventory"
-        subtitle="Published and draft tests in your teaching scope"
-        variant="glass"
-        actions={
-          <Link to="/teacher/test/new">
-            <Button>Create New Test</Button>
-          </Link>
-        }
-      >
-        {tests.length === 0 ? (
-          <div className="empty-state">No tests yet. Create your first test from the wizard.</div>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Subject</th>
-                  <th>Status</th>
-                  <th>Questions</th>
-                  <th>Assignments</th>
-                  <th>Submissions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tests.map((test) => (
-                  <tr key={test.id}>
-                    <td>{test.title}</td>
-                    <td>{test.subject}</td>
-                    <td>
-                      <span className={`status-pill status-${test.status.toLowerCase()}`}>{test.status}</span>
-                    </td>
-                    <td>{test._count.questions}</td>
-                    <td>{test._count.assignments}</td>
-                    <td>{test._count.submissions}</td>
+  const renderTest = () => {
+    const schoolTests = tests.filter(t => t.category !== 'HOMEWORK')
+    return (
+      <>
+        <Card
+          title="Test Inventory"
+          subtitle="Formal assessments (Class/Unit tests)"
+          variant="glass"
+          actions={
+            <Link to="/teacher/test/new">
+              <Button>Create New Test</Button>
+            </Link>
+          }
+        >
+          {schoolTests.length === 0 ? (
+            <div className="empty-state">No tests yet. Create your first test from the wizard.</div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Subject</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Submissions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody>
+                  {schoolTests.map((test) => (
+                    <tr key={test.id}>
+                      <td>{test.title}</td>
+                      <td>{test.subject}</td>
+                      <td>
+                        <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{test.category.replace('_', ' ')}</span>
+                      </td>
+                      <td>
+                        <span className={`status-pill status-${test.status.toLowerCase()}`}>{test.status}</span>
+                      </td>
+                      <td>{test._count.submissions}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
 
-      <div className="two-col">
-        <Card title="Test Activity Trend" subtitle="Submission movement across recent tests" variant="glass">
-          <TrendAreaChart data={submissionTrendData} />
-        </Card>
-        <Card title="Pipeline Status Cards" subtitle="Total tests by state" variant="glass">
-          <ComparisonBarChart data={testStatusCounts} />
-        </Card>
-      </div>
-    </>
-  )
+        <div className="two-col">
+          <Card title="Test Activity Trend" subtitle="Submission movement across recent tests" variant="glass">
+            <TrendAreaChart data={submissionTrendData} />
+          </Card>
+          <Card title="Pipeline Status Cards" subtitle="Total tests by state" variant="glass">
+            <ComparisonBarChart data={testStatusCounts} />
+          </Card>
+        </div>
+      </>
+    )
+  }
 
   const renderLeaderboard = () => (
     <>

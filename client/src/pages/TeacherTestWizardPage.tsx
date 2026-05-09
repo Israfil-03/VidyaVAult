@@ -50,6 +50,8 @@ export const TeacherTestWizardPage = () => {
   const [testForm, setTestForm] = useState({
     title: '',
     subject: 'CHEMISTRY',
+    category: 'TEST',
+    isDaily: false,
     boardTarget: 'WEST_BENGAL',
     classLevel: '10',
     startTime: '',
@@ -231,6 +233,29 @@ export const TeacherTestWizardPage = () => {
                   <option value="ICSE">ICSE</option>
                   <option value="CBSE">CBSE</option>
                 </select>
+              </label>
+            </div>
+            <div className="inline-grid">
+              <label>
+                Category
+                <select
+                  value={testForm.category}
+                  onChange={(event) => setTestForm((prev) => ({ ...prev, category: event.target.value }))}
+                >
+                  <option value="HOMEWORK">Daily Homework</option>
+                  <option value="TEST">Class Test</option>
+                  <option value="UNIT_TEST">Unit Test</option>
+                  <option value="PRACTICE">Practice Drill</option>
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={testForm.isDaily}
+                  onChange={(event) => setTestForm((prev) => ({ ...prev, isDaily: event.target.checked }))}
+                  style={{ width: 'auto' }}
+                />
+                Is Daily Homework?
               </label>
             </div>
             <div className="inline-grid">

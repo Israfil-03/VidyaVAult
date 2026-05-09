@@ -48,6 +48,8 @@ model StudentProfile {
   submissions       Submission[]
   teacherLinks      TeacherStudent[]
   directAssignments TestAssignment[] @relation("StudentAssignments")
+  streakCount       Int              @default(0)
+  lastHomeworkDate  DateTime?
 }
 
 model TeacherStudent {
@@ -100,6 +102,8 @@ model Test {
   endTime         DateTime
   durationMinutes Int
   status          TestStatus       @default(DRAFT)
+  category        TestCategory     @default(TEST)
+  isDaily         Boolean          @default(false)
   creationMode    TestCreationMode @default(MANUAL)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -261,6 +265,13 @@ enum TestStatus {
   DRAFT
   PUBLISHED
   CLOSED
+}
+
+enum TestCategory {
+  HOMEWORK
+  PRACTICE
+  TEST
+  UNIT_TEST
 }
 
 enum TestCreationMode {

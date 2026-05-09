@@ -1,4 +1,4 @@
-import { TestStatus } from '@prisma/client'
+import { TestCategory, TestStatus } from '@prisma/client'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
@@ -46,11 +46,12 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
   const now = new Date()
   const assignedTestIds = await getAssignedTestIds(studentId)
 
-  const [active, upcoming, completed] = await Promise.all([
+  const [active, upcoming, completed, activeHomework, studentProfile] = await Promise.all([
     prisma.test.count({
       where: {
         id: { in: assignedTestIds },
         status: TestStatus.PUBLISHED,
+        category: { in: [TestCategory.TEST, TestCategory.UNIT_TEST] },
         startTime: { lte: now },
         endTime: { gte: now },
       },
@@ -59,6 +60,7 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
       where: {
         id: { in: assignedTestIds },
         status: TestStatus.PUBLISHED,
+        category: { in: [TestCategory.TEST, TestCategory.UNIT_TEST] },
         startTime: { gt: now },
       },
     }),
@@ -68,6 +70,19 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
         submittedAt: { not: null },
       },
     }),
+    prisma.test.count({
+      where: {
+        id: { in: assignedTestIds },
+        status: TestStatus.PUBLISHED,
+        category: TestCategory.HOMEWORK,
+        startTime: { lte: now },
+        endTime: { gte: now },
+      },
+    }),
+    prisma.studentProfile.findUnique({
+      where: { id: studentId },
+      select: { streakCount: true, lastHomeworkDate: true },
+    }),
   ])
 
   res.json({
@@ -76,6 +91,8 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
       active,
       upcoming,
       completed,
+      activeHomework,
+      streakCount: studentProfile?.streakCount ?? 0,
     },
   })
 }
@@ -112,6 +129,9 @@ export const listStudentTests = async (req: Request, res: Response): Promise<voi
     },
     orderBy: { startTime: 'asc' },
   })
+
+  // Filter by category based on requested status/view if needed
+  // For now, return all assigned tests but include category
 
   const filtered =
     status === 'completed'
@@ -354,6 +374,39 @@ export const submitSubmission = async (req: Request, res: Response): Promise<voi
       },
     },
   })
+
+  // Handle Streaks for Homework
+  if (finalized.test.category === TestCategory.HOMEWORK) {
+    const student = submission.student
+    const lastDate = student.lastHomeworkDate
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    let newStreak = student.streakCount
+
+    if (!lastDate) {
+      newStreak = 1
+    } else {
+      const last = new Date(lastDate)
+      last.setHours(0, 0, 0, 0)
+      const diffDays = Math.floor((today.getTime() - last.getTime()) / (1000 * 60 * 60 * 24))
+
+      if (diffDays === 1) {
+        newStreak += 1
+      } else if (diffDays > 1) {
+        newStreak = 1
+      }
+      // if diffDays === 0, streak stays the same
+    }
+
+    await prisma.studentProfile.update({
+      where: { id: studentId },
+      data: {
+        streakCount: newStreak,
+        lastHomeworkDate: now,
+      },
+    })
+  }
 
   res.json({
     success: true,

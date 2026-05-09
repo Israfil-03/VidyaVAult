@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Timer } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '../components/Button'
@@ -12,10 +13,10 @@ interface TestDetail {
   id: string
   title: string
   durationMinutes: number
+  category: string
   questions: Array<{
     id: string
     text: string
-    explanation?: string | null
     options: Array<{
       id: string
       text: string
@@ -25,6 +26,13 @@ interface TestDetail {
 
 const navigation = getDashboardNavigation('student')
 
+const formatTime = (seconds: number | null) => {
+  if (seconds === null) return '--:--'
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 export const TakeTestPage = () => {
   const { token } = useAuth()
   const navigate = useNavigate()
@@ -32,29 +40,21 @@ export const TakeTestPage = () => {
   const [test, setTest] = useState<TestDetail | null>(null)
   const [submissionId, setSubmissionId] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, string | undefined>>({})
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const initialize = async () => {
-      if (!token || !testId) {
-        return
-      }
+      if (!token || !testId) return
       try {
         setError(null)
-        const submission = await apiRequest<{ id: string }>(`/student/tests/${testId}/start`, {
-          method: 'POST',
-          token,
-        })
+        const submission = await apiRequest<{ id: string }>(`/student/tests/${testId}/start`, { method: 'POST', token })
         setSubmissionId(submission.id)
-        const detail = await apiRequest<TestDetail>(`/student/tests/${testId}/detail`, {
-          method: 'GET',
-          token,
-        })
+        const detail = await apiRequest<TestDetail>(`/student/tests/${testId}/detail`, { method: 'GET', token })
         setTest(detail)
-        setRemainingSeconds(detail.durationMinutes * 60)
+        setTimeLeft(detail.durationMinutes * 60)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to start test')
       }
@@ -62,147 +62,106 @@ export const TakeTestPage = () => {
     void initialize()
   }, [token, testId])
 
-  const saveCurrentAnswers = useCallback(async () => {
-    if (!token || !submissionId) {
-      return
-    }
+  const saveAnswers = useCallback(async () => {
+    if (!token || !submissionId) return
     await apiRequest(`/student/submissions/${submissionId}/answers`, {
       method: 'POST',
       token,
       body: JSON.stringify({
-        answers: Object.entries(answers).map(([questionId, selectedOptionId]) => ({
-          questionId,
-          selectedOptionId,
-        })),
+        answers: Object.entries(answers).map(([questionId, selectedOptionId]) => ({ questionId, selectedOptionId })),
       }),
     })
   }, [answers, submissionId, token])
 
-  const finalizeSubmission = useCallback(async () => {
-    if (!token || !submissionId) {
-      return
-    }
-    setSaving(true)
+  const handleSubmit = useCallback(async () => {
+    if (!token || !submissionId) return
+    setSubmitting(true)
     try {
-      await saveCurrentAnswers()
-      await apiRequest(`/student/submissions/${submissionId}/submit`, {
-        method: 'POST',
-        token,
-      })
+      await saveAnswers()
+      await apiRequest(`/student/submissions/${submissionId}/submit`, { method: 'POST', token })
       navigate(`/student/performance/${submissionId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit test')
     } finally {
-      setSaving(false)
+      setSubmitting(false)
     }
-  }, [navigate, saveCurrentAnswers, submissionId, token])
+  }, [navigate, saveAnswers, submissionId, token])
 
   useEffect(() => {
-    if (remainingSeconds === null || remainingSeconds <= 0 || !submissionId) {
-      return
-    }
-    const timer = setInterval(() => {
-      setRemainingSeconds((prev) => (prev !== null ? Math.max(prev - 1, 0) : null))
-    }, 1000)
+    if (timeLeft === null || timeLeft <= 0 || !submissionId) return
+    const timer = setInterval(() => setTimeLeft((prev) => (prev !== null ? Math.max(prev - 1, 0) : null)), 1000)
     return () => clearInterval(timer)
-  }, [remainingSeconds, submissionId])
+  }, [timeLeft, submissionId])
 
   useEffect(() => {
-    if (!submissionId || remainingSeconds !== 0 || saving) {
-      return
-    }
-    void finalizeSubmission()
-  }, [finalizeSubmission, remainingSeconds, saving, submissionId])
+    if (!submissionId || timeLeft !== 0 || submitting) return
+    void handleSubmit()
+  }, [handleSubmit, timeLeft, submitting, submissionId])
 
-  const currentQuestion = test?.questions[currentIndex]
-  const progress = useMemo(() => {
-    if (!test || test.questions.length === 0) {
-      return 0
-    }
-    const answered = Object.values(answers).filter(Boolean).length
-    return Math.round((answered / test.questions.length) * 100)
-  }, [answers, test])
+  const activeQuestion = test?.questions[activeQuestionIndex]
+  const isHomework = test?.category === 'HOMEWORK'
+
+  if (!test) return <DashboardLayout title="Loading..." navigation={navigation}><p className="muted">Loading test...</p></DashboardLayout>
 
   return (
     <DashboardLayout title="Take Test" navigation={navigation}>
-      <div>
-        {error ? <p className="error-text">{error}</p> : null}
-        {test ? (
-          <Card title={test.title} subtitle="Answer each question and submit before timer reaches zero">
-            <div className="test-header">
-              <p>
-                Time left: {remainingSeconds !== null ? Math.floor(remainingSeconds / 60) : '--'}:
-                {remainingSeconds !== null ? String(remainingSeconds % 60).padStart(2, '0') : '--'}
-              </p>
-              <p>Progress: {progress}%</p>
+      <div className={`take-test-page ${isHomework ? 'homework-mode' : ''}`}>
+        {error && <p className="error-text">{error}</p>}
+        <header className="take-test-header">
+          <div className="header-content">
+            <div>
+              <h2 className="fade-in-up">{test.title}</h2>
+              <div className="muted">{isHomework ? 'Daily Homework Assignment' : 'Formal Assessment'}</div>
             </div>
-            <div className="test-progress">
-              <span style={{ width: `${progress}%` }} />
+            <div className="timer-box">
+              <Timer size={18} /> {formatTime(timeLeft)}
             </div>
+          </div>
+        </header>
 
-            <div className="question-jump-grid">
-              {test.questions.map((question, index) => (
-                <button
-                  key={question.id}
-                  type="button"
-                  className={`jump-chip ${index === currentIndex ? 'active' : ''} ${
-                    answers[question.id] ? 'answered' : ''
-                  }`}
-                  onClick={() => setCurrentIndex(index)}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-
-            {currentQuestion ? (
-              <div className="question-card">
-                <h4>
-                  Question {currentIndex + 1} of {test.questions.length}
-                </h4>
-                <p>{currentQuestion.text}</p>
-                <div className="options-grid">
-                  {currentQuestion.options.map((option) => (
+        <main className="take-test-main">
+          <div className="take-test-grid">
+            <div className="question-panel">
+              <Card variant="glass" className="focus-card">
+                <div className="question-header">
+                  <span className="question-number">Question {activeQuestionIndex + 1} of {test.questions.length}</span>
+                </div>
+                <div className="question-text">{activeQuestion?.text}</div>
+                <div className="options-list">
+                  {activeQuestion?.options.map((option) => (
                     <button
                       key={option.id}
-                      className={`option-btn ${answers[currentQuestion.id] === option.id ? 'selected' : ''}`}
-                      onClick={() =>
-                        setAnswers((prev) => ({
-                          ...prev,
-                          [currentQuestion.id]: option.id,
-                        }))
-                      }
+                      className={`option-btn ${answers[activeQuestion.id] === option.id ? 'selected' : ''}`}
+                      onClick={() => setAnswers((prev) => ({ ...prev, [activeQuestion.id]: option.id }))}
                     >
+                      <div className="option-indicator" />
                       {option.text}
                     </button>
                   ))}
                 </div>
+              </Card>
+              
+              <div className="question-nav-actions">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setActiveQuestionIndex(prev => Math.max(0, prev - 1))}
+                  disabled={activeQuestionIndex === 0}
+                >
+                  Previous
+                </Button>
+                {activeQuestionIndex === test.questions.length - 1 ? (
+                  <Button onClick={handleSubmit} isLoading={submitting}>
+                    Finish & Submit
+                  </Button>
+                ) : (
+                  <Button onClick={() => setActiveQuestionIndex(prev => Math.min(test.questions.length - 1, prev + 1))}>
+                    Next Question
+                  </Button>
+                )}
               </div>
-            ) : null}
-
-            <div className="inline-actions">
-              <Button
-                variant="secondary"
-                onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-                disabled={currentIndex === 0}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, (test.questions.length || 1) - 1))}
-                disabled={currentIndex >= test.questions.length - 1}
-              >
-                Next
-              </Button>
-              <Button onClick={finalizeSubmission} isLoading={saving}>
-                {saving ? 'Submitting...' : 'Submit Test'}
-              </Button>
             </div>
-          </Card>
-        ) : (
-          <p className="muted">Loading test...</p>
-        )}
+          </div>
+        </main>
       </div>
     </DashboardLayout>
   )
