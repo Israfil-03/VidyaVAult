@@ -27,7 +27,13 @@ const itemVariants: Variants = {
 }
 
 export const RegistrationPage = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    fullName: string;
+    phone: string;
+    classLevel: string;
+    medium: string;
+    subjects: string[];
+  }>({
     fullName: '',
     phone: '',
     classLevel: '11',
@@ -191,7 +197,7 @@ export const RegistrationPage = () => {
                     key={m.id}
                     type="button"
                     className={`flex-1 py-2 rounded-lg border transition-all ${formData.medium === m.id ? 'bg-primary border-primary text-white' : 'bg-white/5 border-white/10 text-muted'}`}
-                    onClick={() => setFormData(prev => ({ ...prev, medium: m.id as any }))}
+                    onClick={() => setFormData(prev => ({ ...prev, medium: m.id }))}
                   >
                     {m.label}
                   </button>

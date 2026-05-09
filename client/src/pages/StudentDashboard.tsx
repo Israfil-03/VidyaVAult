@@ -334,16 +334,16 @@ export const StudentDashboard = () => {
               <div className="space-y-4">
                 <div className="flex justify-between border-b border-white/5 pb-2">
                   <span className="muted">Short ID (Username)</span>
-                  <span className="font-mono text-primary font-bold">{(user as any)?.shortId || user?.username}</span>
+                  <span className="font-mono text-primary font-bold">{user?.shortId || user?.username}</span>
                 </div>
                 <div className="flex justify-between border-b border-white/5 pb-2">
                   <span className="muted">Permanent Long ID</span>
-                  <span className="font-mono text-xs">{(user as any)?.longId || 'N/A'}</span>
+                  <span className="font-mono text-xs">{user?.longId || 'N/A'}</span>
                 </div>
                 <div className="flex flex-col gap-2 pt-2">
                   <span className="muted text-xs uppercase tracking-wider font-bold">Enrolled Subjects</span>
                   <div className="flex flex-wrap gap-2">
-                    {(user as any)?.subjects?.map((s: string) => (
+                    {user?.subjects?.map((s: string) => (
                       <span key={s} className="bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full text-xs font-bold">
                         {s}
                       </span>

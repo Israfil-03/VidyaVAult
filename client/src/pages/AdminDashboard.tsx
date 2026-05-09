@@ -1,5 +1,5 @@
 import { User, Phone, UserCheck, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 
 import { Button } from '../components/Button'
@@ -45,7 +45,7 @@ export const AdminDashboard = () => {
   })
   const [actionLoading, setActionLoading] = useState(false)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!token) return
     setLoading(true)
     try {
@@ -60,11 +60,11 @@ export const AdminDashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
   useEffect(() => {
     void loadData()
-  }, [token])
+  }, [loadData])
 
   const handleDecline = async (id: string) => {
     if (!token || !window.confirm('Are you sure you want to decline this request?')) return
@@ -88,7 +88,7 @@ export const AdminDashboard = () => {
 
     setActionLoading(true)
     try {
-      const result: any = await apiRequest(`/institute-admin/requests/${approvingId}/approve`, {
+      const result = await apiRequest<{ shortId: string; longId: string }>(`/institute-admin/requests/${approvingId}/approve`, {
         method: 'POST',
         token,
         body: JSON.stringify(approvalData),
@@ -96,6 +96,7 @@ export const AdminDashboard = () => {
       alert(`Student Approved!\nShort ID: ${result.shortId}\nLong ID: ${result.longId}`)
       setApprovingId(null)
       setApprovalData({ batchNo: '', teacherId: '' })
+      
       await loadData()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Approval failed')

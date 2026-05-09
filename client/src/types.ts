@@ -7,6 +7,9 @@ export interface AuthUser {
   role: Role
   teacherId?: string
   studentId?: string
+  shortId?: string | null
+  longId?: string | null
+  subjects?: string[]
   forcePasswordChange: boolean
 }
 
