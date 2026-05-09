@@ -4,6 +4,7 @@ import {
   changePassword,
   login,
   me,
+  registerStudent,
   registerTeacher,
   resetPassword,
   setupStudentProfile,
@@ -25,7 +26,7 @@ authRouter.post(
 authRouter.post(
   '/register-student',
   authMiddleware,
-  requireRole('superadmin', 'teacher_admin'),
+  requireRole('superadmin'),
   asyncHandler(registerStudent),
 )
 authRouter.post(

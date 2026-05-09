@@ -91,7 +91,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
     })
 
     // 7. Create Student Profile
-    const student = await tx.studentProfile.create({
+    await tx.studentProfile.create({
       data: {
         userId: user.id,
         board: 'WEST_BENGAL', // Default or from request if added
