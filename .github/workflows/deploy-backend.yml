@@ -56,69 +56,19 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r server/dist deploy/dist
-          # Copy root node_modules for shared dependencies
-          cp -r node_modules deploy/node_modules
-          # Copy server node_modules (where Prisma client is generated)
-          if [ -d server/node_modules ]; then
-            cp -r server/node_modules/* deploy/node_modules/
-          fi
           cp -r server/prisma deploy/prisma
           cp server/package.json deploy/package.json
           cp package-lock.json deploy/package-lock.json
           cp server/web.config deploy/web.config
+          # Generate a production-only package.json in the deploy folder if needed
+          # For now, we will let Azure install dependencies or copy them if necessary.
+          # However, Prisma needs the client, so we run prisma generate in the deploy step.
           cd deploy && zip -r ../deployment.zip . && cd ..
 
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: vidyavault-api-israfil
-          package: ./deployment.zip
-
-
-      - name: Configure startup command
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            echo "=== Setting startup command ==="
-            az webapp config set \
-              -g vidyavault-rg \
-              -n vidyavault-api-israfil \
-              --startup-file "node dist/server.js"
-            echo "✓ Startup command configured"
-
-            echo "=== Verifying configuration ==="
-            az webapp config show -g vidyavault-rg -n vidyavault-api-israfil --query "startupCommand"
-
-      - name: Start App Service
-        uses: azure/CLI@v2
-        with:
-          inlineScript: |
-            az webapp start -g vidyavault-rg -n vidyavault-api-israfil
-
-      - name: Wait for app to start
-        run: |
-          echo "=== Waiting for app to be healthy ==="
-          APP_URL="https://vidyavault-api-israfil.azurewebsites.net/api/health"
-          for i in {1..40}; do
-            echo "Attempt $i/40: Checking $APP_URL"
-            if curl -s -f -m 5 "$APP_URL" > /dev/null 2>&1; then
-              echo "✓ App is healthy on attempt $i"
-              exit 0
-            fi
-            if [ $i -lt 40 ]; then
-              echo "Waiting 10 seconds before retry..."
-              sleep 10
-            fi
-          done
-          echo "✗ App startup timeout after 400 seconds"
-          echo "=== Getting app service logs ==="
-          az webapp log download -g vidyavault-rg -n vidyavault-api-israfil --log-file ./app-logs.zip || true
-          exit 1
 
       - name: Get App Settings
         uses: azure/CLI@v2
@@ -148,6 +98,49 @@ jobs:
           export SUPERADMIN_USERNAME="superadmin"
           # Use tsx from node_modules to run the seed file
           ./node_modules/.bin/tsx server/prisma/seed.ts
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: vidyavault-api-israfil
+          package: ./deployment.zip
+
+      - name: Configure startup command
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            echo "=== Setting startup command ==="
+            az webapp config set \
+              -g vidyavault-rg \
+              -n vidyavault-api-israfil \
+              --startup-file "node dist/server.js"
+            echo "✓ Startup command configured"
+
+      - name: Start App Service
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az webapp start -g vidyavault-rg -n vidyavault-api-israfil
+
+      - name: Wait for app to start
+        run: |
+          echo "=== Waiting for app to be healthy ==="
+          APP_URL="https://vidyavault-api-israfil.azurewebsites.net/api/health"
+          for i in {1..40}; do
+            echo "Attempt $i/40: Checking $APP_URL"
+            if curl -s -f -m 5 "$APP_URL" > /dev/null 2>&1; then
+              echo "✓ App is healthy on attempt $i"
+              exit 0
+            fi
+            if [ $i -lt 40 ]; then
+              echo "Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+          echo "✗ App startup timeout after 400 seconds"
+          echo "=== Getting app service logs ==="
+          az webapp log download -g vidyavault-rg -n vidyavault-api-israfil --log-file ./app-logs.zip || true
+          exit 1
 
       - name: Verify deployment
         env:

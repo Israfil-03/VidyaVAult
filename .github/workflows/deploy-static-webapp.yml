@@ -24,6 +24,15 @@ jobs:
           node-version: 22.x
           cache: 'npm'
 
+      - name: Check secrets
+        run: |
+          if [ -z "${{ secrets.VITE_API_URL }}" ]; then
+            echo "::warning::VITE_API_URL secret is missing. Frontend will use default '/api' endpoint."
+          fi
+          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" ]; then
+            echo "::error::AZURE_STATIC_WEB_APPS_API_TOKEN is missing. Deployment will fail."
+          fi
+
       - name: Install dependencies
         run: npm ci
 
