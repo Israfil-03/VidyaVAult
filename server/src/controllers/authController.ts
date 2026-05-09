@@ -121,7 +121,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   } as const
 
   const token = signJwt(payload)
-  // TODO: Introduce refresh-token rotation for long-lived sessions in production.
 
   res.json({
     success: true,
