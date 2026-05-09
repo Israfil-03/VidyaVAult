@@ -1,23 +1,3 @@
--- CreateEnum
-CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'APPROVED', 'DECLINED');
-
--- AlterEnum
-ALTER TYPE "Subject" ADD VALUE 'PHYSICS';
-
--- AlterEnum
--- This migration adds more than one value to an enum.
--- With PostgreSQL versions 11 and earlier, this is not possible
--- in a single migration. This can be worked around by creating
--- multiple migrations, each migration adding only one value to
--- the enum.
-
-
-ALTER TYPE "TestCategory" ADD VALUE 'WEEKLY_TEST';
-ALTER TYPE "TestCategory" ADD VALUE 'MONTHLY_TEST';
-
--- AlterEnum
-ALTER TYPE "UserRole" ADD VALUE 'INSTITUTE_ADMIN';
-
 -- AlterTable
 ALTER TABLE "StudentProfile" ADD COLUMN     "batchNo" TEXT,
 ADD COLUMN     "batchSerialNo" INTEGER,

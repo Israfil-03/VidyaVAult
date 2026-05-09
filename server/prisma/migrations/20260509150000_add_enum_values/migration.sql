@@ -1,0 +1,12 @@
+-- CreateEnum
+CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'APPROVED', 'DECLINED');
+
+-- AlterEnum
+ALTER TYPE "Subject" ADD VALUE 'PHYSICS';
+
+-- AlterEnum
+ALTER TYPE "TestCategory" ADD VALUE 'WEEKLY_TEST';
+ALTER TYPE "TestCategory" ADD VALUE 'MONTHLY_TEST';
+
+-- AlterEnum
+ALTER TYPE "UserRole" ADD VALUE 'INSTITUTE_ADMIN';
