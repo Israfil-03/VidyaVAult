@@ -36,7 +36,8 @@ export const AdminDashboard = () => {
   const [requests, setRequests] = useState<RegistrationRequest[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
-  
+  const [error, setError] = useState<string | null>(null)
+
   // Approval state
   const [approvingId, setApprovingId] = useState<string | null>(null)
   const [approvalData, setApprovalData] = useState({
@@ -48,15 +49,17 @@ export const AdminDashboard = () => {
   const loadData = useCallback(async () => {
     if (!token) return
     setLoading(true)
+    setError(null)
     try {
       const [reqData, teacherData] = await Promise.all([
         apiRequest<RegistrationRequest[]>('/institute-admin/requests', { token }),
-        apiRequest<Teacher[]>('/admin/teachers', { token }), // Reuse existing endpoint
+        apiRequest<Teacher[]>('/institute-admin/teachers', { token }),
       ])
       setRequests(reqData)
       setTeachers(teacherData)
     } catch (err) {
-      console.error('Failed to load data:', err)
+      const message = err instanceof Error ? err.message : 'Failed to load data'
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -96,7 +99,7 @@ export const AdminDashboard = () => {
       alert(`Student Approved!\nShort ID: ${result.shortId}\nLong ID: ${result.longId}`)
       setApprovingId(null)
       setApprovalData({ batchNo: '', teacherId: '' })
-      
+
       await loadData()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Approval failed')
@@ -114,6 +117,7 @@ export const AdminDashboard = () => {
         </div>
 
         <Card title="Student Registration Queue" subtitle="Review and process incoming applications">
+          {error ? <div className="mb-4 text-sm text-error">{error}</div> : null}
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="animate-spin text-primary" size={32} />
@@ -161,16 +165,16 @@ export const AdminDashboard = () => {
                       </td>
                       <td>
                         <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="primary" 
-                            size="sm" 
+                          <Button
+                            variant="primary"
+                            size="sm"
                             onClick={() => setApprovingId(req.id)}
                           >
                             Approve
                           </Button>
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             className="btn-error-ghost"
                             onClick={() => handleDecline(req.id)}
                           >
@@ -189,19 +193,19 @@ export const AdminDashboard = () => {
         {/* Approval Modal Placeholder - Simple Overlay */}
         {approvingId && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="bg-[#1a1c23] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl"
             >
               <h3 className="text-xl font-bold mb-2">Approve Student</h3>
               <p className="text-sm muted mb-6">Assign a batch and teacher to generate registration IDs.</p>
-              
+
               <div className="space-y-4">
                 <div className="input-group">
                   <label className="text-xs font-bold uppercase tracking-wider mb-2 block">Batch Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="e.g. 10 or 11"
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-primary outline-none"
                     value={approvalData.batchNo}
@@ -211,7 +215,7 @@ export const AdminDashboard = () => {
 
                 <div className="input-group">
                   <label className="text-xs font-bold uppercase tracking-wider mb-2 block">Assign Teacher</label>
-                  <select 
+                  <select
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-primary outline-none"
                     value={approvalData.teacherId}
                     onChange={e => setApprovalData(prev => ({ ...prev, teacherId: e.target.value }))}
@@ -224,15 +228,15 @@ export const AdminDashboard = () => {
                 </div>
 
                 <div className="flex gap-3 mt-8">
-                  <Button 
-                    className="flex-1" 
-                    onClick={handleApprove} 
+                  <Button
+                    className="flex-1"
+                    onClick={handleApprove}
                     disabled={actionLoading}
                   >
                     {actionLoading ? <Loader2 className="animate-spin" size={18} /> : 'Confirm Approval'}
                   </Button>
-                  <Button 
-                    variant="secondary" 
+                  <Button
+                    variant="secondary"
                     onClick={() => setApprovingId(null)}
                     disabled={actionLoading}
                   >

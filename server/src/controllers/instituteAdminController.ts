@@ -23,6 +23,34 @@ export const getPendingRequests = async (_req: Request, res: Response): Promise<
   })
 }
 
+export const listInstituteTeachers = async (_req: Request, res: Response): Promise<void> => {
+  const teachers = await prisma.teacherProfile.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  res.json({
+    success: true,
+    data: teachers.map((teacher) => ({
+      id: teacher.id,
+      subject: teacher.subject,
+      user: {
+        id: teacher.user.id,
+        username: teacher.user.username,
+        email: teacher.user.email,
+      },
+    })),
+  })
+}
+
 export const approveRequest = async (req: Request, res: Response): Promise<void> => {
   const { requestId } = z.object({ requestId: z.string() }).parse(req.params)
   const { batchNo, teacherId } = approveRequestSchema.parse(req.body)
