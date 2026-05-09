@@ -46,54 +46,6 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
   }, [tests, activeFilter, searchQuery, getTestWindowStatus])
 
   const getStatusColor = (test: TestRow): string => {
-import { FileText, Search, Eye } from 'lucide-react'
-import { useState, useMemo } from 'react'
-
-import { Card } from '../components/Card'
-import { HomeworkStatusModal } from '../components/HomeworkStatusModal'
-
-interface TestRow {
-  id: string
-  title: string
-  subject: string
-  status: string
-  classLevel: string
-  startTime: string
-  endTime: string
-  _count: {
-    questions: number
-    assignments: number
-    submissions: number
-  }
-}
-
-interface HomeworkCardProps {
-  tests: TestRow[]
-  formatShortDate: (dateLike: string) => string
-  getTestWindowStatus: (test: Pick<TestRow, 'startTime' | 'endTime'>) => 'active' | 'upcoming' | 'closed'
-}
-
-type FilterStatus = 'all' | 'upcoming' | 'active' | 'closed'
-
-export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: HomeworkCardProps) => {
-  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTest, setSelectedTest] = useState<{ id: string; title: string } | null>(null)
-
-  const filteredTests = useMemo(() => {
-    return tests.filter((test) => {
-      const windowStatus = getTestWindowStatus(test)
-      const matchesFilter = activeFilter === 'all' || windowStatus === activeFilter
-      const matchesSearch =
-        searchQuery === '' ||
-        test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        test.subject.toLowerCase().includes(searchQuery.toLowerCase())
-
-      return matchesFilter && matchesSearch
-    })
-  }, [tests, activeFilter, searchQuery, getTestWindowStatus])
-
-  const getStatusColor = (test: TestRow): string => {
     const windowStatus = getTestWindowStatus(test)
     if (windowStatus === 'active') return 'status-active'
     if (windowStatus === 'upcoming') return 'status-upcoming'
