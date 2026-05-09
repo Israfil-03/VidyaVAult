@@ -56,11 +56,16 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r server/dist deploy/dist
-          cp -r node_modules deploy/
-          cp -r server/prisma deploy/
-          cp package.json deploy/
-          cp package-lock.json deploy/
-          cp server/web.config deploy/
+          # Copy root node_modules for shared dependencies
+          cp -r node_modules deploy/node_modules
+          # Copy server node_modules (where Prisma client is generated)
+          if [ -d server/node_modules ]; then
+            cp -r server/node_modules/* deploy/node_modules/
+          fi
+          cp -r server/prisma deploy/prisma
+          cp server/package.json deploy/package.json
+          cp package-lock.json deploy/package-lock.json
+          cp server/web.config deploy/web.config
           cd deploy && zip -r ../deployment.zip . && cd ..
 
       - name: Azure Login
@@ -141,28 +146,32 @@ jobs:
           export SUPERADMIN_EMAIL="israfilhoque523@gmail.com"
           export SUPERADMIN_PASSWORD="${{ secrets.SUPERADMIN_PASSWORD }}"
           export SUPERADMIN_USERNAME="superadmin"
-          npx prisma db seed --schema=server/prisma/schema.prisma || npm run prisma:seed -w server
+          # Use tsx from node_modules to run the seed file
+          ./node_modules/.bin/tsx server/prisma/seed.ts
 
       - name: Verify deployment
+        env:
+          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
         run: |
           echo "=== Health Check ==="
           curl -s https://vidyavault-api-israfil.azurewebsites.net/api/health | jq .
 
           echo ""
           echo "=== Login Test ==="
+          # Safely construct JSON using jq to handle special characters in password
+          JSON_PAYLOAD=$(jq -n --arg id "superadmin" --arg pw "$SUPERADMIN_PASSWORD" '{identity: $id, password: $pw}')
+          
           RESPONSE=$(curl -s -X POST https://vidyavault-api-israfil.azurewebsites.net/api/auth/login \
             -H 'Content-Type: application/json' \
-            -d '{
-              "identity": "superadmin",
-              "password": "${{ secrets.SUPERADMIN_PASSWORD }}"
-            }')
+            -d "$JSON_PAYLOAD")
 
           if echo "$RESPONSE" | jq -e '.data.token' > /dev/null 2>&1; then
             echo "✓ Superadmin login successful"
-            echo "$RESPONSE" | jq .
+            # Don't print the whole response to avoid leaking sensitive info if any
+            echo "Login status: Success"
           else
             echo "✗ Superadmin login failed"
-            echo "$RESPONSE"
+            echo "Response: $RESPONSE"
             exit 1
           fi
 

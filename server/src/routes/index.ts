@@ -12,11 +12,20 @@ import { testRouter } from './testRoutes.js'
 
 export const apiRouter = Router()
 
-apiRouter.get('/health', (_req, res) => {
-  res.json({
-    success: true,
-    data: { status: 'ok' },
-  })
+apiRouter.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    res.json({
+      success: true,
+      data: { status: 'ok', database: 'connected' },
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      data: { status: 'error', database: 'disconnected' },
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
 })
 
 apiRouter.use('/auth', authRouter)

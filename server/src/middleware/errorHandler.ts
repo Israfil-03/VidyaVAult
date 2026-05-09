@@ -55,6 +55,8 @@ export const errorHandler = (
     success: false,
     error: {
       message: 'Internal server error',
+      debug: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     },
   })
 }

@@ -2,28 +2,10 @@ import bcrypt from 'bcryptjs'
 
 const SALT_ROUNDS = 12
 
-export const hashPassword = async (value: string): Promise<string> => 
-  new Promise((resolve, reject) => {
-    bcrypt.hash(value, SALT_ROUNDS, (err, hash) => {
-      if (err) {
-        reject(err)
-      } else if (hash === undefined) {
-        reject(new Error('Hashing failed: hash is undefined'))
-      } else {
-        resolve(hash)
-      }
-    })
-  })
+export const hashPassword = async (value: string): Promise<string> => {
+  return bcrypt.hash(value, SALT_ROUNDS)
+}
 
-export const verifyPassword = async (value: string, hash: string): Promise<boolean> =>
-  new Promise((resolve, reject) => {
-    bcrypt.compare(value, hash, (err, result) => {
-      if (err) {
-        reject(err)
-      } else if (result === undefined) {
-        reject(new Error('Comparison failed: result is undefined'))
-      } else {
-        resolve(result)
-      }
-    })
-  })
+export const verifyPassword = async (value: string, hash: string): Promise<boolean> => {
+  return bcrypt.compare(value, hash)
+}
