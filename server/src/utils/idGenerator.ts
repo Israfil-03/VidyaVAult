@@ -2,23 +2,23 @@ import { Subject } from '@prisma/client'
 
 /**
  * Subject Code mapping (Physics, Chemistry, Mathematics):
- * - Selected subject keeps its letter (p/c/m)
- * - Unselected subject becomes o
+ * - Selected subject keeps its letter (P/C/M)
+ * - Unselected subject becomes O
  * Examples:
- * - PCM -> pcm
- * - PC  -> pco
- * - PM  -> pom
- * - CM  -> ocm
- * - P   -> poo
- * - C   -> oco
- * - M   -> oom
+ * - PCM -> PCM
+ * - PC  -> PCO
+ * - PM  -> POM
+ * - CM  -> OCM
+ * - P   -> POO
+ * - C   -> OCO
+ * - M   -> OOM
  */
 export const getSubjectCode = (subjects: Subject[]): string => {
   const hasPhysics = subjects.includes(Subject.PHYSICS)
   const hasChemistry = subjects.includes(Subject.CHEMISTRY)
   const hasMath = subjects.includes(Subject.MATHEMATICS)
 
-  return `${hasPhysics ? 'p' : 'o'}${hasChemistry ? 'c' : 'o'}${hasMath ? 'm' : 'o'}`
+  return `${hasPhysics ? 'P' : 'O'}${hasChemistry ? 'C' : 'O'}${hasMath ? 'M' : 'O'}`
 }
 
 /**

@@ -64,18 +64,28 @@ const buildRegistrationPreview = async (
   request: RegistrationRequest,
 ) => {
   const batchNo = getSubjectBatchNo(request.subjects)
-  const [maxSerial, maxBatchSerial] = await Promise.all([
+  const [maxSerial, pCount, cCount, mCount] = await Promise.all([
     tx.studentProfile.aggregate({
       _max: { overallSerial: true },
     }),
-    tx.studentProfile.aggregate({
-      where: { batchNo },
-      _max: { batchSerialNo: true },
+    tx.studentProfile.count({
+      where: { subjects: { has: Subject.PHYSICS } },
+    }),
+    tx.studentProfile.count({
+      where: { subjects: { has: Subject.CHEMISTRY } },
+    }),
+    tx.studentProfile.count({
+      where: { subjects: { has: Subject.MATHEMATICS } },
     }),
   ])
 
   const overallSerial = Math.max((maxSerial._max.overallSerial ?? 0) + 1, 50)
-  const batchSerialNo = (maxBatchSerial._max.batchSerialNo ?? 0) + 1
+
+  const pPart = request.subjects.includes(Subject.PHYSICS) ? pCount + 1 : 0
+  const cPart = request.subjects.includes(Subject.CHEMISTRY) ? cCount + 1 : 0
+  const mPart = request.subjects.includes(Subject.MATHEMATICS) ? mCount + 1 : 0
+
+  const batchSerialNo = pPart * 10000 + cPart * 100 + mPart
 
   const shortId = generateShortId({
     overallSerial,
