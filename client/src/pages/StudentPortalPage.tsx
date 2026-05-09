@@ -174,7 +174,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             scoreTotal: 9,
             maxScore: 12,
             submittedAt: new Date().toISOString(),
-            test: { title: 'Biology Chapter Test', subject: 'Biology' },
+            test: { title: 'Biology Chapter Test', subject: 'Biology', category: 'TEST' },
           },
         ])
         setClassLeaderboard([
