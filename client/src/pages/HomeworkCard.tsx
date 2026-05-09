@@ -1,4 +1,4 @@
-import { FileText, Search, Eye } from 'lucide-react'
+import { FileText, Search, Eye, Link2, Check } from 'lucide-react'
 import { useState, useMemo } from 'react'
 
 import { Card } from '../components/Card'
@@ -31,6 +31,7 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTest, setSelectedTest] = useState<{ id: string; title: string } | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const filteredTests = useMemo(() => {
     return tests.filter((test) => {
@@ -50,6 +51,13 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
     if (windowStatus === 'active') return 'status-active'
     if (windowStatus === 'upcoming') return 'status-upcoming'
     return 'status-closed'
+  }
+
+  const handleCopyLink = (testId: string) => {
+    const url = `${window.location.origin}/student/tests/${testId}/take`
+    void navigator.clipboard.writeText(url)
+    setCopiedId(testId)
+    setTimeout(() => setCopiedId(null), 2000)
   }
 
   return (
@@ -150,9 +158,14 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
                       </td>
                       <td>{test.subject}</td>
                       <td>
-                        <span className={`status-pill ${getStatusColor(test)}`}>
-                          {getTestWindowStatus(test).charAt(0).toUpperCase() + getTestWindowStatus(test).slice(1)}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className={`status-pill ${getStatusColor(test)}`}>
+                            {getTestWindowStatus(test).charAt(0).toUpperCase() + getTestWindowStatus(test).slice(1)}
+                          </span>
+                          {getTestWindowStatus(test) === 'active' && (
+                            <span className="pulse-dot" title="Live Now" />
+                          )}
+                        </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <strong>{test._count.assignments}</strong>
@@ -166,25 +179,46 @@ export const HomeworkCard = ({ tests, formatShortDate, getTestWindowStatus }: Ho
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button
-                          onClick={() => setSelectedTest({ id: test.id, title: test.title })}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--color-primary-600)',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontWeight: '600',
-                            fontSize: '0.85rem'
-                          }}
-                          title="View Submission Status"
-                        >
-                          <Eye size={18} />
-                          Status
-                        </button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                          <button
+                            onClick={() => handleCopyLink(test.id)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: copiedId === test.id ? 'var(--color-success-500)' : 'var(--text-soft)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontWeight: '600',
+                              fontSize: '0.85rem'
+                            }}
+                            title="Copy Student Link"
+                          >
+                            {copiedId === test.id ? <Check size={16} /> : <Link2 size={16} />}
+                            {copiedId === test.id ? 'Copied' : 'Link'}
+                          </button>
+                          <button
+                            onClick={() => setSelectedTest({ id: test.id, title: test.title })}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--color-primary-600)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontWeight: '600',
+                              fontSize: '0.85rem'
+                            }}
+                            title="View Submission Status"
+                          >
+                            <Eye size={18} />
+                            Status
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

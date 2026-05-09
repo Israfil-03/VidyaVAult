@@ -33,7 +33,7 @@ export const TakeTestPage = () => {
   const [submissionId, setSubmissionId] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, string | undefined>>({})
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -98,11 +98,11 @@ export const TakeTestPage = () => {
   }, [navigate, saveCurrentAnswers, submissionId, token])
 
   useEffect(() => {
-    if (remainingSeconds <= 0 || !submissionId) {
+    if (remainingSeconds === null || remainingSeconds <= 0 || !submissionId) {
       return
     }
     const timer = setInterval(() => {
-      setRemainingSeconds((prev) => Math.max(prev - 1, 0))
+      setRemainingSeconds((prev) => (prev !== null ? Math.max(prev - 1, 0) : null))
     }, 1000)
     return () => clearInterval(timer)
   }, [remainingSeconds, submissionId])
@@ -131,8 +131,8 @@ export const TakeTestPage = () => {
           <Card title={test.title} subtitle="Answer each question and submit before timer reaches zero">
             <div className="test-header">
               <p>
-                Time left: {Math.floor(remainingSeconds / 60)}:
-                {String(remainingSeconds % 60).padStart(2, '0')}
+                Time left: {remainingSeconds !== null ? Math.floor(remainingSeconds / 60) : '--'}:
+                {remainingSeconds !== null ? String(remainingSeconds % 60).padStart(2, '0') : '--'}
               </p>
               <p>Progress: {progress}%</p>
             </div>

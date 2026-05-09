@@ -1,4 +1,4 @@
-import { Plus, Check, AlertCircle, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react'
+import { Plus, Check, AlertCircle, ArrowRight, ArrowLeft, Trash2, Sparkles, Wand2, Edit3 } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '../components/Card'
 import { Button } from '../components/Button'
@@ -16,7 +16,7 @@ interface NewHomeworkCardProps {
   onCreated: () => void
 }
 
-type Step = 'INFO' | 'QUESTION' | 'EXPLANATION'
+type Step = 'INFO' | 'CHOICE' | 'AI_CONFIG' | 'QUESTION' | 'EXPLANATION' | 'REVIEW'
 
 interface Question {
   id: string
@@ -43,6 +43,12 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     durationHours: 24,
   })
 
+  const [aiConfig, setAiConfig] = useState({
+    topic: '',
+    difficulty: 'MEDIUM',
+    numQuestions: 5,
+  })
+
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
     id: crypto.randomUUID(),
@@ -64,6 +70,11 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
       publishAt: new Date().toISOString().slice(0, 16),
       durationHours: 24,
     })
+    setAiConfig({
+      topic: '',
+      difficulty: 'MEDIUM',
+      numQuestions: 5,
+    })
     setQuestions([])
     setCurrentQuestion({
       id: crypto.randomUUID(),
@@ -83,7 +94,48 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
       return
     }
     setError(null)
-    setStep('QUESTION')
+    setStep('CHOICE')
+  }
+
+  const handleAiGenerate = async () => {
+    if (!aiConfig.topic || !token) {
+      setError('Please enter a topic for AI generation.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await apiRequest<Array<{
+        text: string
+        options: Array<{ text: string; isCorrect: boolean }>
+        explanation: string
+      }>>('/ai/generate-questions', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({
+          subject: info.subject,
+          board: 'WEST_BENGAL', // Default or from batch
+          classLevel: info.classLevel,
+          topic: aiConfig.topic,
+          difficulty: aiConfig.difficulty,
+          numQuestions: aiConfig.numQuestions
+        })
+      })
+      
+      const generated = response.map(q => ({
+        id: crypto.randomUUID(),
+        text: q.text,
+        options: q.options,
+        explanation: q.explanation
+      }))
+      
+      setQuestions(generated)
+      setStep('REVIEW')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI generation failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleNextFromQuestion = () => {
@@ -117,11 +169,16 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     setStep('QUESTION')
   }
 
-  const handlePublish = async () => {
+  const handlePublish = async (finalQuestionsOverride?: Question[]) => {
     if (!token) return
 
-    const finalQuestions = [...questions, currentQuestion]
+    const finalQuestions = finalQuestionsOverride || [...questions, currentQuestion]
     
+    if (finalQuestions.length === 0) {
+      setError('Add at least one question before publishing.')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -144,7 +201,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
           endTime: endTime.toISOString(),
           durationMinutes: 60,
           status: 'PUBLISHED',
-          creationMode: 'MANUAL',
+          creationMode: finalQuestionsOverride ? 'AI' : 'MANUAL',
           questions: finalQuestions.map(q => ({
             text: q.text,
             difficulty: 'MEDIUM',
@@ -182,12 +239,15 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     if (currentQuestion.options.length <= 2) return
     setCurrentQuestion(prev => {
       const newOptions = prev.options.filter((_, i) => i !== index)
-      // Ensure at least one is correct if we removed the correct one
       if (!newOptions.some(o => o.isCorrect)) {
         newOptions[0].isCorrect = true
       }
       return { ...prev, options: newOptions }
     })
+  }
+
+  const deleteGeneratedQuestion = (id: string) => {
+    setQuestions(prev => prev.filter(q => q.id !== id))
   }
 
   if (!isCreating) {
@@ -243,8 +303,15 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
 
   return (
     <Card 
-      title={step === 'INFO' ? "Homework Details" : `Question ${questions.length + 1}`} 
-      subtitle={step === 'INFO' ? "Basic setup for your assignment" : step === 'QUESTION' ? "Enter question and options" : "Add an explanation (optional)"}
+      title={step === 'INFO' ? "Homework Details" : step === 'CHOICE' ? "Builder Mode" : step === 'AI_CONFIG' ? "AI Configuration" : step === 'REVIEW' ? "Review Generated Questions" : `Question ${questions.length + 1}`} 
+      subtitle={
+        step === 'INFO' ? "Basic setup for your assignment" : 
+        step === 'CHOICE' ? "Choose how you want to build questions" :
+        step === 'AI_CONFIG' ? "Tell the AI what to generate" :
+        step === 'REVIEW' ? "Review and edit the AI-generated homework" :
+        step === 'QUESTION' ? "Enter question and options" : 
+        "Add an explanation (optional)"
+      }
       variant="glass"
       actions={
         <Button variant="secondary" size="sm" onClick={() => { setIsCreating(false); resetAll(); }}>Cancel</Button>
@@ -253,15 +320,25 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
       <div className="stack-gap" style={{ gap: '20px' }}>
         {/* Progress Dots */}
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '4px' }}>
-          {(['INFO', 'QUESTION', 'EXPLANATION'] as Step[]).map(s => (
-            <div key={s} style={{ 
-              width: '8px', 
-              height: '8px', 
-              borderRadius: '50%', 
-              background: step === s ? 'var(--color-primary-500)' : 'var(--border-soft)',
-              transition: 'all 0.3s'
-            }} />
-          ))}
+          {(['INFO', 'CHOICE', 'AI_CONFIG', 'QUESTION', 'EXPLANATION', 'REVIEW'] as Step[]).map(s => {
+             // Only show relevant dots based on path
+             const isAiPath = step === 'AI_CONFIG' || step === 'REVIEW'
+             const isManualPath = step === 'QUESTION' || step === 'EXPLANATION'
+             if (isAiPath && (s === 'QUESTION' || s === 'EXPLANATION')) return null
+             if (isManualPath && (s === 'AI_CONFIG' || s === 'REVIEW')) return null
+             if (step === 'CHOICE' && (s === 'AI_CONFIG' || s === 'REVIEW' || s === 'QUESTION' || s === 'EXPLANATION')) return null
+             if (step === 'INFO' && s !== 'INFO') return null
+
+             return (
+              <div key={s} style={{ 
+                width: '8px', 
+                height: '8px', 
+                borderRadius: '50%', 
+                background: step === s ? 'var(--color-primary-500)' : 'var(--border-soft)',
+                transition: 'all 0.3s'
+              }} />
+            )
+          })}
         </div>
 
         {error && (
@@ -366,6 +443,168 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
           </div>
         )}
 
+        {step === 'CHOICE' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', animation: 'fadeIn 0.4s ease-out' }}>
+            <div 
+              onClick={() => setStep('QUESTION')}
+              style={{
+                padding: '24px',
+                borderRadius: '16px',
+                border: '1px solid var(--border-soft)',
+                background: 'var(--surface-soft)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                textAlign: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary-400)'
+                e.currentTarget.style.background = 'var(--surface-main)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-soft)'
+                e.currentTarget.style.background = 'var(--surface-soft)'
+              }}
+            >
+              <Edit3 size={32} style={{ color: 'var(--color-primary-500)' }} />
+              <div>
+                <h5 style={{ margin: '0 0 4px', fontWeight: '700' }}>Manual Builder</h5>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-soft)' }}>Create each question yourself</p>
+              </div>
+            </div>
+
+            <div 
+              onClick={() => setStep('AI_CONFIG')}
+              style={{
+                padding: '24px',
+                borderRadius: '16px',
+                border: '1px solid var(--color-primary-200)',
+                background: 'rgba(59, 130, 246, 0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                textAlign: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary-500)'
+                e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary-200)'
+                e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)'
+              }}
+            >
+              <Sparkles size={32} style={{ color: 'var(--color-primary-600)' }} />
+              <div>
+                <h5 style={{ margin: '0 0 4px', fontWeight: '700' }}>AI Generator</h5>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-soft)' }}>Let AI draft questions for you</p>
+              </div>
+            </div>
+
+            <Button variant="secondary" onClick={() => setStep('INFO')} style={{ gridColumn: 'span 2' }}>
+              <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back
+            </Button>
+          </div>
+        )}
+
+        {step === 'AI_CONFIG' && (
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
+            <label>
+              Topic or Chapter
+              <input 
+                placeholder="e.g. Periodic Table Trends, Mitosis..."
+                value={aiConfig.topic}
+                onChange={(e) => setAiConfig(f => ({ ...f, topic: e.target.value }))}
+                required
+              />
+            </label>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <label>
+                Difficulty
+                <select 
+                  value={aiConfig.difficulty}
+                  onChange={(e) => setAiConfig(f => ({ ...f, difficulty: e.target.value }))}
+                >
+                  <option value="EASY">Easy</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HARD">Hard</option>
+                </select>
+              </label>
+              <label>
+                Number of Questions
+                <input 
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={aiConfig.numQuestions}
+                  onChange={(e) => setAiConfig(f => ({ ...f, numQuestions: parseInt(e.target.value) || 0 }))}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <Button variant="secondary" onClick={() => setStep('CHOICE')} style={{ flex: 1 }}>
+                <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back
+              </Button>
+              <Button onClick={handleAiGenerate} isLoading={loading} style={{ flex: 2 }}>
+                {loading ? 'Generating...' : 'Generate Questions'} <Wand2 size={18} style={{ marginLeft: '8px' }} />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'REVIEW' && (
+          <div className="stack-gap" style={{ animation: 'fadeIn 0.4s ease-out' }}>
+            <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }} className="stack-gap">
+              {questions.map((q, idx) => (
+                <div key={q.id} style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  border: '1px solid var(--border-soft)',
+                  background: 'var(--surface-soft)',
+                  position: 'relative'
+                }}>
+                  <button 
+                    onClick={() => deleteGeneratedQuestion(q.id)}
+                    style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <h6 style={{ margin: '0 0 8px', fontSize: '0.9rem' }}>Q{idx + 1}: {q.text}</h6>
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-soft)' }}>
+                    {q.options.map((o, i) => (
+                      <li key={i} style={{ color: o.isCorrect ? 'var(--color-primary-600)' : 'inherit', fontWeight: o.isCorrect ? '700' : 'normal' }}>
+                        {o.text} {o.isCorrect && '(Correct)'}
+                      </li>
+                    ))}
+                  </ul>
+                  {q.explanation && (
+                    <div style={{ marginTop: '8px', fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-muted)' }}>
+                      Note: {q.explanation}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <Button variant="secondary" onClick={() => setStep('AI_CONFIG')} style={{ flex: 1 }}>
+                Regenerate
+              </Button>
+              <Button onClick={() => handlePublish(questions)} isLoading={loading} style={{ flex: 2 }}>
+                {loading ? 'Publishing...' : `Publish ${questions.length} Questions`}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {step === 'QUESTION' && (
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
             <label>
@@ -447,7 +686,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-              <Button variant="secondary" onClick={() => setStep('INFO')} style={{ flex: 1 }}>
+              <Button variant="secondary" onClick={() => setStep('CHOICE')} style={{ flex: 1 }}>
                 <ArrowLeft size={18} style={{ marginRight: '8px' }} /> Back
               </Button>
               <Button onClick={handleNextFromQuestion} style={{ flex: 1 }}>
@@ -483,7 +722,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               </div>
               
               <Button 
-                onClick={handlePublish} 
+                onClick={() => handlePublish()} 
                 isLoading={loading}
                 className="btn-primary"
                 style={{ width: '100%', padding: '14px' }}

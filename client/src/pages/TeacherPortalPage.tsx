@@ -388,12 +388,12 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   }, [students])
 
   const renderHomework = () => (
-    <>
-      <div className="two-col">
+    <div className="fade-in-up">
+      <div className="two-col" style={{ alignItems: 'start' }}>
         <HomeworkCard tests={tests} formatShortDate={formatShortDate} getTestWindowStatus={getTestWindowStatus} />
         <NewHomeworkCard batches={batches} onCreated={loadPortalData} />
       </div>
-    </>
+    </div>
   )
 
   const renderPractice = () => (

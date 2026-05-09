@@ -301,11 +301,19 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                       {test.subject} • {test._count.questions} questions • {test.durationMinutes} min
                     </div>
                   </div>
-                  <Link to={`/student/tests/${test.id}/take`}>
-                    <Button size="sm">
-                      Start <PlayCircle size={14} />
-                    </Button>
-                  </Link>
+                  {test.submissions?.[0]?.submittedAt ? (
+                    <Link to={`/student/performance/${test.submissions[0].id}`}>
+                      <Button variant="secondary" size="sm">
+                        Review <CircleCheckBig size={14} />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link to={`/student/tests/${test.id}/take`}>
+                      <Button size="sm">
+                        Start <PlayCircle size={14} />
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
