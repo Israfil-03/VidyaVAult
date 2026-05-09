@@ -1,27 +1,24 @@
 import { Subject } from '@prisma/client'
 
 /**
- * Subject Code mapping:
- * - Physics only → P0
- * - Chemistry only → C0
- * - Math only → M0
- * - Physics + Chemistry → PC
- * - Physics + Chemistry + Math → PCM
+ * Subject Code mapping (Physics, Chemistry, Mathematics):
+ * - Selected subject keeps its letter (p/c/m)
+ * - Unselected subject becomes o
+ * Examples:
+ * - PCM -> pcm
+ * - PC  -> pco
+ * - PM  -> pom
+ * - CM  -> ocm
+ * - P   -> poo
+ * - C   -> oco
+ * - M   -> oom
  */
 export const getSubjectCode = (subjects: Subject[]): string => {
   const hasPhysics = subjects.includes(Subject.PHYSICS)
   const hasChemistry = subjects.includes(Subject.CHEMISTRY)
   const hasMath = subjects.includes(Subject.MATHEMATICS)
 
-  if (hasPhysics && hasChemistry && hasMath) return 'PCM'
-  if (hasPhysics && hasChemistry) return 'PC'
-  if (hasPhysics && hasMath) return 'PM' // Extended
-  if (hasChemistry && hasMath) return 'CM' // Extended
-  if (hasPhysics) return 'P0'
-  if (hasChemistry) return 'C0'
-  if (hasMath) return 'M0'
-  
-  return 'XX' // Fallback
+  return `${hasPhysics ? 'p' : 'o'}${hasChemistry ? 'c' : 'o'}${hasMath ? 'm' : 'o'}`
 }
 
 /**
@@ -42,7 +39,21 @@ export const generateShortId = (params: {
 }
 
 /**
- * Long ID Formula: [Overall Serial 2 digits] + [Subject Code 2-3 chars] + [Class 2 digits] + [Medium 1 char] + [Batch No 2-3 digits] + [Year 4 digits as 0026] + [Batch Serial No 6 digits]
+ * Batch number mapping (Physics, Chemistry, Mathematics):
+ * - Selected subject -> 1
+ * - Unselected subject -> 0
+ * Example: PCM -> 111, PC -> 110, PM -> 101
+ */
+export const getSubjectBatchNo = (subjects: Subject[]): string => {
+  const hasPhysics = subjects.includes(Subject.PHYSICS)
+  const hasChemistry = subjects.includes(Subject.CHEMISTRY)
+  const hasMath = subjects.includes(Subject.MATHEMATICS)
+
+  return `${hasPhysics ? '1' : '0'}${hasChemistry ? '1' : '0'}${hasMath ? '1' : '0'}`
+}
+
+/**
+ * Long ID Formula: [Overall Serial 2 digits] + [Subject Code 3 chars] + [Class 2 digits] + [Medium 1 char] + [Batch No 3 digits] + [Year 4 digits as 0026] + [Batch Serial No 6 digits]
  */
 export const generateLongId = (params: {
   overallSerial: number
@@ -57,7 +68,7 @@ export const generateLongId = (params: {
   const subjectCode = getSubjectCode(params.subjects)
   const classStr = params.classLevel.padStart(2, '0')
   const mediumChar = params.medium === 'BENGALI' ? 'B' : 'E'
-  const batchNoStr = params.batchNo.padStart(2, '0') // 2-3 digits
+  const batchNoStr = params.batchNo.padStart(3, '0')
   const yearStr = params.year.toString().padStart(4, '0').replace(/^20/, '00') // Year 2026 -> 0026 as per requirement
   const batchSerialStr = params.batchSerialNo.toString().padStart(6, '0')
 

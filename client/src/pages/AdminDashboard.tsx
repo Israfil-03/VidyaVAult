@@ -113,7 +113,6 @@ export const AdminDashboard = () => {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState(1)
   const [approvalContext, setApprovalContext] = useState<ApprovalContext | null>(null)
-  const [batchNo, setBatchNo] = useState('')
   const [assignmentMap, setAssignmentMap] = useState<Record<string, AssignmentDraft>>({})
   const [useSharedBatchName, setUseSharedBatchName] = useState(false)
   const [sharedBatchName, setSharedBatchName] = useState('')
@@ -149,7 +148,6 @@ export const AdminDashboard = () => {
     setWizardOpen(false)
     setWizardStep(1)
     setApprovalContext(null)
-    setBatchNo('')
     setAssignmentMap({})
     setUseSharedBatchName(false)
     setSharedBatchName('')
@@ -200,7 +198,6 @@ export const AdminDashboard = () => {
       )
       setApprovalContext(context)
       setAssignmentMap(initAssignments(context))
-      setBatchNo('')
       setUseSharedBatchName(false)
       setSharedBatchName('')
     } catch (err) {
@@ -252,10 +249,6 @@ export const AdminDashboard = () => {
       return 'Approval details not loaded yet.'
     }
 
-    if (!/^\d{1,3}$/.test(batchNo.trim())) {
-      return 'Batch number must be 1 to 3 digits.'
-    }
-
     if (useSharedBatchName && sharedBatchName.trim().length === 0) {
       return 'Enter a shared batch name.'
     }
@@ -301,7 +294,6 @@ export const AdminDashboard = () => {
         {
           method: 'POST',
           token,
-          body: JSON.stringify({ batchNo: batchNo.trim() }),
         },
       )
       setPreview(previewData)
@@ -364,7 +356,6 @@ export const AdminDashboard = () => {
     }
 
     return {
-      batchNo: batchNo.trim(),
       assignments,
     }
   }
@@ -587,24 +578,14 @@ export const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="input-group">
-                        <label className="text-xs font-bold uppercase tracking-wider mb-2 block">
-                          Registration Batch Number
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={3}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:border-primary outline-none"
-                          value={batchNo}
-                          onChange={(event) => {
-                            setBatchNo(event.target.value.replace(/\D/g, ''))
-                            setPreview(null)
-                          }}
-                          placeholder="e.g. 101"
-                        />
-                        <p className="text-xs muted mt-1">
-                          This number is used in the final registration long ID.
+                      <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                        <div className="text-xs muted mb-1">Batch Number Rule</div>
+                        <p className="text-sm">
+                          Batch number is auto-generated from subjects as binary (Physics, Chemistry, Mathematics):
+                          selected = 1, not selected = 0.
+                        </p>
+                        <p className="text-xs muted mt-2">
+                          Example: PCM = 111, PC = 110, PM = 101, CM = 011.
                         </p>
                       </div>
 

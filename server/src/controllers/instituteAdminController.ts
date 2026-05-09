@@ -10,17 +10,12 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 
 import { prisma } from '../prisma/client.js'
-import { generateLongId, generateShortId } from '../utils/idGenerator.js'
+import { generateLongId, generateShortId, getSubjectBatchNo } from '../utils/idGenerator.js'
 import { ApiError } from '../utils/apiError.js'
 
 const requestIdParamSchema = z.object({
   requestId: z.string().min(1),
 })
-
-const batchNoSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{1,3}$/, 'Batch number must be 1 to 3 digits')
 
 const createBatchForApprovalSchema = z.object({
   name: z.string().trim().min(1),
@@ -47,12 +42,7 @@ const approvalAssignmentSchema = z
   })
 
 const approveRequestSchema = z.object({
-  batchNo: batchNoSchema,
   assignments: z.array(approvalAssignmentSchema).min(1),
-})
-
-const previewApprovalSchema = z.object({
-  batchNo: batchNoSchema,
 })
 
 type ApprovalAssignment = z.infer<typeof approvalAssignmentSchema>
@@ -72,8 +62,8 @@ const getPendingRequestById = async (requestId: string): Promise<RegistrationReq
 const buildRegistrationPreview = async (
   tx: Prisma.TransactionClient,
   request: RegistrationRequest,
-  batchNo: string,
 ) => {
+  const batchNo = getSubjectBatchNo(request.subjects)
   const [maxSerial, maxBatchSerial] = await Promise.all([
     tx.studentProfile.aggregate({
       _max: { overallSerial: true },
@@ -304,11 +294,10 @@ export const getApprovalOptions = async (req: Request, res: Response): Promise<v
 
 export const previewRequestApproval = async (req: Request, res: Response): Promise<void> => {
   const { requestId } = requestIdParamSchema.parse(req.params)
-  const { batchNo } = previewApprovalSchema.parse(req.body)
   const request = await getPendingRequestById(requestId)
 
   const preview = await prisma.$transaction(async (tx) => {
-    return buildRegistrationPreview(tx, request, batchNo)
+    return buildRegistrationPreview(tx, request)
   })
 
   res.json({
@@ -324,7 +313,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
   await validateApprovalAssignments(request, payload.assignments)
 
   const result = await prisma.$transaction(async (tx) => {
-    const preview = await buildRegistrationPreview(tx, request, payload.batchNo)
+    const preview = await buildRegistrationPreview(tx, request)
 
     const assignedBatchIds: string[] = []
     const resolvedAssignments: { subject: Subject; teacherId: string; batchId: string }[] = []
@@ -379,7 +368,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
         overallSerial: preview.overallSerial,
         shortId: preview.shortId,
         longId: preview.longId,
-        batchNo: payload.batchNo,
+        batchNo: preview.batchNo,
         batchSerialNo: preview.batchSerialNo,
         year: request.year,
         subjects: request.subjects,
