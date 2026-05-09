@@ -175,7 +175,8 @@ export const TeacherTestWizardPage = () => {
           ],
         }),
       })
-      navigate('/teacher/test')
+      const target = testForm.category === 'HOMEWORK' ? '/teacher/homework' : '/teacher/test'
+      navigate(target)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish test')
     } finally {

@@ -201,6 +201,8 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
           endTime: endTime.toISOString(),
           durationMinutes: 60,
           status: 'PUBLISHED',
+          category: 'HOMEWORK',
+          isDaily: true,
           creationMode: finalQuestionsOverride ? 'AI' : 'MANUAL',
           questions: finalQuestions.map(q => ({
             text: q.text,

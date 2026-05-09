@@ -59,13 +59,14 @@ interface ResultRow {
   test: {
     title: string
     subject: string
+    category: string
   }
 }
 
 const sectionTitle: Record<DashboardSection, string> = {
   homework: 'Homework Section',
   practice: 'Practice',
-  test: 'Test',
+  test: 'School Test',
   leaderboard: 'Leaderboard',
   performance: 'Student Performance',
   profile: 'Profile',
@@ -315,11 +316,11 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         </Card>
 
         <Card title="Upcoming Work" subtitle="Plan your week ahead" variant="glass">
-          {upcomingTests.length === 0 ? (
+          {upcomingTests.filter(t => t.category === 'HOMEWORK').length === 0 ? (
             <div className="empty-state">No upcoming tasks.</div>
           ) : (
             <ul className="plain-list">
-              {upcomingTests.slice(0, 4).map((test) => (
+              {upcomingTests.filter(t => t.category === 'HOMEWORK').slice(0, 4).map((test) => (
                 <li key={test.id}>
                   <strong>{test.title}</strong>
                   <div className="muted">{test.category.replace('_', ' ')} • {formatShortDate(test.startTime)}</div>
@@ -329,6 +330,29 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
           )}
         </Card>
       </div>
+
+      <Card title="Homework Completion History" subtitle="Your past daily assignments" variant="glass">
+        {results.filter(r => r.test.category === 'HOMEWORK').length === 0 ? (
+          <div className="empty-state">No homework records yet.</div>
+        ) : (
+          <div className="premium-list">
+            {results.filter(r => r.test.category === 'HOMEWORK').map((row) => (
+              <div key={row.id} className="premium-item">
+                <div>
+                  <strong>{row.test.title}</strong>
+                  <div className="muted">
+                    {row.test.subject} • {row.scoreTotal ?? 0}/{row.maxScore ?? 0} •{' '}
+                    {row.submittedAt ? formatShortDate(row.submittedAt) : 'Not submitted'}
+                  </div>
+                </div>
+                <Link to={`/student/performance/${row.id}`}>
+                  <Button variant="secondary" size="sm">Review</Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </>
   )
 
@@ -417,20 +441,42 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
           </Card>
         </div>
 
-      <Card title="Readiness Snapshot" subtitle="Quick indicators before you start" variant="glass">
-        <div className="stats-grid">
-          <StatCard label="Ready Now" value={activeTests.length} icon={<Clock3 size={18} />} />
-          <StatCard label="Upcoming" value={upcomingTests.length} icon={<CalendarClock size={18} />} tone="warning" />
-          <StatCard
-            label="Avg. Performance"
-            value={`${averageScore.toFixed(1)}%`}
-            icon={<Sparkles size={18} />}
-            tone="success"
-          />
-          <StatCard label="Streak Points" value={Math.max(1, completedTests.length)} icon={<Flame size={18} />} />
-        </div>
-      </Card>
-    </>
+        <Card title="Test Records & Results" subtitle="Your past formal assessments" variant="glass">
+          {results.filter(r => r.test.category !== 'HOMEWORK').length === 0 ? (
+            <div className="empty-state">No test records yet.</div>
+          ) : (
+            <div className="premium-list">
+              {results.filter(r => r.test.category !== 'HOMEWORK').map((row) => (
+                <div key={row.id} className="premium-item">
+                  <div>
+                    <strong>{row.test.title}</strong>
+                    <div className="muted">
+                      {row.test.subject} • {row.test.category.replace('_', ' ')} • {row.scoreTotal ?? 0}/{row.maxScore ?? 0}
+                    </div>
+                  </div>
+                  <Link to={`/student/performance/${row.id}`}>
+                    <Button variant="secondary" size="sm">View Detailed Report</Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card title="Readiness Snapshot" subtitle="Quick indicators before you start" variant="glass">
+          <div className="stats-grid">
+            <StatCard label="Ready Now" value={activeTests.filter(t => t.category !== 'HOMEWORK').length} icon={<Clock3 size={18} />} />
+            <StatCard label="Upcoming" value={upcomingTests.filter(t => t.category !== 'HOMEWORK').length} icon={<CalendarClock size={18} />} tone="warning" />
+            <StatCard
+              label="Avg. Performance"
+              value={`${averageScore.toFixed(1)}%`}
+              icon={<Sparkles size={18} />}
+              tone="success"
+            />
+            <StatCard label="Streak Points" value={Math.max(1, completedTests.length)} icon={<Flame size={18} />} />
+          </div>
+        </Card>
+      </>
     )
   }
 

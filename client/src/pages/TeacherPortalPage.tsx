@@ -68,7 +68,7 @@ interface TestRow {
 const sectionTitle: Record<DashboardSection, string> = {
   homework: 'Homework Section',
   practice: 'Practice',
-  test: 'Test',
+  test: 'School Test',
   leaderboard: 'Leaderboard',
   performance: 'Student Performance',
   profile: 'Profile',
@@ -340,20 +340,26 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
 
   const testStatusCounts = useMemo(() => {
     const countByStatus = new Map<string, number>()
-    for (const test of tests) {
+    const relevantTests = section === 'homework' 
+      ? tests.filter(t => t.category === 'HOMEWORK')
+      : tests.filter(t => t.category !== 'HOMEWORK')
+
+    for (const test of relevantTests) {
       countByStatus.set(test.status, (countByStatus.get(test.status) ?? 0) + 1)
     }
     return [...countByStatus.entries()].map(([label, value]) => ({ label, value }))
-  }, [tests])
+  }, [tests, section])
 
-  const submissionTrendData = useMemo(
-    () =>
-      tests.slice(0, 8).map((test, index) => ({
-        label: `T${index + 1}`,
-        value: test._count.submissions,
-      })),
-    [tests],
-  )
+  const submissionTrendData = useMemo(() => {
+    const relevantTests = section === 'homework' 
+      ? tests.filter(t => t.category === 'HOMEWORK')
+      : tests.filter(t => t.category !== 'HOMEWORK')
+
+    return relevantTests.slice(0, 8).map((test, index) => ({
+      label: `T${index + 1}`,
+      value: test._count.submissions,
+    }))
+  }, [tests, section])
 
   const classLeaderboardChartData = useMemo(
     () =>
@@ -836,7 +842,13 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
         <Card title={sectionTitle[section]} subtitle={sectionSubtitle[section]} variant="gradient">
           <div className="inline-actions">
             <span className="status-pill status-upcoming">Students: {overview?.studentCount ?? 0}</span>
-            <span className="status-pill status-completed">Tests: {tests.length}</span>
+            <span className="status-pill status-completed">
+              {section === 'homework' ? 'Homework' : 'School Tests'}: {
+                section === 'homework' 
+                  ? tests.filter(t => t.category === 'HOMEWORK').length 
+                  : tests.filter(t => t.category !== 'HOMEWORK').length
+              }
+            </span>
             <span className="status-pill status-draft">Batches: {batches.length}</span>
           </div>
         </Card>
