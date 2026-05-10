@@ -811,6 +811,12 @@ a {
   border-radius: var(--radius-sm);
 }
 
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  border-radius: var(--radius-md);
+}
+
 .btn-primary {
   background: var(--grad-primary);
   color: #fff;
