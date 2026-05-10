@@ -70,6 +70,7 @@ const sectionTitle: Record<DashboardSection, string> = {
   leaderboard: 'Leaderboard',
   performance: 'Student Performance',
   profile: 'Profile',
+  'question-bank': 'Question Bank',
 }
 
 const sectionSubtitle: Record<DashboardSection, string> = {
@@ -79,6 +80,7 @@ const sectionSubtitle: Record<DashboardSection, string> = {
   leaderboard: 'See class and batch rank insights.',
   performance: 'Review growth and submission outcomes.',
   profile: 'Manage account and quick learning summary.',
+  'question-bank': 'Question Bank',
 }
 
 const getNormalizedPercent = (score: number | null, max: number | null): number =>
@@ -649,6 +651,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     leaderboard: renderLeaderboard(),
     performance: renderPerformance(),
     profile: renderProfile(),
+    'question-bank': <div className="empty-state">Access Denied</div>,
   }
 
   return (

@@ -121,17 +121,19 @@ export const QuestionBankPage = () => {
         }))
       }
       
+      let finalPayload = payload as Record<string, unknown>
+      
       // Remove id and other metadata if creating
       if (!currentQuestion.id) {
-        delete (payload as any).id
-        delete (payload as any).createdAt
-        delete (payload as any).updatedAt
+        const { id, createdAt, updatedAt, ...rest } = payload as Record<string, unknown>
+        console.log('Stripping metadata', { id, createdAt, updatedAt })
+        finalPayload = rest
       }
 
       await apiRequest(url, {
         method,
         token,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(finalPayload)
       })
       
       setIsEditModalOpen(false)

@@ -85,6 +85,7 @@ const sectionTitle: Record<DashboardSection, string> = {
   leaderboard: 'Leaderboard',
   performance: 'Student Performance',
   profile: 'Profile',
+  'question-bank': 'Question Bank',
 }
 
 const sectionSubtitle: Record<DashboardSection, string> = {
@@ -94,6 +95,7 @@ const sectionSubtitle: Record<DashboardSection, string> = {
   leaderboard: 'Review class and batch ranking insights.',
   performance: 'Inspect submission trends and learner outcomes.',
   profile: 'Profile, security, and account-level actions.',
+  'question-bank': 'Manage and organize assessment questions.',
 }
 
 const formatShortDate = (dateLike: string): string =>
@@ -669,6 +671,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
     leaderboard: renderLeaderboard(),
     performance: renderPerformance(),
     profile: renderProfile(),
+    'question-bank': <div className="empty-state">Redirecting to Question Bank...</div>,
   }
 
   return (
