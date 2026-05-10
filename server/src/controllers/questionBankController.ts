@@ -59,9 +59,15 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
 }
 
 export const createBankQuestion = async (req: Request, res: Response): Promise<void> => {
+  console.log('[CreateBankQuestion] Body:', JSON.stringify(req.body, null, 2))
   const payload = bankQuestionSchema.parse(req.body)
+  console.log('[CreateBankQuestion] Payload:', JSON.stringify(payload, null, 2))
 
   try {
+    if (!prisma.questionBankEntry) {
+      console.error('[CreateBankQuestion] prisma.questionBankEntry is UNDEFINED')
+      throw new Error('prisma.questionBankEntry is undefined')
+    }
     const question = await prisma.questionBankEntry.create({
       data: {
         text: payload.text,
