@@ -193,9 +193,31 @@ export const QuestionBankPage = () => {
     if (!token) return
     setSubmitting(true)
     try {
+      const parseCSVLine = (line: string): string[] => {
+        const result: string[] = []
+        let current = ''
+        let inQuotes = false
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i]
+          if (char === '"' && line[i+1] === '"') {
+            current += '"'
+            i++
+          } else if (char === '"') {
+            inQuotes = !inQuotes
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim())
+            current = ''
+          } else {
+            current += char
+          }
+        }
+        result.push(current.trim())
+        return result
+      }
+
       const lines = csvText.trim().split('\n')
       const payload = lines.slice(1).map(line => {
-        const parts = line.split(',')
+        const parts = parseCSVLine(line)
         return {
           text: parts[0],
           subject: parts[1],
