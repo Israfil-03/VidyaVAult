@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Trash2, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Trash2, Plus, Database, Search, CheckCircle2, Loader2, XCircle } from 'lucide-react'
 
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
@@ -68,6 +68,15 @@ export const TeacherTestWizardPage = () => {
   const [aiPreviewQuestions, setAiPreviewQuestions] = useState<QuestionInput[] | null>(null)
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([])
+  
+  // Question Bank Integration
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false)
+  const [bankQuestions, setBankQuestions] = useState<any[]>([])
+  const [bankLoading, setBankLoading] = useState(false)
+  const [bankFilters, setBankFilters] = useState({
+    subject: testForm.subject,
+    search: ''
+  })
 
   // Sub-wizard state for Step 3
   const [currentQIndex, setCurrentQIndex] = useState(0)
@@ -152,7 +161,31 @@ export const TeacherTestWizardPage = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate AI questions')
     }
+    }
   }
+
+  const loadBankQuestions = async () => {
+    if (!token) return
+    setBankLoading(true)
+    try {
+      const query = new URLSearchParams()
+      query.append('subject', bankFilters.subject)
+      if (bankFilters.search) query.append('search', bankFilters.search)
+
+      const response = await apiRequest<any[]>(`/question-bank?${query.toString()}`, { token })
+      setBankQuestions(response)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load bank questions')
+    } finally {
+      setBankLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isBankModalOpen) {
+      void loadBankQuestions()
+    }
+  }, [isBankModalOpen, bankFilters.subject, bankFilters.search])
 
   const publishTest = async () => {
     if (!token) {
@@ -317,6 +350,15 @@ export const TeacherTestWizardPage = () => {
               onClick={() => setTestForm((prev) => ({ ...prev, creationMode: 'AI' }))}
             >
               AI Assisted
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setBankFilters(prev => ({ ...prev, subject: testForm.subject }))
+                setIsBankModalOpen(true)
+              }}
+            >
+              <Database size={18} className="mr-2" /> From Question Bank
             </Button>
           </div>
 
@@ -758,6 +800,123 @@ export const TeacherTestWizardPage = () => {
           </p>
         </Card>
       ) : null}
+      {/* Question Bank Modal */}
+      {isBankModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+           <div className="bg-[#12141c] border border-white/10 rounded-3xl p-8 max-w-5xl w-full shadow-2xl max-h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                 <div>
+                    <h3 className="text-2xl font-black">Question Bank</h3>
+                    <p className="text-muted text-sm mt-1">Select questions to add to your assessment.</p>
+                 </div>
+                 <button onClick={() => setIsBankModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <XCircle size={24} className="text-muted" />
+                 </button>
+              </div>
+
+              {/* Filters */}
+              <div className="flex gap-4 mb-6">
+                 <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Search bank questions..." 
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 outline-none focus:border-primary-500"
+                      value={bankFilters.search}
+                      onChange={(e) => setBankFilters(prev => ({ ...prev, search: e.target.value }))}
+                    />
+                 </div>
+                 <select 
+                   className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none"
+                   value={bankFilters.subject}
+                   onChange={(e) => setBankFilters(prev => ({ ...prev, subject: e.target.value }))}
+                 >
+                    <option value="PHYSICS">Physics</option>
+                    <option value="CHEMISTRY">Chemistry</option>
+                    <option value="MATHEMATICS">Mathematics</option>
+                    <option value="BIOLOGY">Biology</option>
+                 </select>
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                 {bankLoading ? (
+                    <div className="flex justify-center py-20">
+                       <Loader2 className="animate-spin text-primary-500" size={40} />
+                    </div>
+                 ) : bankQuestions.length === 0 ? (
+                    <div className="text-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                       <p className="text-muted">No questions found in the bank for these filters.</p>
+                    </div>
+                 ) : (
+                    bankQuestions.map((q) => {
+                       const isSelected = questions.some(existing => existing.text === q.text);
+                       return (
+                          <div 
+                            key={q.id} 
+                            onClick={() => {
+                               if (isSelected) {
+                                  setQuestions(prev => prev.filter(p => p.text !== q.text));
+                               } else {
+                                  const newQ: QuestionInput = {
+                                     id: crypto.randomUUID(),
+                                     text: q.text,
+                                     chapter: q.chapter || '',
+                                     concept: q.concept || '',
+                                     difficulty: q.difficulty,
+                                     marks: 1,
+                                     source: 'MANUAL',
+                                     explanation: q.explanation || '',
+                                     options: q.options.map((opt: any) => ({
+                                        text: opt.text,
+                                        isCorrect: opt.isCorrect
+                                     }))
+                                  };
+                                  setQuestions(prev => (prev.length === 1 && prev[0].text === '' ? [newQ] : [...prev, newQ]));
+                               }
+                            }}
+                            className={`p-5 rounded-2xl border transition-all cursor-pointer group ${
+                               isSelected ? 'bg-primary-500/10 border-primary-500 shadow-[0_0_20px_rgba(var(--color-primary-500-rgb),0.1)]' : 'bg-white/5 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                             <div className="flex justify-between gap-4">
+                                <div className="flex-1">
+                                   <div className="flex items-center gap-2 mb-2">
+                                      <span className="text-[10px] font-black uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded text-muted">
+                                         {q.subject}
+                                      </span>
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-primary-500">
+                                         {q.difficulty}
+                                      </span>
+                                   </div>
+                                   <p className="font-semibold leading-relaxed">{q.text}</p>
+                                </div>
+                                <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                                   isSelected ? 'bg-primary-500 border-primary-500' : 'border-white/10 group-hover:border-white/30'
+                                }`}>
+                                   {isSelected && <CheckCircle2 size={14} className="text-white" />}
+                                </div>
+                             </div>
+                          </div>
+                       );
+                    })
+                 )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
+                 <Button size="lg" className="rounded-2xl px-12" onClick={() => {
+                    setIsBankModalOpen(false);
+                    if (questions.some(q => q.text !== '')) {
+                       setStep(3);
+                    }
+                 }}>
+                    Continue with {questions.filter(q => q.text !== '').length} Questions
+                 </Button>
+              </div>
+           </div>
+        </div>
+      )}
+
     </DashboardLayout>
   )
 }

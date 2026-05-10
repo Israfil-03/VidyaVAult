@@ -50,13 +50,18 @@ export const errorHandler = (
     return
   }
 
-  console.error(error)
+  console.error('[Error Handler]:', {
+    name: error instanceof Error ? error.name : 'UnknownError',
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    original: error,
+  })
+
   res.status(500).json({
     success: false,
     error: {
       message: 'Internal server error',
       debug: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     },
   })
 }

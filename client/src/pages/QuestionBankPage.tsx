@@ -12,7 +12,8 @@ import {
   Download,
   Image as ImageIcon,
   BookOpen,
-  Info
+  Info,
+  Sparkles
 } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -48,8 +49,15 @@ export const QuestionBankPage = () => {
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false)
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState<Partial<QuestionBankEntry> | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [aiConfig, setAiConfig] = useState({
+    topic: '',
+    difficulty: 'MEDIUM',
+    numQuestions: 5,
+    subject: 'PHYSICS'
+  })
 
   const loadQuestions = useCallback(async () => {
     if (!token) return
@@ -104,6 +112,50 @@ export const QuestionBankPage = () => {
       void loadQuestions()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleAiGenerate = async () => {
+    if (!token) return
+    setSubmitting(true)
+    try {
+      const generated = await apiRequest<any[]>('/ai/generate-questions', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({
+          subject: aiConfig.subject,
+          board: 'CBSE', // Default or could be configurable
+          classLevel: '12', // Default or could be configurable
+          topic: aiConfig.topic,
+          difficulty: aiConfig.difficulty,
+          numQuestions: aiConfig.numQuestions,
+        }),
+      })
+
+      const payload = generated.map(item => ({
+        text: item.question,
+        subject: aiConfig.subject,
+        chapter: item.chapter || aiConfig.topic,
+        difficulty: aiConfig.difficulty,
+        explanation: item.explanation,
+        options: item.options.map((opt: string, idx: number) => ({
+          text: opt,
+          isCorrect: idx === item.correctIndex
+        }))
+      }))
+
+      await apiRequest('/question-bank/bulk', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ questions: payload })
+      })
+
+      setIsAiModalOpen(false)
+      void loadQuestions()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'AI generation failed')
     } finally {
       setSubmitting(false)
     }
@@ -181,6 +233,9 @@ export const QuestionBankPage = () => {
           <div className="flex gap-3">
              <Button variant="secondary" onClick={() => setIsBulkModalOpen(true)}>
                 <Upload size={18} className="mr-2" /> Bulk Upload
+             </Button>
+             <Button variant="secondary" onClick={() => setIsAiModalOpen(true)} className="!bg-purple-500/10 !text-purple-500 !border-purple-500/20 hover:!bg-purple-500/20">
+                <Sparkles size={18} className="mr-2" /> AI Scrape
              </Button>
              <Button onClick={() => {
                 setCurrentQuestion({
@@ -465,6 +520,98 @@ export const QuestionBankPage = () => {
                       <Button type="submit" size="lg" className="rounded-2xl px-12" isLoading={submitting}>Save to Bank</Button>
                    </div>
                 </form>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Scrape Modal */}
+      <AnimatePresence>
+        {isAiModalOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+             <motion.div 
+               initial={{ scale: 0.95, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.95, opacity: 0 }}
+               className="bg-[#12141c] border border-purple-500/20 rounded-3xl p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden"
+             >
+                {/* Background Glow */}
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/20 blur-[100px] pointer-events-none" />
+                
+                <div className="flex items-center justify-between mb-8 relative">
+                   <div>
+                      <div className="flex items-center gap-2 mb-1">
+                         <Sparkles className="text-purple-500" size={20} />
+                         <span className="text-purple-500 text-[10px] font-black uppercase tracking-[0.2em]">Powered by Gemini AI</span>
+                      </div>
+                      <h3 className="text-2xl font-black">AI Question Scraper</h3>
+                      <p className="text-muted text-sm mt-1">Generate high-quality academic questions instantly.</p>
+                   </div>
+                   <button onClick={() => setIsAiModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                      <XCircle size={24} className="text-muted" />
+                   </button>
+                </div>
+
+                <div className="space-y-6 relative">
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted">Subject</label>
+                         <select 
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all appearance-none"
+                           value={aiConfig.subject}
+                           onChange={(e) => setAiConfig(prev => ({ ...prev, subject: e.target.value }))}
+                         >
+                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                         </select>
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted">Difficulty</label>
+                         <select 
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all appearance-none"
+                           value={aiConfig.difficulty}
+                           onChange={(e) => setAiConfig(prev => ({ ...prev, difficulty: e.target.value }))}
+                         >
+                            {DIFFICULTIES.map(d => <option key(d) value={d}>{d}</option>)}
+                         </select>
+                      </div>
+                   </div>
+
+                   <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted">Topic / Chapter Name</label>
+                      <input 
+                        type="text"
+                        placeholder="e.g. Quantum Mechanics or Photosynthesis"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all"
+                        value={aiConfig.topic}
+                        onChange={(e) => setAiConfig(prev => ({ ...prev, topic: e.target.value }))}
+                      />
+                   </div>
+
+                   <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted">Number of Questions (1-20)</label>
+                      <input 
+                        type="number"
+                        min="1"
+                        max="20"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all"
+                        value={aiConfig.numQuestions}
+                        onChange={(e) => setAiConfig(prev => ({ ...prev, numQuestions: parseInt(e.target.value) }))}
+                      />
+                   </div>
+
+                   <div className="flex justify-end gap-4 mt-8">
+                      <Button variant="secondary" size="lg" className="rounded-2xl px-8" onClick={() => setIsAiModalOpen(false)}>Cancel</Button>
+                      <Button 
+                        size="lg" 
+                        className="rounded-2xl px-12 !bg-purple-600 hover:!bg-purple-700 shadow-lg shadow-purple-500/20" 
+                        onClick={handleAiGenerate} 
+                        isLoading={submitting}
+                        disabled={!aiConfig.topic}
+                      >
+                         <Sparkles size={18} className="mr-2" /> Start Generating
+                      </Button>
+                   </div>
+                </div>
              </motion.div>
           </div>
         )}
