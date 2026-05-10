@@ -16,7 +16,6 @@ import { RegistrationPage } from '../pages/RegistrationPage'
 import { SetupProfilePage } from '../pages/SetupProfilePage'
 import { AdminDashboard } from '../pages/AdminDashboard'
 import { QuestionBankPage } from '../pages/QuestionBankPage'
-import { QuestionBankPage } from '../pages/QuestionBankPage'
 
 const homePathByRole = {
   superadmin: '/superadmin',

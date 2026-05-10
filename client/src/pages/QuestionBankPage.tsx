@@ -2,7 +2,6 @@ import {
   Database, 
   Plus, 
   Search, 
-  Filter, 
   Trash2, 
   Edit, 
   Upload, 
@@ -10,10 +9,9 @@ import {
   XCircle, 
   AlertCircle,
   Loader2,
-  ChevronRight,
   Download
 } from 'lucide-react'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { Button } from '../components/Button'
@@ -114,7 +112,6 @@ export const QuestionBankPage = () => {
     try {
       // Basic CSV parser
       const lines = csvText.trim().split('\n')
-      const headers = lines[0].split(',')
       const payload = lines.slice(1).map(line => {
         const parts = line.split(',')
         return {
@@ -149,6 +146,11 @@ export const QuestionBankPage = () => {
   return (
     <DashboardLayout title="Question Bank Management" navigation={navigation}>
       <div className="space-y-6">
+        {error && (
+          <div className="p-4 bg-danger-500/10 border border-danger-500/20 text-danger-500 rounded-xl mb-6">
+            {error}
+          </div>
+        )}
         {/* Header Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-[300px]">
