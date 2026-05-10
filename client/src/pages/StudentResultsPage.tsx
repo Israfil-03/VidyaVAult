@@ -102,26 +102,26 @@ export const StudentResultsPage = () => {
         {error ? <p className="error-text">{error}</p> : null}
 
         <div className="bento-grid">
-          <motion.div variants={itemVariants} className={submissionId ? '' : 'bento-item-large'}>
+          <motion.div variants={itemVariants} className={submissionId ? 'bento-item-lg-8' : 'bento-item'}>
             <Card title="Performance Trend" subtitle="Progress across recent tests" variant="glass" tilt>
                <TrendAreaChart data={scoreTrend} valueSuffix="%" />
             </Card>
           </motion.div>
 
           {submissionId && (
-            <motion.div variants={itemVariants}>
+            <motion.div variants={itemVariants} className="bento-item-lg-4">
               <Card title="Quick Stats" variant="glass" tilt>
-                 <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--color-primary-600)' }}>{detailPercent}%</div>
-                    <p className="muted">Overall Accuracy</p>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px' }}>
-                       <div className="glass" style={{ padding: '10px 15px', borderRadius: '12px' }}>
-                          <span style={{ display: 'block', fontWeight: 700, color: 'var(--color-success-500)' }}>{detail?.scoreTotal}</span>
-                          <span style={{ fontSize: '0.7rem' }}>Correct</span>
+                 <div className="flex flex-col items-center justify-center py-6">
+                    <div className="text-6xl font-black text-primary-500 tracking-tighter">{detailPercent}%</div>
+                    <p className="text-text-soft font-bold uppercase tracking-widest text-xs mt-2">Overall Accuracy</p>
+                    <div className="flex justify-center gap-6 mt-8 w-full">
+                       <div className="bg-success-500/10 p-4 rounded-2xl flex-1 text-center border border-success-500/20">
+                          <span className="block text-2xl font-black text-success-500">{detail?.scoreTotal}</span>
+                          <span className="text-[10px] font-bold text-success-500/70 uppercase">Correct</span>
                        </div>
-                       <div className="glass" style={{ padding: '10px 15px', borderRadius: '12px' }}>
-                          <span style={{ display: 'block', fontWeight: 700, color: 'var(--color-danger-500)' }}>{(detail?.maxScore ?? 0) - (detail?.scoreTotal ?? 0)}</span>
-                          <span style={{ fontSize: '0.7rem' }}>Incorrect</span>
+                       <div className="bg-danger-500/10 p-4 rounded-2xl flex-1 text-center border border-danger-500/20">
+                          <span className="block text-2xl font-black text-danger-500">{(detail?.maxScore ?? 0) - (detail?.scoreTotal ?? 0)}</span>
+                          <span className="text-[10px] font-bold text-danger-500/70 uppercase">Incorrect</span>
                        </div>
                     </div>
                  </div>
@@ -154,43 +154,61 @@ export const StudentResultsPage = () => {
           </motion.div>
 
           {detail && (
-            <motion.div variants={itemVariants} className="bento-item-large">
+            <motion.div variants={itemVariants} className="bento-item-lg-12">
               <Card title="Detailed Analysis" subtitle="Question-by-question review" variant="glass">
-                <div className="stack-gap">
-                  <div className="glass" style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--color-primary-100)' }}>
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Trophy size={18} color="var(--color-warning-500)" /> AI Insights</h4>
-                    <p style={{ marginTop: '10px', fontSize: '0.95rem', lineHeight: '1.6' }}>{detail.aiAnalysisSummary ?? 'AI analysis is processing your attempt. Check back soon for personalized feedback!'}</p>
+                <div className="space-y-6">
+                  <div className="bg-grad-primary p-1 rounded-[22px]">
+                    <div className="bg-white/95 backdrop-blur-sm p-6 rounded-[20px]">
+                      <h4 className="flex items-center gap-3 text-primary-600 font-bold">
+                        <Trophy size={22} className="text-warning-500" /> 
+                        Personalized AI Mentorship
+                      </h4>
+                      <p className="mt-4 text-text-main text-lg leading-relaxed font-medium italic">
+                        "{detail.aiAnalysisSummary ?? 'AI analysis is processing your attempt. Check back soon for personalized feedback!'}"
+                      </p>
+                    </div>
                   </div>
-
-                  <div style={{ marginTop: '20px' }}>
-                    <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}><ListChecks size={18} /> Review Questions</h4>
-                    <div style={{ display: 'grid', gap: '16px' }}>
+                  <div className="mt-12">
+                    <h4 className="mb-6 flex items-center gap-3 font-bold text-xl"><ListChecks size={24} className="text-primary-500" /> Review Questions</h4>
+                    <div className="grid gap-6">
                       {detail.answers.map((answer, idx) => (
-                        <div key={answer.question.id} className="premium-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px', borderLeft: `4px solid ${answer.isCorrect ? 'var(--color-success-500)' : 'var(--color-danger-500)'}` }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <span className="muted" style={{ fontSize: '0.8rem', fontWeight: 700 }}>QUESTION {idx + 1}</span>
-                            {answer.isCorrect ? <CheckCircle2 size={18} color="var(--color-success-500)" /> : <XCircle size={18} color="var(--color-danger-500)" />}
+                        <div key={answer.question.id} className="bg-white rounded-2xl p-6 shadow-sm border border-border-soft flex flex-col gap-4 relative overflow-hidden">
+                          <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${answer.isCorrect ? 'bg-success-500' : 'bg-danger-500'}`} />
+                          <div className="flex justify-between items-center">
+                            <span className="text-text-soft font-bold text-xs tracking-tighter uppercase">Question {idx + 1}</span>
+                            {answer.isCorrect 
+                              ? <div className="bg-success-500/10 text-success-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle2 size={14} /> Correct</div> 
+                              : <div className="bg-danger-500/10 text-danger-500 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><XCircle size={14} /> Incorrect</div>
+                            }
                           </div>
-                          <p style={{ fontWeight: 600, fontSize: '1rem' }}>{answer.question.text}</p>
-                          <div style={{ width: '100%', display: 'grid', gap: '8px' }}>
-                             <div className="glass" style={{ padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem' }}>
-                                <strong>Your Answer:</strong> <span style={{ color: answer.isCorrect ? 'var(--color-success-500)' : 'var(--color-danger-500)' }}>{answer.selectedOption?.text ?? 'Not answered'}</span>
+                          <p className="font-bold text-lg leading-snug">{answer.question.text}</p>
+                          
+                          <div className="grid md:grid-cols-2 gap-4 mt-2">
+                             <div className="bg-surface-soft p-4 rounded-xl border border-border-soft">
+                                <span className="block text-[10px] font-bold text-text-soft uppercase mb-1">Your Selection</span>
+                                <span className={`font-bold ${answer.isCorrect ? 'text-success-500' : 'text-danger-500'}`}>{answer.selectedOption?.text ?? 'Not answered'}</span>
                              </div>
                              {!answer.isCorrect && (
-                               <div className="glass" style={{ padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem', background: 'rgba(34, 197, 94, 0.05)' }}>
-                                 <strong>Correct Answer:</strong> <span style={{ color: 'var(--color-success-500)' }}>{answer.question.options.find(o => o.isCorrect)?.text}</span>
+                               <div className="bg-success-500/5 p-4 rounded-xl border border-success-500/20">
+                                 <span className="block text-[10px] font-bold text-success-500/70 uppercase mb-1">Correct Answer</span>
+                                 <span className="font-bold text-success-600">{answer.question.options.find(o => o.isCorrect)?.text}</span>
                                </div>
                              )}
                           </div>
+                          
                           {answer.question.explanation && (
-                            <div style={{ fontSize: '0.85rem', background: 'var(--surface-soft)', padding: '12px', borderRadius: '10px', border: '1px dashed var(--border-strong)', width: '100%' }}>
-                               <strong>Explanation:</strong> {answer.question.explanation}
+                            <div className="bg-primary-50/30 p-5 rounded-xl border border-primary-100/50 mt-2">
+                               <div className="flex items-center gap-2 text-primary-600 font-bold text-xs uppercase tracking-wider mb-2">
+                                  <Sparkles size={14} /> Concept Explanation
+                               </div>
+                               <p className="text-sm text-text-muted leading-relaxed">{answer.question.explanation}</p>
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
                   </div>
+
                 </div>
               </Card>
             </motion.div>

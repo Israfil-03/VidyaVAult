@@ -118,16 +118,16 @@ export const RegistrationPage = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
       >
-        <header className="login-header">
+        <header className="login-header text-center">
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
-            className="logo-icon-container"
+            className="logo-icon-container mx-auto"
           >
-             <Sparkles size={40} className="logo-icon" />
+             <Sparkles size={48} className="logo-icon text-primary-500" />
           </motion.div>
-          <h1>Join VidyaVault</h1>
-          <p>Apply for admission to start your learning journey.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight mt-4 text-white">Join Vidya<span>Vault</span></h1>
+          <p className="text-muted mt-2">Start your premium learning journey today.</p>
         </header>
 
         <motion.form
@@ -196,7 +196,7 @@ export const RegistrationPage = () => {
                   <button
                     key={m.id}
                     type="button"
-                    className={`flex-1 py-2 rounded-lg border transition-all ${formData.medium === m.id ? 'bg-primary border-primary text-white' : 'bg-white/5 border-white/10 text-muted'}`}
+                    className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${formData.medium === m.id ? 'bg-primary-500 border-primary-500 text-white shadow-lg' : 'bg-white/5 border-white/10 text-text-soft hover:border-white/20'}`}
                     onClick={() => setFormData(prev => ({ ...prev, medium: m.id }))}
                   >
                     {m.label}

@@ -33,7 +33,8 @@ const questionSchema: Schema = {
 }
 
 const model = genAI?.getGenerativeModel({
-  model: 'gemini-1.5-flash',
+  model: 'gemini-flash-latest',
+
   generationConfig: {
     responseMimeType: 'application/json',
     responseSchema: questionSchema,
@@ -86,18 +87,17 @@ export const generateQuestions = async (
   }
 
   const prompt = `
-    You are an expert academic content creator specializing in the ${input.board} curriculum for Class ${input.classLevel}.
-    Generate ${count} high-quality, conceptual Multiple Choice Questions (MCQs) for the topic: "${input.topic}" in ${input.subject}.
+    You are an elite academic content creator and subject matter expert for the ${input.board} curriculum, specializing in Class ${input.classLevel}.
+    Your goal is to generate ${count} high-quality, conceptually rigorous Multiple Choice Questions (MCQs) for the topic: "${input.topic}" in ${input.subject}.
 
-    Requirements for each question:
-    1. The question should test understanding of concepts, not just rote memorization.
-    2. Provide 4 plausible options where only one is unambiguously correct.
-    3. Include a clear, pedagogical explanation for the correct answer.
-    4. Categorize the specific sub-chapter and concept being tested.
-    5. Adhere strictly to the ${input.difficulty} difficulty level.
+    Operational Guidelines for Each Question:
+    1. **Conceptual Depth**: Avoid simple recall. Focus on application of principles, critical thinking, and common misconceptions.
+    2. **Distractor Quality**: Provide 4 plausible options. Distractors must be based on common student errors or logical fallacies in ${input.subject}.
+    3. **Pedagogical Explanation**: Write a detailed, step-by-step explanation that explains *why* the correct answer is right and *why* specific distractors are common mistakes.
+    4. **Curriculum Alignment**: Strictly adhere to the ${input.board} standards and the specified ${input.difficulty} difficulty level.
+    5. **Clarity**: Use precise academic terminology appropriate for Class ${input.classLevel}.
 
-    Ensure the language is formal and appropriate for academic assessments.
-    Return a JSON object with a single property 'questions' containing an array of the generated questions.
+    Structure the response as a JSON object with a single property 'questions' containing an array of these objects.
   `
 
   try {
@@ -151,7 +151,8 @@ export const analysePerformance = async (
   const accuracy = Math.round((total.correct / input.entries.length) * 100)
 
   // For analysis, we use the standard model (not JSON mode)
-  const analysisModel = genAI?.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const analysisModel = genAI?.getGenerativeModel({ model: 'gemini-flash-latest' })
+
 
   if (!analysisModel) {
     return `Great effort! You scored ${percentage}% with ${accuracy}% accuracy in ${input.subject}. Keep revising chapter basics daily.`
@@ -165,17 +166,21 @@ export const analysePerformance = async (
     .join('\n')
 
   const prompt = `
-    You are a supportive academic mentor. Analyze the following student performance in ${input.subject} (Class ${input.classLevel}):
+    You are a highly experienced academic mentor and educational psychologist. Analyze this student's performance data in ${input.subject} for Class ${input.classLevel}.
 
-    Overall Score: ${percentage}% (${total.obtained}/${total.max})
-    Accuracy: ${accuracy}%
+    Metrics:
+    - Overall Proficiency: ${percentage}%
+    - Concept Accuracy: ${accuracy}%
+    - Total Marks: ${total.obtained} out of ${total.max}
 
-    Detailed Breakdown:
+    Individual Attempt Context:
     ${performanceContext}
 
-    Provide a personalized, encouraging, and actionable study plan in 3-4 sentences.
-    Focus on the concepts they missed and suggest how to improve.
-    Keep the tone professional yet motivating.
+    Your Task:
+    1. Identify the specific conceptual gaps based on the 'Incorrect' results.
+    2. Provide a motivating, highly actionable 3-4 sentence analysis.
+    3. Suggest one specific revision technique (e.g., Active Recall, Feynman Technique) tailored to their weak topics.
+    4. Maintain a tone that is professional, empathetic, and academically rigorous.
   `
 
   try {

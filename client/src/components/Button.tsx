@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-type ButtonVariant = 'primary' | 'secondary'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 type ButtonSize = 'md' | 'sm'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -19,9 +19,9 @@ export const Button = ({
   ...props
 }: ButtonProps) => (
   <button
-    className={`btn ${variant === 'secondary' ? 'btn-secondary' : 'btn-primary'} ${
-      size === 'sm' ? 'btn-sm' : ''
-    } ${className}`}
+    className={`btn ${
+      variant === 'secondary' ? 'btn-secondary' : variant === 'ghost' ? 'btn-ghost' : 'btn-primary'
+    } ${size === 'sm' ? 'btn-sm' : ''} ${className}`}
     disabled={disabled || isLoading}
     {...props}
   >

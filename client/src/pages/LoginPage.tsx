@@ -78,28 +78,30 @@ export const LoginPage = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
       >
-        <header className="login-header">
+        <header className="login-header text-center">
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", bounce: 0.5, delay: 0.1, duration: 0.8 }}
-            className="logo-icon-container"
+            className="logo-icon-container mx-auto"
           >
-             <Sparkles size={40} className="logo-icon" />
+             <Sparkles size={48} className="logo-icon text-primary-500" />
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-3xl font-extrabold tracking-tight mt-4"
           >
-            VidyaVault
+            Vidya<span>Vault</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-muted mt-2"
           >
-            Welcome back! Let's get you signed in.
+            Empowering the next generation of learners.
           </motion.p>
         </header>
 

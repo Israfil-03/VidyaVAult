@@ -119,29 +119,54 @@ export const TakeTestPage = () => {
           </div>
         </header>
 
-        <main className="take-test-main">
-          <div className="take-test-grid">
-            <div className="question-panel">
-              <Card variant="glass" className="focus-card">
-                <div className="question-header">
-                  <span className="question-number">Question {activeQuestionIndex + 1} of {test.questions.length}</span>
+        <main className="take-test-main container mx-auto px-4 py-8">
+          <div className="bento-grid">
+            <div className="bento-item-lg-9">
+              <Card variant="glass" className="overflow-hidden border-none shadow-xl">
+                <div className="h-1 bg-border-soft w-full">
+                  <motion.div 
+                    className="h-full bg-primary-500"
+                    initial={{ width: '100%' }}
+                    animate={{ width: `${(timeLeft ?? 0) / (test.durationMinutes * 60) * 100}%` }}
+                    transition={{ duration: 1, ease: 'linear' }}
+                  />
                 </div>
-                <div className="question-text">{activeQuestion?.text}</div>
-                <div className="options-list">
-                  {activeQuestion?.options.map((option) => (
-                    <button
-                      key={option.id}
-                      className={`option-btn ${answers[activeQuestion.id] === option.id ? 'selected' : ''}`}
-                      onClick={() => setAnswers((prev) => ({ ...prev, [activeQuestion.id]: option.id }))}
-                    >
-                      <div className="option-indicator" />
-                      {option.text}
-                    </button>
-                  ))}
+                <div className="p-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-sm font-bold text-primary-500 tracking-wider uppercase">Question {activeQuestionIndex + 1} of {test.questions.length}</span>
+                    <div className="flex gap-2">
+                       {/* Mark for review placeholder */}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-8 leading-relaxed">{activeQuestion?.text}</h3>
+                  <div className="grid gap-4">
+                    {activeQuestion?.options.map((option, idx) => (
+                      <motion.button
+                        key={option.id}
+                        whileHover={{ scale: 1.01, x: 5 }}
+                        whileTap={{ scale: 0.99 }}
+                        className={`flex items-center gap-4 p-5 rounded-xl border-2 text-left transition-all ${
+                          answers[activeQuestion.id] === option.id 
+                            ? 'border-primary-500 bg-primary-50/50 shadow-inner' 
+                            : 'border-transparent bg-surface-soft hover:bg-white hover:border-primary-200'
+                        }`}
+                        onClick={() => setAnswers((prev) => ({ ...prev, [activeQuestion.id]: option.id }))}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          answers[activeQuestion.id] === option.id 
+                            ? 'bg-primary-500 text-white' 
+                            : 'bg-white text-text-muted border border-border-strong'
+                        }`}>
+                          {String.fromCharCode(65 + idx)}
+                        </div>
+                        <span className="font-medium">{option.text}</span>
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
               </Card>
               
-              <div className="question-nav-actions">
+              <div className="flex justify-between items-center mt-8">
                 <Button 
                   variant="secondary" 
                   onClick={() => setActiveQuestionIndex(prev => Math.max(0, prev - 1))}
@@ -149,16 +174,55 @@ export const TakeTestPage = () => {
                 >
                   Previous
                 </Button>
-                {activeQuestionIndex === test.questions.length - 1 ? (
-                  <Button onClick={handleSubmit} isLoading={submitting}>
-                    Finish & Submit
-                  </Button>
-                ) : (
-                  <Button onClick={() => setActiveQuestionIndex(prev => Math.min(test.questions.length - 1, prev + 1))}>
-                    Next Question
-                  </Button>
-                )}
+                
+                <div className="flex gap-4">
+                  {activeQuestionIndex === test.questions.length - 1 ? (
+                    <Button onClick={handleSubmit} isLoading={submitting}>
+                      Finish Assessment
+                    </Button>
+                  ) : (
+                    <Button onClick={() => setActiveQuestionIndex(prev => Math.min(test.questions.length - 1, prev + 1))}>
+                      Next Question
+                    </Button>
+                  )}
+                </div>
               </div>
+            </div>
+
+            <div className="bento-item-lg-3">
+              <Card title="Navigator" subtitle="Jump to any question" variant="glass">
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {test.questions.map((q, idx) => (
+                    <button
+                      key={q.id}
+                      onClick={() => setActiveQuestionIndex(idx)}
+                      className={`h-10 rounded-lg font-bold transition-all ${
+                        activeQuestionIndex === idx
+                          ? 'bg-primary-500 text-white shadow-lg'
+                          : answers[q.id]
+                            ? 'bg-success-500/10 text-success-500 border border-success-500/20'
+                            : 'bg-surface-soft text-text-muted hover:bg-white border border-border-soft'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-8 flex flex-col gap-3">
+                   <div className="flex items-center gap-2 text-xs font-bold text-text-soft">
+                      <div className="w-3 h-3 rounded bg-success-500"></div>
+                      <span>ANSWERED</span>
+                   </div>
+                   <div className="flex items-center gap-2 text-xs font-bold text-text-soft">
+                      <div className="w-3 h-3 rounded bg-primary-500"></div>
+                      <span>CURRENT</span>
+                   </div>
+                   <div className="flex items-center gap-2 text-xs font-bold text-text-soft">
+                      <div className="w-3 h-3 rounded bg-surface-soft border border-border-soft"></div>
+                      <span>NOT VISITED</span>
+                   </div>
+                </div>
+              </Card>
             </div>
           </div>
         </main>
