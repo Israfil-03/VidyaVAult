@@ -23,7 +23,7 @@ interface StudentOption {
 const navigation = getDashboardNavigation('teacher')
 
 const createEmptyQuestion = (): QuestionInput => ({
-  id: crypto.randomUUID(),
+  id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11),
   text: '',
   chapter: '',
   concept: '',
@@ -143,7 +143,7 @@ export const TeacherTestWizardPage = () => {
 
       setAiPreviewQuestions(
         generated.map((item) => ({
-          id: crypto.randomUUID(),
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11),
           text: item.question,
           chapter: item.chapter,
           concept: item.concept,
@@ -857,7 +857,7 @@ export const TeacherTestWizardPage = () => {
                                   setQuestions(prev => prev.filter(p => p.text !== q.text));
                                } else {
                                   const newQ: QuestionInput = {
-                                     id: crypto.randomUUID(),
+                                     id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11),
                                      text: q.text,
                                      chapter: q.chapter || '',
                                      concept: q.concept || '',

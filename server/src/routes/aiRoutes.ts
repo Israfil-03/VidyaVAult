@@ -12,7 +12,7 @@ export const aiRouter = Router()
 aiRouter.post(
   '/generate-questions',
   authMiddleware,
-  requireRole('teacher_admin', 'superadmin'),
+  requireRole('teacher_admin', 'superadmin', 'institute_admin'),
   asyncHandler(generateQuestionsHandler),
 )
 aiRouter.post(
