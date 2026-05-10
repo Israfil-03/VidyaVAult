@@ -1,4 +1,4 @@
-import { Board, Medium, TestStatus } from '@prisma/client'
+import { Board, Medium, TestStatus, TestCategory } from '@prisma/client'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
@@ -260,5 +260,68 @@ export const listTeacherRewardCycles = async (req: Request, res: Response): Prom
   res.json({
     success: true,
     data: cycles,
+  })
+}
+
+export const getTeacherPracticeSubmissions = async (req: Request, res: Response): Promise<void> => {
+  const teacherId = requireTeacherId(req.user)
+
+  const submissions = await prisma.submission.findMany({
+    where: {
+      test: {
+        teacherId,
+        category: TestCategory.PRACTICE,
+      },
+      submittedAt: { not: null },
+    },
+    include: {
+      student: {
+        include: {
+          user: {
+            select: {
+              username: true,
+              email: true,
+            },
+          },
+          batchLinks: {
+            where: {
+              batch: {
+                teacherId,
+              },
+            },
+            include: {
+              batch: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      test: {
+        select: {
+          title: true,
+          subject: true,
+        },
+      },
+    },
+    orderBy: { submittedAt: 'desc' },
+  })
+
+  res.json({
+    success: true,
+    data: submissions.map((s) => ({
+      id: s.id,
+      studentId: s.studentId,
+      studentName: s.student.user.username,
+      studentEmail: s.student.user.email,
+      batchName: s.student.batchLinks[0]?.batch.name || 'No Batch',
+      testTitle: s.test.title,
+      subject: s.test.subject,
+      score: s.scoreTotal,
+      maxScore: s.maxScore,
+      submittedAt: s.submittedAt,
+    })),
   })
 }

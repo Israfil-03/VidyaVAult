@@ -65,6 +65,19 @@ interface TestRow {
   }
 }
 
+interface PracticeAttempt {
+  id: string
+  studentId: string
+  studentName: string
+  studentEmail: string | null
+  batchName: string
+  testTitle: string
+  subject: string
+  score: number | null
+  maxScore: number | null
+  submittedAt: string
+}
+
 const sectionTitle: Record<DashboardSection, string> = {
   homework: 'Homework Section',
   practice: 'Practice',
@@ -76,7 +89,7 @@ const sectionTitle: Record<DashboardSection, string> = {
 
 const sectionSubtitle: Record<DashboardSection, string> = {
   homework: 'Plan, publish, and track assigned homework.',
-  practice: 'Manage student and batch setup for guided practice.',
+  practice: 'Track and analyze student performance in practice drills.',
   test: 'Create and monitor Weekly and Monthly assessments.',
   leaderboard: 'Review class and batch ranking insights.',
   performance: 'Inspect submission trends and learner outcomes.',
@@ -111,23 +124,9 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   const [batchLeaderboard, setBatchLeaderboard] = useState<
     Array<{ rank: number; name: string; averageNormalizedScore: number; medium: string }>
   >([])
+  const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempt[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const [studentForm, setStudentForm] = useState({
-    email: '',
-    username: '',
-    password: '',
-    board: 'WEST_BENGAL',
-    medium: 'ENGLISH',
-    classLevel: '10',
-    rollNo: '',
-  })
-  const [batchForm, setBatchForm] = useState({
-    name: '',
-    medium: 'ENGLISH',
-    classLevel: '10',
-    boardTarget: 'WEST_BENGAL',
-  })
   const [resetStudent, setResetStudent] = useState({
     studentId: '',
     newPassword: '',
@@ -192,7 +191,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
 
     try {
       setError(null)
-      const [overviewData, studentData, batchData, testData, classData, batchDataLb] = await Promise.all([
+      const [overviewData, studentData, batchData, testData, classData, batchDataLb, practiceData] = await Promise.all([
         apiRequest<TeacherOverview>('/teacher/overview', { method: 'GET', token }),
         apiRequest<StudentRow[]>('/teacher/students', { method: 'GET', token }),
         apiRequest<BatchRow[]>('/teacher/batches', { method: 'GET', token }),
@@ -208,6 +207,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
             token,
           },
         ),
+        apiRequest<PracticeAttempt[]>('/teacher/practice-attempts', { method: 'GET', token }),
       ])
       setOverview(overviewData)
       setStudents(studentData)
@@ -215,6 +215,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
       setTests(testData)
       setClassLeaderboard(classData)
       setBatchLeaderboard(batchDataLb)
+      setPracticeAttempts(practiceData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teacher portal')
     }
@@ -223,101 +224,6 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   useEffect(() => {
     void loadPortalData()
   }, [loadPortalData])
-
-  const createStudent = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!token) {
-      return
-    }
-    try {
-      await apiRequest('/auth/register-student', {
-        method: 'POST',
-        token,
-        body: JSON.stringify({
-          ...studentForm,
-          rollNo: studentForm.rollNo || undefined,
-          email: studentForm.email || undefined,
-        }),
-      })
-      setStudentForm({
-        email: '',
-        username: '',
-        password: '',
-        board: 'WEST_BENGAL',
-        medium: 'ENGLISH',
-        classLevel: '10',
-        rollNo: '',
-      })
-      await loadPortalData()
-    } catch (err) {
-      if (err instanceof Error) {
-        try {
-          const parsed = JSON.parse(err.message)
-          if (parsed.error && parsed.error.message) {
-            setError(parsed.error.message)
-            return
-          }
-        } catch {
-          // ignore parse error, use fallback
-        }
-        setError(err.message)
-      } else {
-        setError('Failed to create student')
-      }
-    }
-  }
-
-  const createBatch = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!token) {
-      return
-    }
-    try {
-      await apiRequest('/teacher/batches', {
-        method: 'POST',
-        token,
-        body: JSON.stringify(batchForm),
-      })
-      setBatchForm({
-        name: '',
-        medium: 'ENGLISH',
-        classLevel: '10',
-        boardTarget: 'WEST_BENGAL',
-      })
-      await loadPortalData()
-    } catch (err) {
-      if (err instanceof Error) {
-        try {
-          const parsed = JSON.parse(err.message)
-          if (parsed.error && parsed.error.message) {
-            setError(parsed.error.message)
-            return
-          }
-        } catch {
-          // ignore
-        }
-        setError(err.message)
-      } else {
-        setError('Failed to create batch')
-      }
-    }
-  }
-
-  const assignToBatch = async (batchId: string, studentId: string) => {
-    if (!token) {
-      return
-    }
-    try {
-      await apiRequest(`/teacher/batches/${batchId}/students`, {
-        method: 'POST',
-        token,
-        body: JSON.stringify({ studentId }),
-      })
-      await loadPortalData()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign student to batch')
-    }
-  }
 
   const resetStudentPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -408,173 +314,87 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   }
 
   const renderPractice = () => (
-    <>
-      <div className="two-col">
-        <Card title="Create Student Account" variant="glass">
-          <form className="form-grid" onSubmit={createStudent}>
-            <label>
-              Username
-              <input
-                value={studentForm.username}
-                onChange={(event) => setStudentForm((prev) => ({ ...prev, username: event.target.value }))}
-                required
-              />
-            </label>
-            <label>
-              Email (optional)
-              <input
-                value={studentForm.email}
-                onChange={(event) => setStudentForm((prev) => ({ ...prev, email: event.target.value }))}
-              />
-            </label>
-            <label>
-              Temporary Password
-               <input
-                type="password"
-                value={studentForm.password}
-                onChange={(event) => setStudentForm((prev) => ({ ...prev, password: event.target.value }))}
-                required
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-soft)', marginTop: '4px', display: 'block' }}>
-                Must be at least 8 characters
-              </span>
-            </label>
-            <div className="inline-grid">
-              <label>
-                Board
-                <select
-                  value={studentForm.board}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, board: event.target.value }))}
-                >
-                  <option value="WEST_BENGAL">West Bengal</option>
-                  <option value="ICSE">ICSE</option>
-                  <option value="CBSE">CBSE</option>
-                </select>
-              </label>
-              <label>
-                Medium
-                <select
-                  value={studentForm.medium}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, medium: event.target.value }))}
-                >
-                  <option value="ENGLISH">English</option>
-                  <option value="BENGALI">Bengali</option>
-                </select>
-              </label>
+    <div className="fade-in-up">
+      <Card 
+        title="Student Practice Attempts" 
+        subtitle="Monitor real-time progress of students in practice drills"
+        variant="glass"
+      >
+        {practiceAttempts.length === 0 ? (
+          <div className="empty-state py-12">
+            <div className="flex flex-col items-center gap-4">
+              <Sparkles className="text-primary/40" size={48} />
+              <p className="muted">No practice attempts recorded yet.</p>
             </div>
-            <div className="inline-grid">
-              <label>
-                Class
-                <input
-                  value={studentForm.classLevel}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, classLevel: event.target.value }))}
-                  required
-                />
-              </label>
-              <label>
-                Roll No
-                <input
-                  value={studentForm.rollNo}
-                  onChange={(event) => setStudentForm((prev) => ({ ...prev, rollNo: event.target.value }))}
-                />
-              </label>
-            </div>
-            <Button type="submit">Create Student</Button>
-          </form>
-        </Card>
-
-        <Card title="Create Practice Batch" variant="glass">
-          <form className="form-grid" onSubmit={createBatch}>
-            <label>
-              Batch Name
-              <input
-                value={batchForm.name}
-                onChange={(event) => setBatchForm((prev) => ({ ...prev, name: event.target.value }))}
-                required
-              />
-            </label>
-            <div className="inline-grid">
-              <label>
-                Medium
-                <select
-                  value={batchForm.medium}
-                  onChange={(event) => setBatchForm((prev) => ({ ...prev, medium: event.target.value }))}
-                >
-                  <option value="ENGLISH">English</option>
-                  <option value="BENGALI">Bengali</option>
-                </select>
-              </label>
-              <label>
-                Board
-                <select
-                  value={batchForm.boardTarget}
-                  onChange={(event) => setBatchForm((prev) => ({ ...prev, boardTarget: event.target.value }))}
-                >
-                  <option value="WEST_BENGAL">West Bengal</option>
-                  <option value="ICSE">ICSE</option>
-                  <option value="CBSE">CBSE</option>
-                </select>
-              </label>
-            </div>
-            <label>
-              Class
-              <input
-                value={batchForm.classLevel}
-                onChange={(event) => setBatchForm((prev) => ({ ...prev, classLevel: event.target.value }))}
-              />
-            </label>
-            <Button type="submit">Create Batch</Button>
-          </form>
-        </Card>
-      </div>
-
-      <Card title="Assign Students to Batches" subtitle="Connect learners to practice cohorts" variant="glass">
-        {students.length === 0 ? (
-          <div className="empty-state">Create students to begin assignments.</div>
+          </div>
         ) : (
           <div className="table-wrap">
-            <table>
+            <table className="w-full">
               <thead>
                 <tr>
                   <th>Student</th>
-                  <th>Board</th>
-                  <th>Medium</th>
-                  <th>Class</th>
-                  <th>Assign Batch</th>
+                  <th>Batch</th>
+                  <th>Test Title</th>
+                  <th>Subject</th>
+                  <th>Score</th>
+                  <th>Date</th>
+                  <th className="text-right">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {students.map((student) => (
-                  <tr key={student.id}>
-                    <td>{student.username}</td>
-                    <td>{student.board}</td>
-                    <td>{student.medium}</td>
-                    <td>{student.classLevel}</td>
-                    <td>
-                      <select
-                        value={student.batchIds[0] || ''}
-                        onChange={(event) => {
-                          if (event.target.value) {
-                            void assignToBatch(event.target.value, student.id)
-                          }
-                        }}
-                      >
-                        <option value="">Assign...</option>
-                        {batches.map((batch) => (
-                          <option key={batch.id} value={batch.id}>
-                            {batch.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
+                {practiceAttempts.map((attempt) => {
+                  const percentage = attempt.score !== null && attempt.maxScore ? (attempt.score / attempt.maxScore) * 100 : 0
+                  return (
+                    <tr key={attempt.id}>
+                      <td>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-white">{attempt.studentName}</span>
+                          <span className="text-xs muted">{attempt.studentEmail || 'No email'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="bg-white/5 px-2 py-1 rounded border border-white/10 text-xs text-primary-soft">
+                          {attempt.batchName}
+                        </span>
+                      </td>
+                      <td>{attempt.testTitle}</td>
+                      <td>
+                         <span className="subject-pill text-[10px]">
+                           {attempt.subject}
+                         </span>
+                      </td>
+                      <td>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-mono text-sm">
+                            {attempt.score?.toFixed(1) || '0.0'} / {attempt.maxScore?.toFixed(1) || '0.0'}
+                          </span>
+                          <div className="w-20 h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${percentage >= 80 ? 'bg-success' : percentage >= 50 ? 'bg-warning' : 'bg-error'}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="text-xs muted">
+                          {new Date(attempt.submittedAt).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                         <span className="status-pill status-published text-[10px]">
+                           SUBMITTED
+                         </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
       </Card>
-    </>
+    </div>
   )
 
   const renderTest = () => {
