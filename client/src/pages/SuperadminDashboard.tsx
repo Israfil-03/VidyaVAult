@@ -434,7 +434,7 @@ export const SuperadminDashboard = () => {
                             className="w-full"
                           >
                             <option value="CHEMISTRY">Chemistry</option>
-                            <option value="BIOLOGY">Biology</option>
+                            <option value="PHYSICS">Physics</option>
                             <option value="MATHEMATICS">Mathematics</option>
                           </select>
                         </label>

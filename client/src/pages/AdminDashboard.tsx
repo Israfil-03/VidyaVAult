@@ -95,7 +95,6 @@ const SUBJECT_LABELS: Record<string, string> = {
   PHYSICS: 'Physics',
   CHEMISTRY: 'Chemistry',
   MATHEMATICS: 'Mathematics',
-  BIOLOGY: 'Biology',
 }
 
 const MEDIUM_LABELS: Record<string, string> = {

@@ -34,7 +34,7 @@ interface AiGeneratedQuestion {
   concept: string
 }
 
-const SUBJECTS = ['PHYSICS', 'CHEMISTRY', 'MATHEMATICS', 'BIOLOGY']
+const SUBJECTS = ['PHYSICS', 'CHEMISTRY', 'MATHEMATICS']
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD']
 
 export const QuestionBankPage = () => {

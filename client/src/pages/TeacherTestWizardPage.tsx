@@ -250,7 +250,6 @@ export const TeacherTestWizardPage = () => {
                   onChange={(event) => setTestForm((prev) => ({ ...prev, subject: event.target.value }))}
                 >
                   <option value="CHEMISTRY">Chemistry</option>
-                  <option value="BIOLOGY">Biology</option>
                   <option value="MATHEMATICS">Mathematics</option>
                   <option value="PHYSICS">Physics</option>
                 </select>
@@ -858,7 +857,6 @@ export const TeacherTestWizardPage = () => {
                     <option value="PHYSICS">Physics</option>
                     <option value="CHEMISTRY">Chemistry</option>
                     <option value="MATHEMATICS">Mathematics</option>
-                    <option value="BIOLOGY">Biology</option>
                  </select>
               </div>
 

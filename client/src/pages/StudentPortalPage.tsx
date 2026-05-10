@@ -158,8 +158,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         setCompletedTests([
           {
             id: 'ui-4',
-            title: 'Biology Chapter Test',
-            subject: 'Biology',
+            title: 'Physics Chapter Test',
+            subject: 'Physics',
             classLevel: '10',
             startTime: new Date().toISOString(),
             endTime: new Date().toISOString(),
@@ -176,7 +176,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             scoreTotal: 9,
             maxScore: 12,
             submittedAt: new Date().toISOString(),
-            test: { title: 'Biology Chapter Test', subject: 'Biology', category: 'TEST' },
+            test: { title: 'Physics Chapter Test', subject: 'Physics', category: 'TEST' },
           },
         ])
         setClassLeaderboard([

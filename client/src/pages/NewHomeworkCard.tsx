@@ -396,7 +396,6 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
                   onChange={(e) => setInfo(f => ({ ...f, subject: e.target.value }))}
                 >
                   <option value="CHEMISTRY">Chemistry</option>
-                  <option value="BIOLOGY">Biology</option>
                   <option value="MATHEMATICS">Mathematics</option>
                   <option value="PHYSICS">Physics</option>
                 </select>
