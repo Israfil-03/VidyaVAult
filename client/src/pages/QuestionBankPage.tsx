@@ -25,6 +25,15 @@ import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import type { QuestionBankEntry } from '../types'
 
+interface AiGeneratedQuestion {
+  question: string
+  options: string[]
+  correctIndex: number
+  explanation: string
+  chapter: string
+  concept: string
+}
+
 const navigation = [
   { label: 'Admin Dashboard', to: '/institute-admin', icon: <Database size={18} /> },
   { label: 'Question Bank', to: '/admin/question-bank', icon: <Database size={18} /> }
@@ -121,7 +130,7 @@ export const QuestionBankPage = () => {
     if (!token) return
     setSubmitting(true)
     try {
-      const generated = await apiRequest<any[]>('/ai/generate-questions', {
+      const generated = await apiRequest<AiGeneratedQuestion[]>('/ai/generate-questions', {
         method: 'POST',
         token,
         body: JSON.stringify({

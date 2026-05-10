@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Trash2, Plus, Database, Search, CheckCircle2, Loader2, XCircle } from 'lucide-react'
 
@@ -7,7 +7,7 @@ import { Card } from '../components/Card'
 import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
-import type { QuestionInput } from '../types'
+import type { QuestionInput, QuestionBankEntry } from '../types'
 import { getDashboardNavigation } from './shared/dashboardNavigation'
 
 interface BatchOption {
@@ -71,7 +71,7 @@ export const TeacherTestWizardPage = () => {
   
   // Question Bank Integration
   const [isBankModalOpen, setIsBankModalOpen] = useState(false)
-  const [bankQuestions, setBankQuestions] = useState<any[]>([])
+  const [bankQuestions, setBankQuestions] = useState<QuestionBankEntry[]>([])
   const [bankLoading, setBankLoading] = useState(false)
   const [bankFilters, setBankFilters] = useState({
     subject: testForm.subject,
@@ -162,7 +162,7 @@ export const TeacherTestWizardPage = () => {
     }
   }
 
-  const loadBankQuestions = async () => {
+  const loadBankQuestions = useCallback(async () => {
     if (!token) return
     setBankLoading(true)
     try {
@@ -170,20 +170,20 @@ export const TeacherTestWizardPage = () => {
       query.append('subject', bankFilters.subject)
       if (bankFilters.search) query.append('search', bankFilters.search)
 
-      const response = await apiRequest<any[]>(`/question-bank?${query.toString()}`, { token })
+      const response = await apiRequest<QuestionBankEntry[]>(`/question-bank?${query.toString()}`, { token })
       setBankQuestions(response)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load bank questions')
     } finally {
       setBankLoading(false)
     }
-  }
+  }, [token, bankFilters.subject, bankFilters.search])
 
   useEffect(() => {
     if (isBankModalOpen) {
       void loadBankQuestions()
     }
-  }, [isBankModalOpen, bankFilters.subject, bankFilters.search])
+  }, [isBankModalOpen, loadBankQuestions])
 
   const publishTest = async () => {
     if (!token) {
@@ -865,7 +865,7 @@ export const TeacherTestWizardPage = () => {
                                      marks: 1,
                                      source: 'MANUAL',
                                      explanation: q.explanation || '',
-                                     options: q.options.map((opt: any) => ({
+                                     options: q.options.map((opt: { text: string; isCorrect: boolean }) => ({
                                         text: opt.text,
                                         isCorrect: opt.isCorrect
                                      }))
