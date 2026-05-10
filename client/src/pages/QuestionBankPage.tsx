@@ -11,7 +11,7 @@ import {
   Loader2,
   Download
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { Button } from '../components/Button'
@@ -48,7 +48,7 @@ export const QuestionBankPage = () => {
   const [currentQuestion, setCurrentQuestion] = useState<Partial<QuestionBankEntry> | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     if (!token) return
     setLoading(true)
     try {
@@ -64,14 +64,14 @@ export const QuestionBankPage = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, filters, setError])
 
   useEffect(() => {
     const timer = setTimeout(() => {
       void loadQuestions()
     }, 300)
     return () => clearTimeout(timer)
-  }, [filters, token])
+  }, [loadQuestions])
 
   const handleDelete = async (id: string) => {
     if (!token || !window.confirm('Are you sure you want to delete this question?')) return
@@ -187,7 +187,7 @@ export const QuestionBankPage = () => {
                     { id: '', text: '', isCorrect: false },
                     { id: '', text: '', isCorrect: false },
                     { id: '', text: '', isCorrect: false },
-                  ] as any
+                  ]
                 })
                 setIsEditModalOpen(true)
              }}>
@@ -285,7 +285,7 @@ export const QuestionBankPage = () => {
                          <select 
                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
                            value={currentQuestion?.subject}
-                           onChange={(e) => setCurrentQuestion(prev => ({ ...prev, subject: e.target.value as any }))}
+                           onChange={(e) => setCurrentQuestion(prev => ({ ...prev, subject: e.target.value as QuestionBankEntry['subject'] }))}
                            required
                          >
                             {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -296,7 +296,7 @@ export const QuestionBankPage = () => {
                          <select 
                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
                            value={currentQuestion?.difficulty}
-                           onChange={(e) => setCurrentQuestion(prev => ({ ...prev, difficulty: e.target.value as any }))}
+                           onChange={(e) => setCurrentQuestion(prev => ({ ...prev, difficulty: e.target.value as QuestionBankEntry['difficulty'] }))}
                            required
                          >
                             {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
