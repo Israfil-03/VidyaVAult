@@ -9,7 +9,10 @@ import {
   XCircle, 
   AlertCircle,
   Loader2,
-  Download
+  Download,
+  Image as ImageIcon,
+  BookOpen,
+  Info
 } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -110,7 +113,6 @@ export const QuestionBankPage = () => {
     if (!token) return
     setSubmitting(true)
     try {
-      // Basic CSV parser
       const lines = csvText.trim().split('\n')
       const payload = lines.slice(1).map(line => {
         const parts = line.split(',')
@@ -119,11 +121,13 @@ export const QuestionBankPage = () => {
           subject: parts[1],
           chapter: parts[2],
           difficulty: parts[3],
+          imageUrl: parts[4] || undefined,
+          explanation: parts[5] || undefined,
           options: [
-            { text: parts[4], isCorrect: parts[8] === '0' },
-            { text: parts[5], isCorrect: parts[8] === '1' },
-            { text: parts[6], isCorrect: parts[8] === '2' },
-            { text: parts[7], isCorrect: parts[8] === '3' },
+            { text: parts[6], isCorrect: parts[10] === '0', imageUrl: parts[11] || undefined },
+            { text: parts[7], isCorrect: parts[10] === '1', imageUrl: parts[12] || undefined },
+            { text: parts[8], isCorrect: parts[10] === '2', imageUrl: parts[13] || undefined },
+            { text: parts[9], isCorrect: parts[10] === '3', imageUrl: parts[14] || undefined },
           ]
         }
       })
@@ -151,6 +155,7 @@ export const QuestionBankPage = () => {
             {error}
           </div>
         )}
+        
         {/* Header Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-[300px]">
@@ -182,12 +187,14 @@ export const QuestionBankPage = () => {
                   text: '',
                   subject: 'PHYSICS',
                   difficulty: 'MEDIUM',
+                  explanation: '',
+                  imageUrl: '',
                   options: [
-                    { id: '', text: '', isCorrect: true },
-                    { id: '', text: '', isCorrect: false },
-                    { id: '', text: '', isCorrect: false },
-                    { id: '', text: '', isCorrect: false },
-                  ]
+                    { id: '', text: '', isCorrect: true, imageUrl: '' },
+                    { id: '', text: '', isCorrect: false, imageUrl: '' },
+                    { id: '', text: '', isCorrect: false, imageUrl: '' },
+                    { id: '', text: '', isCorrect: false, imageUrl: '' },
+                  ] as QuestionBankEntry['options']
                 })
                 setIsEditModalOpen(true)
              }}>
@@ -215,8 +222,13 @@ export const QuestionBankPage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <Card className="hover:border-primary-500/50 transition-colors group">
-                   <div className="flex items-start justify-between gap-4">
+                <Card className="hover:border-primary-500/50 transition-colors group relative overflow-hidden">
+                   <div className="flex flex-col md:flex-row gap-6">
+                      {q.imageUrl && (
+                        <div className="md:w-48 h-32 bg-black/20 rounded-xl overflow-hidden flex-shrink-0">
+                           <img src={q.imageUrl} alt="Question" className="w-full h-full object-cover" />
+                        </div>
+                      )}
                       <div className="flex-1">
                          <div className="flex items-center gap-2 mb-2">
                             <span className="bg-primary-500/10 text-primary-500 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
@@ -231,32 +243,49 @@ export const QuestionBankPage = () => {
                             {q.chapter && <span className="text-[10px] text-muted font-bold uppercase">{q.chapter}</span>}
                          </div>
                          <h4 className="text-lg font-semibold leading-relaxed mb-4">{q.text}</h4>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {q.options.map((opt) => (
-                               <div key={opt.id} className={`flex items-center gap-2 text-sm p-2 rounded-lg border ${
-                                  opt.isCorrect ? 'bg-success-500/5 border-success-500/20 text-success-500' : 'bg-white/5 border-white/10 text-muted'
+                               <div key={opt.id} className={`flex flex-col gap-2 p-3 rounded-xl border transition-all ${
+                                  opt.isCorrect ? 'bg-success-500/5 border-success-500/30 text-success-500 ring-1 ring-success-500/20' : 'bg-white/5 border-white/10 text-muted'
                                }`}>
-                                  {opt.isCorrect ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                                  {opt.text}
+                                  <div className="flex items-center gap-2">
+                                     {opt.isCorrect ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                                     <span className="font-medium">{opt.text}</span>
+                                  </div>
+                                  {opt.imageUrl && (
+                                    <div className="h-20 w-full mt-1 bg-black/10 rounded-lg overflow-hidden">
+                                       <img src={opt.imageUrl} alt="Option" className="w-full h-full object-contain" />
+                                    </div>
+                                  )}
                                </div>
                             ))}
                          </div>
+                         {q.explanation && (
+                            <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/5 text-sm text-muted">
+                               <div className="flex items-center gap-2 mb-1 text-white font-semibold">
+                                  <BookOpen size={14} className="text-primary-500" /> Solution Explanation
+                               </div>
+                               {q.explanation}
+                            </div>
+                         )}
                       </div>
-                      <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-row md:flex-col gap-2 md:self-start self-end">
                          <button 
                            onClick={() => {
                               setCurrentQuestion(q)
                               setIsEditModalOpen(true)
                            }}
-                           className="p-2 hover:bg-primary-500/10 text-primary-500 rounded-lg transition-colors"
+                           className="p-3 bg-primary-500/10 hover:bg-primary-500/20 text-primary-500 rounded-xl transition-all"
+                           title="Edit Question"
                          >
-                            <Edit size={18} />
+                            <Edit size={20} />
                          </button>
                          <button 
                            onClick={() => handleDelete(q.id)}
-                           className="p-2 hover:bg-danger-500/10 text-danger-500 rounded-lg transition-colors"
+                           className="p-3 bg-danger-500/10 hover:bg-danger-500/20 text-danger-500 rounded-xl transition-all"
+                           title="Delete Question"
                          >
-                            <Trash2 size={18} />
+                            <Trash2 size={20} />
                          </button>
                       </div>
                    </div>
@@ -270,20 +299,32 @@ export const QuestionBankPage = () => {
       {/* Edit/Add Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
              <motion.div 
-               initial={{ scale: 0.95, opacity: 0 }}
-               animate={{ scale: 1, opacity: 1 }}
-               exit={{ scale: 0.95, opacity: 0 }}
-               className="bg-[#1a1c23] border border-white/10 rounded-2xl p-8 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+               initial={{ scale: 0.95, opacity: 0, y: 20 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.95, opacity: 0, y: 20 }}
+               className="bg-[#12141c] border border-white/10 rounded-3xl p-8 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
              >
-                <h3 className="text-2xl font-bold mb-6">{currentQuestion?.id ? 'Edit Question' : 'Add New Question'}</h3>
-                <form onSubmit={handleSave} className="space-y-6">
-                   <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between mb-8">
+                   <div>
+                      <h3 className="text-2xl font-black">{currentQuestion?.id ? 'Edit Question' : 'Add New Question'}</h3>
+                      <p className="text-muted text-sm mt-1">Fill in the details to update the global question bank.</p>
+                   </div>
+                   <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                      <XCircle size={24} className="text-muted" />
+                   </button>
+                </div>
+
+                <form onSubmit={handleSave} className="space-y-8">
+                   {/* Meta Section */}
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                         <label className="text-xs font-bold uppercase text-muted">Subject</label>
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
+                            <Info size={12} /> Subject
+                         </label>
                          <select 
-                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 focus:ring-4 ring-primary-500/10 transition-all appearance-none"
                            value={currentQuestion?.subject}
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, subject: e.target.value as QuestionBankEntry['subject'] }))}
                            required
@@ -292,9 +333,11 @@ export const QuestionBankPage = () => {
                          </select>
                       </div>
                       <div className="space-y-2">
-                         <label className="text-xs font-bold uppercase text-muted">Difficulty</label>
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
+                            <Info size={12} /> Difficulty
+                         </label>
                          <select 
-                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 focus:ring-4 ring-primary-500/10 transition-all appearance-none"
                            value={currentQuestion?.difficulty}
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, difficulty: e.target.value as QuestionBankEntry['difficulty'] }))}
                            required
@@ -302,71 +345,124 @@ export const QuestionBankPage = () => {
                             {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
                          </select>
                       </div>
-                   </div>
-
-                   <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase text-muted">Question Text</label>
-                      <textarea 
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500 min-h-[100px]"
-                        value={currentQuestion?.text}
-                        onChange={(e) => setCurrentQuestion(prev => ({ ...prev, text: e.target.value }))}
-                        required
-                      />
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                         <label className="text-xs font-bold uppercase text-muted">Chapter</label>
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
+                            <ImageIcon size={12} /> Question Image URL
+                         </label>
                          <input 
                            type="text"
-                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
+                           placeholder="https://example.com/image.png"
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 transition-all"
+                           value={currentQuestion?.imageUrl || ''}
+                           onChange={(e) => setCurrentQuestion(prev => ({ ...prev, imageUrl: e.target.value }))}
+                         />
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted">Chapter Name</label>
+                         <input 
+                           type="text"
+                           placeholder="e.g. Thermodynamics"
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 transition-all"
                            value={currentQuestion?.chapter || ''}
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, chapter: e.target.value }))}
                          />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-xs font-bold uppercase text-muted">Concept</label>
+                         <label className="text-xs font-bold uppercase tracking-widest text-muted">Concept Tag</label>
                          <input 
                            type="text"
-                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
+                           placeholder="e.g. Entropy"
+                           className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 transition-all"
                            value={currentQuestion?.concept || ''}
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, concept: e.target.value }))}
                          />
                       </div>
                    </div>
 
-                   <div className="space-y-4">
-                      <label className="text-xs font-bold uppercase text-muted">Options (Select the correct one)</label>
-                      {currentQuestion?.options?.map((opt, idx) => (
-                        <div key={idx} className="flex items-center gap-4">
-                           <input 
-                             type="radio" 
-                             name="isCorrect" 
-                             checked={opt.isCorrect}
-                             onChange={() => {
-                                const newOptions = currentQuestion.options?.map((o, i) => ({ ...o, isCorrect: i === idx }))
-                                setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
-                             }}
-                           />
-                           <input 
-                             type="text" 
-                             className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500"
-                             placeholder={`Option ${idx + 1}`}
-                             value={opt.text}
-                             onChange={(e) => {
-                                const newOptions = [...(currentQuestion.options || [])]
-                                newOptions[idx] = { ...newOptions[idx], text: e.target.value }
-                                setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
-                             }}
-                             required
-                           />
-                        </div>
-                      ))}
+                   <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted">Question Statement</label>
+                      <textarea 
+                        placeholder="Type your question here. Use $...$ for LaTeX formulas."
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary-500 transition-all min-h-[120px] resize-y leading-relaxed"
+                        value={currentQuestion?.text}
+                        onChange={(e) => setCurrentQuestion(prev => ({ ...prev, text: e.target.value }))}
+                        required
+                      />
                    </div>
 
-                   <div className="flex justify-end gap-3 pt-4">
-                      <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-                      <Button type="submit" isLoading={submitting}>Save Question</Button>
+                   {/* Options Section */}
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                         <label className="text-sm font-black uppercase tracking-widest text-primary-500">Answer Options</label>
+                         <span className="text-xs text-muted">Select the correct radio button</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         {currentQuestion?.options?.map((opt, idx) => (
+                           <div key={idx} className={`p-5 rounded-3xl border transition-all ${opt.isCorrect ? 'bg-success-500/5 border-success-500/30' : 'bg-white/5 border-white/10'}`}>
+                              <div className="flex items-center gap-3 mb-4">
+                                 <input 
+                                   type="radio" 
+                                   name="isCorrect" 
+                                   className="w-5 h-5 accent-success-500"
+                                   checked={opt.isCorrect}
+                                   onChange={() => {
+                                      const newOptions = currentQuestion.options?.map((o, i) => ({ ...o, isCorrect: i === idx }))
+                                      setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
+                                   }}
+                                 />
+                                 <span className="text-xs font-bold uppercase tracking-widest text-muted">Option {String.fromCharCode(65 + idx)}</span>
+                              </div>
+                              <div className="space-y-3">
+                                 <input 
+                                   type="text" 
+                                   className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-all"
+                                   placeholder={`Option Text...`}
+                                   value={opt.text}
+                                   onChange={(e) => {
+                                      const newOptions = [...(currentQuestion.options || [])]
+                                      newOptions[idx] = { ...newOptions[idx], text: e.target.value }
+                                      setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
+                                   }}
+                                   required
+                                 />
+                                 <div className="flex items-center gap-2">
+                                    <ImageIcon size={14} className="text-muted" />
+                                    <input 
+                                      type="text" 
+                                      className="flex-1 bg-black/20 border border-white/5 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500 transition-all"
+                                      placeholder="Option Image URL (Optional)"
+                                      value={opt.imageUrl || ''}
+                                      onChange={(e) => {
+                                         const newOptions = [...(currentQuestion.options || [])]
+                                         newOptions[idx] = { ...newOptions[idx], imageUrl: e.target.value }
+                                         setCurrentQuestion(prev => ({ ...prev, options: newOptions }))
+                                      }}
+                                    />
+                                 </div>
+                              </div>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
+                         <BookOpen size={14} /> Detailed Solution / Explanation
+                      </label>
+                      <textarea 
+                        placeholder="Explain why the selected option is correct..."
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary-500 transition-all min-h-[100px] resize-y text-sm text-muted"
+                        value={currentQuestion?.explanation || ''}
+                        onChange={(e) => setCurrentQuestion(prev => ({ ...prev, explanation: e.target.value }))}
+                      />
+                   </div>
+
+                   <div className="flex justify-end gap-4 pt-6">
+                      <Button variant="secondary" size="lg" className="rounded-2xl px-8" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                      <Button type="submit" size="lg" className="rounded-2xl px-12" isLoading={submitting}>Save to Bank</Button>
                    </div>
                 </form>
              </motion.div>
@@ -377,39 +473,51 @@ export const QuestionBankPage = () => {
       {/* Bulk Upload Modal */}
       <AnimatePresence>
         {isBulkModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
              <motion.div 
                initial={{ scale: 0.95, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
                exit={{ scale: 0.95, opacity: 0 }}
-               className="bg-[#1a1c23] border border-white/10 rounded-2xl p-8 max-w-3xl w-full shadow-2xl"
+               className="bg-[#12141c] border border-white/10 rounded-3xl p-10 max-w-4xl w-full shadow-2xl"
              >
-                <div className="flex items-center justify-between mb-6">
-                   <h3 className="text-2xl font-bold">Bulk Upload Questions</h3>
-                   <Button variant="secondary" size="sm" onClick={() => {
-                      const csvContent = "text,subject,chapter,difficulty,opt1,opt2,opt3,opt4,correctIndex\nWhat is the speed of light?,PHYSICS,Mechanics,EASY,3e8,4e8,5e8,2e8,0";
+                <div className="flex items-center justify-between mb-8">
+                   <div>
+                      <h3 className="text-2xl font-black">Bulk Upload Questions</h3>
+                      <p className="text-muted text-sm mt-1">Import multiple questions using CSV format.</p>
+                   </div>
+                   <Button variant="secondary" size="sm" className="rounded-xl" onClick={() => {
+                      const csvContent = "text,subject,chapter,difficulty,imageUrl,explanation,optA_text,optB_text,optC_text,optD_text,correctIdx(0-3),optA_img,optB_img,optC_img,optD_img\nWhat is the speed of light?,PHYSICS,Mechanics,EASY,,Speed is approx 3e8,3e8,4e8,5e8,2e8,0,,,,";
                       const blob = new Blob([csvContent], { type: 'text/csv' });
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = 'question_template.csv';
+                      a.download = 'question_bank_template.csv';
                       a.click();
                    }}>
-                      <Download size={14} className="mr-2" /> Template
+                      <Download size={14} className="mr-2" /> Download Template
                    </Button>
                 </div>
-                <p className="text-sm text-muted mb-4">Paste your CSV content below. Ensure it matches the template format.</p>
+                
+                <div className="bg-primary-500/5 border border-primary-500/10 rounded-2xl p-4 mb-6 flex gap-4 items-start">
+                   <Info className="text-primary-500 shrink-0 mt-1" size={20} />
+                   <div className="text-xs text-muted leading-relaxed">
+                      Ensure your CSV columns match exactly: <br/>
+                      <code className="text-primary-500">text, subject, chapter, difficulty, imageUrl, explanation, optA, optB, optC, optD, correctIdx, optA_img, optB_img, optC_img, optD_img</code>
+                   </div>
+                </div>
+
                 <textarea 
-                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary-500 min-h-[300px] font-mono text-sm"
-                   placeholder="text,subject,chapter,difficulty,opt1,opt2,opt3,opt4,correctIndex..."
+                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary-500 min-h-[300px] font-mono text-sm custom-scrollbar"
+                   placeholder="Paste CSV rows here..."
                    id="bulkCsv"
                 />
-                <div className="flex justify-end gap-3 mt-6">
-                   <Button variant="secondary" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button>
-                   <Button onClick={() => {
+                
+                <div className="flex justify-end gap-4 mt-8">
+                   <Button variant="secondary" size="lg" className="rounded-2xl px-8" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button>
+                   <Button size="lg" className="rounded-2xl px-12" onClick={() => {
                       const val = (document.getElementById('bulkCsv') as HTMLTextAreaElement).value;
                       if (val) void handleBulkUpload(val);
-                   }} isLoading={submitting}>Upload Questions</Button>
+                   }} isLoading={submitting}>Start Import</Button>
                 </div>
              </motion.div>
           </div>

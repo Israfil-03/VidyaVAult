@@ -178,6 +178,7 @@ model QuestionBankEntry {
   concept     String?
   difficulty  Difficulty   @default(MEDIUM)
   explanation String?
+  imageUrl    String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   options     BankOption[]
@@ -189,6 +190,7 @@ model BankOption {
   id             String            @id @default(cuid())
   questionBankId String
   text           String
+  imageUrl       String?
   isCorrect      Boolean           @default(false)
   question       QuestionBankEntry @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
 

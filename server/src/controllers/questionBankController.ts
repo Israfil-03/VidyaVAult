@@ -12,10 +12,12 @@ const bankQuestionSchema = z.object({
   concept: z.string().optional(),
   difficulty: z.nativeEnum(Difficulty).default(Difficulty.MEDIUM),
   explanation: z.string().optional(),
+  imageUrl: z.string().url().or(z.literal('')).optional(),
   options: z
     .array(
       z.object({
         text: z.string().min(1),
+        imageUrl: z.string().url().or(z.literal('')).optional(),
         isCorrect: z.boolean(),
       }),
     )
@@ -67,6 +69,7 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
       concept: payload.concept,
       difficulty: payload.difficulty,
       explanation: payload.explanation,
+      imageUrl: payload.imageUrl,
       options: {
         create: payload.options,
       },
@@ -105,6 +108,7 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
         concept: payload.concept,
         difficulty: payload.difficulty,
         explanation: payload.explanation,
+        imageUrl: payload.imageUrl,
         options: payload.options
           ? {
               create: payload.options,
@@ -149,6 +153,7 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           concept: q.concept,
           difficulty: q.difficulty,
           explanation: q.explanation,
+          imageUrl: q.imageUrl,
           options: {
             create: q.options,
           },

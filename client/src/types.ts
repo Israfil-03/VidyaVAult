@@ -42,12 +42,14 @@ export interface QuestionInput {
 export interface BankOption {
   id: string
   text: string
+  imageUrl?: string
   isCorrect: boolean
 }
 
 export interface QuestionBankEntry {
   id: string
   text: string
+  imageUrl?: string
   subject: string
   chapter?: string
   concept?: string
