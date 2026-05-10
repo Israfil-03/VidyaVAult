@@ -68,6 +68,7 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
   console.log('[CreateBankQuestion] Payload:', JSON.stringify(payload, null, 2))
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (!(prisma as any).questionBankEntry) {
       throw new Error("Prisma model 'questionBankEntry' is not defined. Please run 'npx prisma generate'.")
     }
