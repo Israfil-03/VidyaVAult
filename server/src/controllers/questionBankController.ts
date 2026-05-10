@@ -45,6 +45,10 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
       chapter: query.chapter,
       difficulty: query.difficulty,
       text: query.search ? { contains: query.search, mode: 'insensitive' } : undefined,
+      OR: [
+        { isPublic: true },
+        req.user?.teacherId ? { teacherId: req.user.teacherId } : {},
+      ],
     },
     include: {
       options: true,
@@ -64,10 +68,6 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
   console.log('[CreateBankQuestion] Payload:', JSON.stringify(payload, null, 2))
 
   try {
-    if (!prisma.questionBankEntry) {
-      console.error('[CreateBankQuestion] prisma.questionBankEntry is UNDEFINED')
-      throw new Error('prisma.questionBankEntry is undefined')
-    }
     const question = await prisma.questionBankEntry.create({
       data: {
         text: payload.text,
@@ -77,6 +77,7 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
         difficulty: payload.difficulty,
         explanation: payload.explanation,
         imageUrl: payload.imageUrl,
+        teacherId: req.user?.teacherId,
         options: {
           create: payload.options.map(opt => ({
             text: opt.text,
@@ -184,6 +185,7 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           difficulty: q.difficulty,
           explanation: q.explanation,
           imageUrl: q.imageUrl,
+          teacherId: req.user?.teacherId,
           options: {
             create: q.options.map(opt => ({
               text: opt.text,

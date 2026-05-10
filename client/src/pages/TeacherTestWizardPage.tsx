@@ -185,6 +185,33 @@ export const TeacherTestWizardPage = () => {
     }
   }, [isBankModalOpen, loadBankQuestions])
 
+  const saveToBank = async (question: QuestionInput) => {
+    if (!token) return
+    try {
+      await apiRequest('/question-bank', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({
+          text: question.text,
+          subject: testForm.subject,
+          chapter: question.chapter,
+          concept: question.concept,
+          difficulty: question.difficulty,
+          explanation: question.explanation,
+          imageUrl: question.imageUrl,
+          options: question.options.map(opt => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect,
+            imageUrl: opt.imageUrl
+          }))
+        })
+      })
+      alert('Question saved to bank successfully!')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save to bank')
+    }
+  }
+
   const publishTest = async () => {
     if (!token) {
       return
@@ -467,6 +494,15 @@ export const TeacherTestWizardPage = () => {
                 }}
               >
                 + Add New
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="!text-primary-500 !bg-primary-500/10 hover:!bg-primary-500/20"
+                onClick={() => saveToBank(questions[currentQIndex])}
+                disabled={!questions[currentQIndex].text}
+              >
+                <Database size={14} className="mr-2" /> Save to Bank
               </Button>
               {questions.length > 1 && (
                 <Button 

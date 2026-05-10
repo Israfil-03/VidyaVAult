@@ -277,7 +277,8 @@ export const QuestionBankPage = () => {
                     { id: '', text: '', isCorrect: false, imageUrl: '' },
                     { id: '', text: '', isCorrect: false, imageUrl: '' },
                     { id: '', text: '', isCorrect: false, imageUrl: '' },
-                  ] as QuestionBankEntry['options']
+                  ] as QuestionBankEntry['options'],
+                  isPublic: user?.role === 'superadmin'
                 })
                 setIsEditModalOpen(true)
              }}>
@@ -323,7 +324,12 @@ export const QuestionBankPage = () => {
                             }`}>
                                {q.difficulty}
                             </span>
-                            {q.chapter && <span className="text-[10px] text-muted font-bold uppercase">{q.chapter}</span>}
+                             {q.isPublic && (
+                               <span className="bg-purple-500/10 text-purple-500 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1">
+                                  <Sparkles size={8} /> Global
+                               </span>
+                             )}
+                             {q.chapter && <span className="text-[10px] text-muted font-bold uppercase">{q.chapter}</span>}
                          </div>
                          <h4 className="text-lg font-semibold leading-relaxed mb-4">{q.text}</h4>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -440,6 +446,20 @@ export const QuestionBankPage = () => {
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, imageUrl: e.target.value }))}
                          />
                       </div>
+                       {(user?.role === 'superadmin' || user?.role === 'teacher_admin') && (
+                         <div className="md:col-span-3 flex items-center gap-3 p-4 bg-primary-500/5 rounded-2xl border border-primary-500/10">
+                            <input 
+                              type="checkbox" 
+                              id="isPublic"
+                              className="w-5 h-5 accent-primary-500"
+                              checked={currentQuestion?.isPublic || false}
+                              onChange={(e) => setCurrentQuestion(prev => ({ ...prev, isPublic: e.target.checked }))}
+                            />
+                            <label htmlFor="isPublic" className="text-sm font-bold cursor-pointer">
+                               Make this question <span className="text-primary-500">Global</span> (Visible to all teachers)
+                            </label>
+                         </div>
+                       )}
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

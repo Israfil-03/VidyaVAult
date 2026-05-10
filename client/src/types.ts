@@ -58,6 +58,8 @@ export interface QuestionBankEntry {
   difficulty: 'EASY' | 'MEDIUM' | 'HARD'
   explanation?: string
   options: BankOption[]
+  teacherId?: string
+  isPublic: boolean
   createdAt: string
   updatedAt: string
 }
