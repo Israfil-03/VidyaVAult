@@ -15,6 +15,8 @@ import { TeacherTestWizardPage } from '../pages/TeacherTestWizardPage'
 import { RegistrationPage } from '../pages/RegistrationPage'
 import { SetupProfilePage } from '../pages/SetupProfilePage'
 import { AdminDashboard } from '../pages/AdminDashboard'
+import { QuestionBankPage } from '../pages/QuestionBankPage'
+import { QuestionBankPage } from '../pages/QuestionBankPage'
 
 const homePathByRole = {
   superadmin: '/superadmin',
@@ -54,6 +56,15 @@ export const AppRouter = () => {
         element={
           <ProtectedRoute roles={['institute_admin']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/question-bank"
+        element={
+          <ProtectedRoute roles={['superadmin', 'institute_admin']}>
+            <QuestionBankPage />
           </ProtectedRoute>
         }
       />

@@ -1,4 +1,4 @@
-import { Phone, User, UserCheck, Loader2 } from 'lucide-react'
+import { Phone, User, UserCheck, Loader2, Database } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
@@ -86,7 +86,10 @@ interface AssignmentDraft {
   newBatchName: string
 }
 
-const navigation = [{ label: 'Admin Dashboard', to: '/institute-admin', icon: <UserCheck size={18} /> }]
+const navigation = [
+  { label: 'Admin Dashboard', to: '/institute-admin', icon: <UserCheck size={18} /> },
+  { label: 'Question Bank', to: '/admin/question-bank', icon: <Database size={18} /> }
+]
 
 const SUBJECT_LABELS: Record<string, string> = {
   PHYSICS: 'Physics',

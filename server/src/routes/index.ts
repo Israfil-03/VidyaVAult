@@ -10,6 +10,7 @@ import { rewardRouter } from './rewardRoutes.js'
 import { studentRouter } from './studentRoutes.js'
 import { teacherRouter } from './teacherRoutes.js'
 import { testRouter } from './testRoutes.js'
+import questionBankRouter from './questionBankRoutes.js'
 
 export const apiRouter = Router()
 
@@ -38,3 +39,4 @@ apiRouter.use('/rewards', rewardRouter)
 apiRouter.use('/leaderboards', leaderboardRouter)
 apiRouter.use('/institute-admin', instituteAdminRouter)
 apiRouter.use('/ai', aiRouter)
+apiRouter.use('/question-bank', questionBankRouter)

@@ -38,3 +38,22 @@ export interface QuestionInput {
   explanation?: string
   options: OptionInput[]
 }
+
+export interface BankOption {
+  id: string
+  text: string
+  isCorrect: boolean
+}
+
+export interface QuestionBankEntry {
+  id: string
+  text: string
+  subject: string
+  chapter?: string
+  concept?: string
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD'
+  explanation?: string
+  options: BankOption[]
+  createdAt: string
+  updatedAt: string
+}
