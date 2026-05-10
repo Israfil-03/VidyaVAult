@@ -157,10 +157,8 @@ export const TeacherTestWizardPage = () => {
           })),
         })),
       )
-      setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate AI questions')
-    }
     }
   }
 

@@ -571,7 +571,7 @@ export const QuestionBankPage = () => {
                            value={aiConfig.difficulty}
                            onChange={(e) => setAiConfig(prev => ({ ...prev, difficulty: e.target.value }))}
                          >
-                            {DIFFICULTIES.map(d => <option key(d) value={d}>{d}</option>)}
+                            {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
                          </select>
                       </div>
                    </div>
