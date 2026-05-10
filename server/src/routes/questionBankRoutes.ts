@@ -15,13 +15,13 @@ const router = Router()
 // All routes require authentication
 router.use(authMiddleware)
 
-// Admin and Institute Admin can manage the bank
-const adminOnly = requireRole('superadmin', 'institute_admin')
+// Admin, Institute Admin and Teachers can manage the bank
+const bankManagers = requireRole('superadmin', 'institute_admin', 'teacher_admin')
 
 router.get('/', asyncHandler(getQuestionBank))
-router.post('/', adminOnly, asyncHandler(createBankQuestion))
-router.put('/:id', adminOnly, asyncHandler(updateBankQuestion))
-router.delete('/:id', adminOnly, asyncHandler(deleteBankQuestion))
-router.post('/bulk', adminOnly, asyncHandler(bulkUploadQuestions))
+router.post('/', bankManagers, asyncHandler(createBankQuestion))
+router.put('/:id', bankManagers, asyncHandler(updateBankQuestion))
+router.delete('/:id', bankManagers, asyncHandler(deleteBankQuestion))
+router.post('/bulk', bankManagers, asyncHandler(bulkUploadQuestions))
 
 export default router

@@ -34,16 +34,16 @@ interface AiGeneratedQuestion {
   concept: string
 }
 
-const navigation = [
-  { label: 'Admin Dashboard', to: '/institute-admin', icon: <Database size={18} /> },
-  { label: 'Question Bank', to: '/admin/question-bank', icon: <Database size={18} /> }
-]
-
 const SUBJECTS = ['PHYSICS', 'CHEMISTRY', 'MATHEMATICS', 'BIOLOGY']
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD']
 
 export const QuestionBankPage = () => {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
+  
+  const navigation = [
+    { label: user?.role === 'teacher_admin' ? 'Teacher Dashboard' : 'Admin Dashboard', to: user?.role === 'teacher_admin' ? '/teacher/homework' : '/institute-admin', icon: <Database size={18} /> },
+    { label: 'Question Bank', to: '/admin/question-bank', icon: <Database size={18} /> }
+  ]
   const [questions, setQuestions] = useState<QuestionBankEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -111,10 +111,27 @@ export const QuestionBankPage = () => {
       const method = currentQuestion.id ? 'PUT' : 'POST'
       const url = currentQuestion.id ? `/question-bank/${currentQuestion.id}` : '/question-bank'
       
+      // Clean up payload
+      const payload = {
+        ...currentQuestion,
+        options: currentQuestion.options?.map(({ text, isCorrect, imageUrl }) => ({
+          text,
+          isCorrect,
+          imageUrl: imageUrl || null
+        }))
+      }
+      
+      // Remove id and other metadata if creating
+      if (!currentQuestion.id) {
+        delete (payload as any).id
+        delete (payload as any).createdAt
+        delete (payload as any).updatedAt
+      }
+
       await apiRequest(url, {
         method,
         token,
-        body: JSON.stringify(currentQuestion)
+        body: JSON.stringify(payload)
       })
       
       setIsEditModalOpen(false)

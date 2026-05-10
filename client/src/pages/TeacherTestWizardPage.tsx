@@ -525,6 +525,17 @@ export const TeacherTestWizardPage = () => {
                     }
                   />
                 </label>
+                <label>
+                  Question Image URL (Optional)
+                  <input
+                    type="text"
+                    value={questions[currentQIndex].imageUrl || ''}
+                    placeholder="https://example.com/image.png"
+                    onChange={(event) =>
+                      updateQuestion(currentQIndex, (current) => ({ ...current, imageUrl: event.target.value }))
+                    }
+                  />
+                </label>
                 <div className="inline-grid">
                   <label>
                     Chapter
@@ -565,19 +576,34 @@ export const TeacherTestWizardPage = () => {
                         }
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                       />
-                      <input
-                        value={option.text}
-                        placeholder={`Option ${optionIndex + 1}`}
-                        style={{ flex: 1 }}
-                        onChange={(event) =>
-                          updateQuestion(currentQIndex, (current) => ({
-                            ...current,
-                            options: current.options.map((entry, idx) =>
-                              idx === optionIndex ? { ...entry, text: event.target.value } : entry,
-                            ),
-                          }))
-                        }
-                      />
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <input
+                          value={option.text}
+                          placeholder={`Option ${optionIndex + 1}`}
+                          style={{ width: '100%' }}
+                          onChange={(event) =>
+                            updateQuestion(currentQIndex, (current) => ({
+                              ...current,
+                              options: current.options.map((entry, idx) =>
+                                idx === optionIndex ? { ...entry, text: event.target.value } : entry,
+                              ),
+                            }))
+                          }
+                        />
+                        <input
+                          value={option.imageUrl || ''}
+                          placeholder="Option Image URL (Optional)"
+                          style={{ width: '100%', fontSize: '0.75rem', height: '30px' }}
+                          onChange={(event) =>
+                            updateQuestion(currentQIndex, (current) => ({
+                              ...current,
+                              options: current.options.map((entry, idx) =>
+                                idx === optionIndex ? { ...entry, imageUrl: event.target.value } : entry,
+                              ),
+                            }))
+                          }
+                        />
+                      </div>
                       {questions[currentQIndex].options.length > 2 && (
                         <button 
                           onClick={() => {
@@ -865,9 +891,11 @@ export const TeacherTestWizardPage = () => {
                                      marks: 1,
                                      source: 'MANUAL',
                                      explanation: q.explanation || '',
-                                     options: q.options.map((opt: { text: string; isCorrect: boolean }) => ({
+                                     imageUrl: q.imageUrl || '',
+                                     options: q.options.map((opt: { text: string; isCorrect: boolean; imageUrl?: string }) => ({
                                         text: opt.text,
-                                        isCorrect: opt.isCorrect
+                                        isCorrect: opt.isCorrect,
+                                        imageUrl: opt.imageUrl || ''
                                      }))
                                   };
                                   setQuestions(prev => (prev.length === 1 && prev[0].text === '' ? [newQ] : [...prev, newQ]));

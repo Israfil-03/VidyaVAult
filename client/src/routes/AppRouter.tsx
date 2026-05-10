@@ -62,7 +62,7 @@ export const AppRouter = () => {
       <Route
         path="/admin/question-bank"
         element={
-          <ProtectedRoute roles={['superadmin', 'institute_admin']}>
+          <ProtectedRoute roles={['superadmin', 'institute_admin', 'teacher_admin']}>
             <QuestionBankPage />
           </ProtectedRoute>
         }

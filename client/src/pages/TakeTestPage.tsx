@@ -18,9 +18,11 @@ interface TestDetail {
   questions: Array<{
     id: string
     text: string
+    imageUrl?: string
     options: Array<{
       id: string
       text: string
+      imageUrl?: string
     }>
   }>
 }
@@ -139,7 +141,18 @@ export const TakeTestPage = () => {
                        {/* Mark for review placeholder */}
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold mb-8 leading-relaxed">{activeQuestion?.text}</h3>
+                  <div className="flex flex-col gap-4 mb-8">
+                    <h3 className="text-xl font-semibold leading-relaxed">{activeQuestion?.text}</h3>
+                    {activeQuestion?.imageUrl && (
+                      <div className="rounded-2xl overflow-hidden bg-black/5 border border-border-soft">
+                        <img 
+                          src={activeQuestion.imageUrl} 
+                          alt="Question" 
+                          className="max-w-full h-auto max-h-[400px] mx-auto object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <div className="grid gap-4">
                     {activeQuestion?.options.map((option, idx) => (
                       <motion.button
@@ -160,7 +173,14 @@ export const TakeTestPage = () => {
                         }`}>
                           {String.fromCharCode(65 + idx)}
                         </div>
-                        <span className="font-medium">{option.text}</span>
+                        <div className="flex-1">
+                          <span className="font-medium block">{option.text}</span>
+                          {option.imageUrl && (
+                            <div className="mt-3 rounded-lg overflow-hidden border border-border-soft bg-white/50 p-1">
+                              <img src={option.imageUrl} alt={`Option ${idx + 1}`} className="max-w-full h-32 object-contain" />
+                            </div>
+                          )}
+                        </div>
                       </motion.button>
                     ))}
                   </div>

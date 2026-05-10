@@ -27,10 +27,12 @@ const questionSchema = z.object({
   marks: z.number().int().positive().default(1),
   source: z.nativeEnum(QuestionSource).default(QuestionSource.MANUAL),
   explanation: z.string().optional(),
+  imageUrl: z.string().url().or(z.literal('')).nullable().optional(),
   options: z
     .array(
       z.object({
         text: z.string().min(1),
+        imageUrl: z.string().url().or(z.literal('')).nullable().optional(),
         isCorrect: z.boolean(),
       }),
     )
@@ -226,8 +228,13 @@ export const createTest = async (req: Request, res: Response): Promise<void> => 
                 marks: question.marks,
                 source: question.source,
                 explanation: question.explanation,
+                imageUrl: question.imageUrl,
                 options: {
-                  create: question.options,
+                  create: question.options.map(opt => ({
+                    text: opt.text,
+                    isCorrect: opt.isCorrect,
+                    imageUrl: opt.imageUrl
+                  })),
                 },
               })),
             }

@@ -8,16 +8,16 @@ import { ApiError } from '../utils/apiError.js'
 const bankQuestionSchema = z.object({
   text: z.string().min(1),
   subject: z.nativeEnum(Subject),
-  chapter: z.string().optional(),
-  concept: z.string().optional(),
+  chapter: z.string().nullable().optional(),
+  concept: z.string().nullable().optional(),
   difficulty: z.nativeEnum(Difficulty).default(Difficulty.MEDIUM),
-  explanation: z.string().optional(),
-  imageUrl: z.string().url().or(z.literal('')).optional(),
+  explanation: z.string().nullable().optional(),
+  imageUrl: z.string().url().or(z.literal('')).nullable().optional(),
   options: z
     .array(
       z.object({
         text: z.string().min(1),
-        imageUrl: z.string().url().or(z.literal('')).optional(),
+        imageUrl: z.string().url().or(z.literal('')).nullable().optional(),
         isCorrect: z.boolean(),
       }),
     )
@@ -61,28 +61,40 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
 export const createBankQuestion = async (req: Request, res: Response): Promise<void> => {
   const payload = bankQuestionSchema.parse(req.body)
 
-  const question = await prisma.questionBankEntry.create({
-    data: {
-      text: payload.text,
-      subject: payload.subject,
-      chapter: payload.chapter,
-      concept: payload.concept,
-      difficulty: payload.difficulty,
-      explanation: payload.explanation,
-      imageUrl: payload.imageUrl,
-      options: {
-        create: payload.options,
+  try {
+    const question = await prisma.questionBankEntry.create({
+      data: {
+        text: payload.text,
+        subject: payload.subject,
+        chapter: payload.chapter,
+        concept: payload.concept,
+        difficulty: payload.difficulty,
+        explanation: payload.explanation,
+        imageUrl: payload.imageUrl,
+        options: {
+          create: payload.options.map(opt => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect,
+            imageUrl: opt.imageUrl
+          })),
+        },
       },
-    },
-    include: {
-      options: true,
-    },
-  })
+      include: {
+        options: true,
+      },
+    })
 
-  res.status(201).json({
-    success: true,
-    data: question,
-  })
+    res.status(201).json({
+      success: true,
+      data: question,
+    })
+  } catch (error) {
+    console.error('[CreateBankQuestion Error]:', error)
+    if (error instanceof Error) {
+      throw new ApiError(`Failed to create bank question: ${error.message}`, 500)
+    }
+    throw error
+  }
 }
 
 export const updateBankQuestion = async (req: Request, res: Response): Promise<void> => {
@@ -94,37 +106,49 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
     throw new ApiError('Question not found', 404)
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    if (payload.options) {
-      await tx.bankOption.deleteMany({ where: { questionBankId: id } })
-    }
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      if (payload.options) {
+        await tx.bankOption.deleteMany({ where: { questionBankId: id } })
+      }
 
-    return tx.questionBankEntry.update({
-      where: { id },
-      data: {
-        text: payload.text,
-        subject: payload.subject,
-        chapter: payload.chapter,
-        concept: payload.concept,
-        difficulty: payload.difficulty,
-        explanation: payload.explanation,
-        imageUrl: payload.imageUrl,
-        options: payload.options
-          ? {
-              create: payload.options,
-            }
-          : undefined,
-      },
-      include: {
-        options: true,
-      },
+      return tx.questionBankEntry.update({
+        where: { id },
+        data: {
+          text: payload.text,
+          subject: payload.subject,
+          chapter: payload.chapter,
+          concept: payload.concept,
+          difficulty: payload.difficulty,
+          explanation: payload.explanation,
+          imageUrl: payload.imageUrl,
+          options: payload.options
+            ? {
+                create: payload.options.map(opt => ({
+                  text: opt.text,
+                  isCorrect: opt.isCorrect,
+                  imageUrl: opt.imageUrl
+                })),
+              }
+            : undefined,
+        },
+        include: {
+          options: true,
+        },
+      })
     })
-  })
 
-  res.json({
-    success: true,
-    data: updated,
-  })
+    res.json({
+      success: true,
+      data: updated,
+    })
+  } catch (error) {
+    console.error('[UpdateBankQuestion Error]:', error)
+    if (error instanceof Error) {
+      throw new ApiError(`Failed to update bank question: ${error.message}`, 500)
+    }
+    throw error
+  }
 }
 
 export const deleteBankQuestion = async (req: Request, res: Response): Promise<void> => {
@@ -155,7 +179,11 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           explanation: q.explanation,
           imageUrl: q.imageUrl,
           options: {
-            create: q.options,
+            create: q.options.map(opt => ({
+              text: opt.text,
+              isCorrect: opt.isCorrect,
+              imageUrl: opt.imageUrl
+            })),
           },
         },
       }),

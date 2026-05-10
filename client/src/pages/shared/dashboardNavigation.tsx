@@ -17,6 +17,7 @@ export type DashboardSection =
   | 'leaderboard'
   | 'performance'
   | 'profile'
+  | 'question-bank'
 
 interface NavigationItem {
   label: string
@@ -35,10 +36,20 @@ const sectionMeta: Array<{ section: DashboardSection; label: string; icon: React
 
 export const getDashboardNavigation = (role: DashboardRole): NavigationItem[] => {
   const basePath = role === 'teacher' ? '/teacher' : '/student'
-  return sectionMeta.map((item) => ({
+  const nav = sectionMeta.map((item) => ({
     label: item.label,
     to: `${basePath}/${item.section}`,
     icon: item.icon,
   }))
+
+  if (role === 'teacher') {
+    nav.splice(3, 0, {
+      label: 'Question Bank',
+      to: '/admin/question-bank',
+      icon: <FileText size={18} /> // Or another suitable icon
+    })
+  }
+
+  return nav
 }
 

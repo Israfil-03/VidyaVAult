@@ -25,6 +25,7 @@ export interface ApiEnvelope<T> {
 export interface OptionInput {
   text: string
   isCorrect: boolean
+  imageUrl?: string
 }
 
 export interface QuestionInput {
@@ -36,6 +37,7 @@ export interface QuestionInput {
   marks: number
   source: 'MANUAL' | 'AI'
   explanation?: string
+  imageUrl?: string
   options: OptionInput[]
 }
 
