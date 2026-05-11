@@ -32,6 +32,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [autoSaveToBank, setAutoSaveToBank] = useState(false)
 
   const [step, setStep] = useState<Step>('INFO')
   
@@ -86,6 +87,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
       ],
       explanation: '',
     })
+    setAutoSaveToBank(false)
     setError(null)
   }
 
@@ -189,6 +191,31 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
 
       if (endTime <= startTime) {
         throw new Error('End time must be after publish time.')
+      }
+
+      if (autoSaveToBank) {
+        await apiRequest('/question-bank/bulk', {
+          method: 'POST',
+          token,
+          body: JSON.stringify({
+            questions: finalQuestions.map(q => ({
+              text: q.text,
+              subject: info.subject,
+              chapter: '',
+              concept: '',
+              difficulty: 'MEDIUM',
+              explanation: q.explanation,
+              isPublic: false,
+              options: q.options.map(opt => ({
+                text: opt.text,
+                isCorrect: opt.isCorrect,
+                imageUrl: ''
+              }))
+            }))
+          })
+        }).catch(err => {
+           console.error('Failed to auto-save to bank:', err)
+        })
       }
 
       await apiRequest('/tests', {
@@ -604,6 +631,19 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               ))}
             </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--surface-soft)', borderRadius: '8px', border: '1px solid var(--border-soft)' }}>
+              <input 
+                type="checkbox" 
+                id="autoSaveBankRev"
+                checked={autoSaveToBank}
+                onChange={(e) => setAutoSaveToBank(e.target.checked)} 
+                style={{ width: 'auto', margin: 0 }}
+              />
+              <label htmlFor="autoSaveBankRev" style={{ margin: 0, fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+                Save all {questions.length} questions to my Question Bank
+              </label>
+            </div>
+
             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
               <Button variant="secondary" onClick={() => setStep('AI_CONFIG')} style={{ flex: 1 }}>
                 Regenerate
@@ -718,6 +758,19 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
                 onChange={(e) => setCurrentQuestion(q => ({ ...q, explanation: e.target.value }))}
               />
             </label>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--surface-soft)', borderRadius: '8px', border: '1px solid var(--border-soft)' }}>
+              <input 
+                type="checkbox" 
+                id="autoSaveBankExp"
+                checked={autoSaveToBank}
+                onChange={(e) => setAutoSaveToBank(e.target.checked)} 
+                style={{ width: 'auto', margin: 0 }}
+              />
+              <label htmlFor="autoSaveBankExp" style={{ margin: 0, fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+                Save question(s) to my Question Bank
+              </label>
+            </div>
 
             <div className="stack-gap" style={{ gap: '12px', marginTop: '12px' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
