@@ -13,7 +13,8 @@ import {
   Image as ImageIcon,
   BookOpen,
   Info,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -225,11 +226,12 @@ export const QuestionBankPage = () => {
           difficulty: parts[3],
           imageUrl: parts[4] || undefined,
           explanation: parts[5] || undefined,
+          isPublic: parts[6] === 'true' || parts[6] === '1',
           options: [
-            { text: parts[6], isCorrect: parts[10] === '0', imageUrl: parts[11] || undefined },
-            { text: parts[7], isCorrect: parts[10] === '1', imageUrl: parts[12] || undefined },
-            { text: parts[8], isCorrect: parts[10] === '2', imageUrl: parts[13] || undefined },
-            { text: parts[9], isCorrect: parts[10] === '3', imageUrl: parts[14] || undefined },
+            { text: parts[7], isCorrect: parts[11] === '0', imageUrl: parts[12] || undefined },
+            { text: parts[8], isCorrect: parts[11] === '1', imageUrl: parts[13] || undefined },
+            { text: parts[9], isCorrect: parts[11] === '2', imageUrl: parts[14] || undefined },
+            { text: parts[10], isCorrect: parts[11] === '3', imageUrl: parts[15] || undefined },
           ]
         }
       })
@@ -350,6 +352,15 @@ export const QuestionBankPage = () => {
                                <span className="bg-purple-500/10 text-purple-500 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1">
                                   <Sparkles size={8} /> Global
                                </span>
+                             )}
+                             {!q.teacherId ? (
+                                <span className="bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1">
+                                   <Database size={8} /> Official
+                                </span>
+                             ) : (
+                                <span className="bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1">
+                                   <User size={8} /> {q.teacher?.user?.username || 'Teacher'}
+                                </span>
                              )}
                              {q.chapter && <span className="text-[10px] text-muted font-bold uppercase">{q.chapter}</span>}
                          </div>

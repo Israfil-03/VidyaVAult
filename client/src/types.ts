@@ -59,6 +59,11 @@ export interface QuestionBankEntry {
   explanation?: string
   options: BankOption[]
   teacherId?: string
+  teacher?: {
+    user: {
+      username: string
+    }
+  }
   isPublic: boolean
   createdAt: string
   updatedAt: string

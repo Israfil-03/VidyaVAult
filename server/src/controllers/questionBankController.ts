@@ -13,6 +13,7 @@ const bankQuestionSchema = z.object({
   difficulty: z.nativeEnum(Difficulty).default(Difficulty.MEDIUM),
   explanation: z.string().nullable().optional(),
   imageUrl: z.string().url().or(z.literal('')).nullable().optional(),
+  isPublic: z.boolean().default(false),
   options: z
     .array(
       z.object({
@@ -82,15 +83,24 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
       throw new ApiError('Teacher profile not found', 404)
     }
 
-    // Build where clause: same subject AND (public OR owned by this teacher)
+    // Build where clause: same subject AND (public OR owned by this teacher OR created by admin)
     questions = await prisma.questionBankEntry.findMany({
       where: {
         ...baseWhere,
         subject: teacher.subject,
-        OR: [{ isPublic: true }, { teacherId: req.user.teacherId }],
+        OR: [
+          { isPublic: true },
+          { teacherId: req.user.teacherId },
+          { teacherId: null }, // Include questions created by admins
+        ],
       },
       include: {
         options: true,
+        teacher: {
+          select: {
+            user: { select: { username: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -148,6 +158,7 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
         difficulty: payload.difficulty,
         explanation: payload.explanation,
         imageUrl: payload.imageUrl || null,
+        isPublic: payload.isPublic,
         teacherId: req.user.teacherId || null,
         options: {
           create: payload.options.map(opt => ({
@@ -227,6 +238,7 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
           difficulty: payload.difficulty,
           explanation: payload.explanation,
           imageUrl: payload.imageUrl || null,
+          isPublic: payload.isPublic,
           options: payload.options
             ? {
                 create: payload.options.map(opt => ({
@@ -331,6 +343,7 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           difficulty: q.difficulty,
           explanation: q.explanation,
           imageUrl: q.imageUrl || null,
+          isPublic: q.isPublic ?? (req.user?.role !== 'teacher_admin'), // Default to public if uploaded by admin
           teacherId: req.user?.teacherId || null,
           options: {
             create: q.options.map(opt => ({
