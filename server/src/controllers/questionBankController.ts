@@ -83,7 +83,8 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
       throw new ApiError('Teacher profile not found', 404)
     }
 
-    // Build where clause: same subject AND (public OR owned by this teacher OR created by admin)
+    // Build where clause: strictly same subject AND (public OR owned by this teacher)
+    // Removed { teacherId: null } as admins no longer add questions
     questions = await prisma.questionBankEntry.findMany({
       where: {
         ...baseWhere,
@@ -91,7 +92,6 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
         OR: [
           { isPublic: true },
           { teacherId: req.user.teacherId },
-          { teacherId: null }, // Include questions created by admins
         ],
       },
       include: {
@@ -125,7 +125,7 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
     throw new ApiError('Authentication required', 401)
   }
 
-  // Teachers can only create questions for their own subject
+  // ONLY Teachers can create questions for their own subject
   if (req.user.role === 'teacher_admin' && req.user.teacherId) {
     const teacher = await prisma.teacherProfile.findUnique({
       where: { id: req.user.teacherId },
@@ -142,10 +142,9 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
         400
       )
     }
-  }
-  // Admins and others can create for any subject
-  else if (!['superadmin', 'institute_admin'].includes(req.user.role)) {
-    throw new ApiError('You do not have permission to create questions', 403)
+  } else {
+    // Admins are restricted to "View Only" as per new architecture
+    throw new ApiError('Only teachers can create questions in the question bank', 403)
   }
 
   try {
@@ -199,12 +198,12 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
     throw new ApiError('Question not found', 404)
   }
 
-  // Check access control: only allow if user is admin or owner
-  const isAdmin = ['superadmin', 'institute_admin'].includes(req.user.role)
-  const isOwner = existing.teacherId === req.user.teacherId
+  // Check access control: only allow if user is the owner (Teacher)
+  // Admins are "View Only" as per new architecture
+  const isOwner = req.user.teacherId && existing.teacherId === req.user.teacherId
 
-  if (!isAdmin && !isOwner) {
-    throw new ApiError('You do not have permission to edit this question', 403)
+  if (!isOwner) {
+    throw new ApiError('You do not have permission to edit this question. Only the creator can modify it.', 403)
   }
 
   // If teacher is updating, validate subject doesn't change or matches their subject
@@ -280,12 +279,12 @@ export const deleteBankQuestion = async (req: Request, res: Response): Promise<v
     throw new ApiError('Question not found', 404)
   }
 
-  // Check access control: only allow if user is admin or owner
-  const isAdmin = ['superadmin', 'institute_admin'].includes(req.user.role)
-  const isOwner = existing.teacherId === req.user.teacherId
+  // Check access control: only allow if user is the owner (Teacher)
+  // Admins are "View Only" as per new architecture
+  const isOwner = req.user.teacherId && existing.teacherId === req.user.teacherId
 
-  if (!isAdmin && !isOwner) {
-    throw new ApiError('You do not have permission to delete this question', 403)
+  if (!isOwner) {
+    throw new ApiError('You do not have permission to delete this question. Only the creator can remove it.', 403)
   }
 
   await prisma.questionBankEntry.delete({
@@ -305,7 +304,7 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
     throw new ApiError('Authentication required', 401)
   }
 
-  // Teachers can only bulk upload questions for their own subject
+  // ONLY Teachers can bulk upload questions for their own subject
   if (req.user.role === 'teacher_admin' && req.user.teacherId) {
     const teacher = await prisma.teacherProfile.findUnique({
       where: { id: req.user.teacherId },
@@ -320,16 +319,13 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
     const mismatchedQuestions = questions.filter(q => q.subject !== teacher.subject)
     if (mismatchedQuestions.length > 0) {
       throw new ApiError(
-        `You can only upload questions for your subject (${teacher.subject}). Found ${mismatchedQuestions.length} questions with different subjects: ${
-          [...new Set(mismatchedQuestions.map(q => q.subject))].join(', ')
-        }`,
+        `You can only upload questions for your subject (${teacher.subject}). Found ${mismatchedQuestions.length} questions with different subjects.`,
         400
       )
     }
-  }
-  // Admins and others must have permission
-  else if (!['superadmin', 'institute_admin'].includes(req.user.role)) {
-    throw new ApiError('You do not have permission to bulk upload questions', 403)
+  } else {
+    // Admins are restricted to "View Only" as per new architecture
+    throw new ApiError('Only teachers can bulk upload questions to the bank', 403)
   }
 
   const created = await prisma.$transaction(
@@ -343,8 +339,8 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           difficulty: q.difficulty,
           explanation: q.explanation,
           imageUrl: q.imageUrl || null,
-          isPublic: q.isPublic ?? (req.user?.role !== 'teacher_admin'), // Default to public if uploaded by admin
-          teacherId: req.user?.teacherId || null,
+          isPublic: q.isPublic ?? false, // Default to private
+          teacherId: req.user.teacherId!, // Guaranteed to be present due to check above
           options: {
             create: q.options.map(opt => ({
               text: opt.text,
