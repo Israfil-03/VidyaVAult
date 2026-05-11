@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 
 interface AutoExpandingTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  value: string;
+  value?: string;
 }
 
-export const AutoExpandingTextarea: React.FC<AutoExpandingTextareaProps> = ({ value, ...props }) => {
+export const AutoExpandingTextarea: React.FC<AutoExpandingTextareaProps> = ({ value = '', ...props }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
