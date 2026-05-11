@@ -1,0 +1,1 @@
+import { z } from 'zod'; const schema = z.object({ imageUrl: z.string().url().or(z.literal('')).nullable().optional() }); console.log(schema.safeParse({ imageUrl: '' })); console.log(schema.safeParse({ imageUrl: '   ' }));
