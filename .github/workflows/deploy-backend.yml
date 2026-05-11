@@ -63,6 +63,7 @@ jobs:
           # Generate a production-only package.json in the deploy folder if needed
           # For now, we will let Azure install dependencies or copy them if necessary.
           # However, Prisma needs the client, so we run prisma generate in the deploy step.
+          jq 'del(.scripts.build)' deploy/package.json > deploy/package.json.tmp && mv deploy/package.json.tmp deploy/package.json
           cd deploy && zip -r ../deployment.zip . && cd ..
 
       - name: Azure Login
