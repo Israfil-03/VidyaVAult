@@ -176,6 +176,10 @@ model Option {
 model QuestionBankEntry {
   id          String       @id @default(cuid())
   teacherId   String?
+  /// isPublic controls question visibility:
+  /// - false (default): Only creator teacher can view (private)
+  /// - true: All teachers can view regardless of subject (global/shared)
+  /// Note: Admins can always view all questions regardless of isPublic setting
   isPublic    Boolean      @default(false)
   text        String
   subject     Subject

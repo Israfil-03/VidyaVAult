@@ -470,15 +470,15 @@ export const QuestionBankPage = () => {
                       </div>
                        {(user?.role === 'superadmin' || user?.role === 'teacher_admin') && (
                          <div className="md:col-span-3 flex items-center gap-3 p-4 bg-primary-500/5 rounded-2xl border border-primary-500/10">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               id="isPublic"
                               className="w-5 h-5 accent-primary-500"
                               checked={currentQuestion?.isPublic || false}
                               onChange={(e) => setCurrentQuestion(prev => ({ ...prev, isPublic: e.target.checked }))}
                             />
                             <label htmlFor="isPublic" className="text-sm font-bold cursor-pointer">
-                               Make this question <span className="text-primary-500">Global</span> (Visible to all teachers)
+                               Make this question <span className="text-primary-500">Global</span> (Visible to all teachers across all subjects)
                             </label>
                          </div>
                        )}
