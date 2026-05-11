@@ -737,8 +737,11 @@ export const TeacherTestWizardPage = () => {
 
             {qEditorStep === 'DETAILS' ? (
               <div className="form-grid" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-                <label>
-                  Question text
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span>Question text</span>
+                  {isCheckingSimilar && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}><Loader2 size={12} className="animate-spin" /> Checking bank...</span>}
+                </label>
+                <div style={{ marginBottom: '16px' }}>
                   <AutoExpandingTextarea
                     value={questions[currentQIndex].text}
                     placeholder="Enter question here..."
@@ -746,7 +749,7 @@ export const TeacherTestWizardPage = () => {
                       updateQuestion(currentQIndex, (current) => ({ ...current, text: event.target.value }))
                     }
                   />
-                </label>
+                </div>
 
                 {similarQuestions.length > 0 && (
                   <div style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: '8px', color: 'rgb(202, 138, 4)', fontSize: '0.85rem' }}>
