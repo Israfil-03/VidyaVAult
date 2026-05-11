@@ -1006,8 +1006,16 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 4px hsla(var(--p-h), var(--p-s), 53%, 0.1);
+  box-shadow: 0 0 0 4px hsla(var(--p-h), var(--p-s), 53%, 0.15);
   background: var(--surface);
+  transform: translateY(-1px);
+}
+
+/* Ensure mobile inputs don't zoom in on iOS */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
 }
 
 label {
@@ -1268,21 +1276,35 @@ th {
 .wizard-steps {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .wizard-steps span {
-  padding: 7px 11px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  padding: 8px 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--surface-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .wizard-steps span.active {
-  border-color: rgba(59, 130, 246, 0.55);
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  box-shadow: 0 4px 12px hsla(var(--p-h), var(--p-s), 53%, 0.15);
+  transform: scale(1.05);
+}
+
+[data-theme='dark'] .wizard-steps span.active {
+  background: var(--color-primary-900);
+  color: var(--color-primary-100);
 }
 
 .stack-gap {

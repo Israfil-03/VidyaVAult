@@ -4,6 +4,7 @@ import { Card } from '../components/Card'
 import { Button } from '../components/Button'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
+import { AutoExpandingTextarea } from '../components/AutoExpandingTextarea'
 
 interface BatchOption {
   id: string
@@ -464,10 +465,14 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-primary-400)'
                 e.currentTarget.style.background = 'var(--surface-main)'
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--border-soft)'
                 e.currentTarget.style.background = 'var(--surface-soft)'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
               }}
             >
               <Edit3 size={32} style={{ color: 'var(--color-primary-500)' }} />
@@ -495,10 +500,14 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-primary-500)'
                 e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--color-primary-200)'
                 e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
               }}
             >
               <Sparkles size={32} style={{ color: 'var(--color-primary-600)' }} />
@@ -610,9 +619,8 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
             <label>
               Question Text
-              <textarea 
+              <AutoExpandingTextarea 
                 placeholder="Type your question here..."
-                style={{ height: '100px' }}
                 value={currentQuestion.text}
                 onChange={(e) => setCurrentQuestion(q => ({ ...q, text: e.target.value }))}
               />
@@ -704,9 +712,8 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               <p style={{ margin: '0 0 8px', fontSize: '0.8rem', color: 'var(--text-soft)' }}>
                 This will be shown to students after they answer or when the test ends.
               </p>
-              <textarea 
+              <AutoExpandingTextarea 
                 placeholder="Explain why the answer is correct..."
-                style={{ height: '120px' }}
                 value={currentQuestion.explanation}
                 onChange={(e) => setCurrentQuestion(q => ({ ...q, explanation: e.target.value }))}
               />

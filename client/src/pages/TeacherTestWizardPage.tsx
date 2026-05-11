@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Trash2, Plus, Database, Search, CheckCircle2, Loader2, XCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Trash2, Plus, Database, Search, CheckCircle2, Loader2, XCircle, Info, Settings, Edit3, Users, ClipboardCheck } from 'lucide-react'
+import { AutoExpandingTextarea } from '../components/AutoExpandingTextarea'
 
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
@@ -246,13 +247,17 @@ export const TeacherTestWizardPage = () => {
     <DashboardLayout title="Teacher Test Wizard" navigation={navigation}>
       {error ? <p className="error-text">{error}</p> : null}
 
-      <Card title={`Step ${step} of 5`} subtitle="Build and publish assessments with assignment targeting">
+      <Card 
+        title={`Step ${step} of 5`} 
+        subtitle="Build and publish assessments with assignment targeting"
+        icon={<Settings size={20} />}
+      >
         <div className="wizard-steps">
-          <span className={step === 1 ? 'active' : ''}>1. Basic Details</span>
-          <span className={step === 2 ? 'active' : ''}>2. Question Mode</span>
-          <span className={step === 3 ? 'active' : ''}>3. Question Editor</span>
-          <span className={step === 4 ? 'active' : ''}>4. Assignment</span>
-          <span className={step === 5 ? 'active' : ''}>5. Review</span>
+          <span className={step === 1 ? 'active' : ''}><Info size={16} /> 1. Basic Details</span>
+          <span className={step === 2 ? 'active' : ''}><Settings size={16} /> 2. Question Mode</span>
+          <span className={step === 3 ? 'active' : ''}><Edit3 size={16} /> 3. Question Editor</span>
+          <span className={step === 4 ? 'active' : ''}><Users size={16} /> 4. Assignment</span>
+          <span className={step === 5 ? 'active' : ''}><ClipboardCheck size={16} /> 5. Review</span>
         </div>
         <div className="test-progress">
           <span style={{ width: `${(step / 5) * 100}%` }} />
@@ -260,7 +265,7 @@ export const TeacherTestWizardPage = () => {
       </Card>
 
       {step === 1 ? (
-        <Card title="Basic test details">
+        <Card title="Basic test details" icon={<Info size={20} />}>
           <div className="form-grid">
             <label>
               Title
@@ -360,30 +365,119 @@ export const TeacherTestWizardPage = () => {
 
       {step === 2 ? (
         <Card title="Choose question mode">
-          <div className="inline-actions">
-            <Button
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', animation: 'fadeIn 0.4s ease-out' }}>
+            <div 
               onClick={() => {
                 setTestForm((prev) => ({ ...prev, creationMode: 'MANUAL' }))
                 setStep(3)
               }}
+              style={{
+                padding: '24px',
+                borderRadius: '16px',
+                border: '1px solid var(--border-soft)',
+                background: 'var(--surface-soft)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                textAlign: 'center',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary-400)'
+                e.currentTarget.style.background = 'var(--surface-main)'
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-soft)'
+                e.currentTarget.style.background = 'var(--surface-soft)'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             >
-              Manual Entry
-            </Button>
-            <Button
-              variant="secondary"
+              <Edit3 size={32} style={{ color: 'var(--color-primary-500)' }} />
+              <div>
+                <h5 style={{ margin: '0 0 4px', fontWeight: '700' }}>Manual Entry</h5>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-soft)' }}>Add questions one by one manually</p>
+              </div>
+            </div>
+
+            <div 
               onClick={() => setTestForm((prev) => ({ ...prev, creationMode: 'AI' }))}
+              style={{
+                padding: '24px',
+                borderRadius: '16px',
+                border: testForm.creationMode === 'AI' ? '2px solid var(--color-primary-500)' : '1px solid var(--color-primary-200)',
+                background: testForm.creationMode === 'AI' ? 'var(--color-primary-50)' : 'rgba(59, 130, 246, 0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                textAlign: 'center',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary-500)'
+                e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
+              }}
+              onMouseLeave={(e) => {
+                if (testForm.creationMode !== 'AI') {
+                  e.currentTarget.style.borderColor = 'var(--color-primary-200)'
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)'
+                }
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             >
-              AI Assisted
-            </Button>
-            <Button
-              variant="secondary"
+              <Database size={32} style={{ color: 'var(--color-primary-600)' }} />
+              <div>
+                <h5 style={{ margin: '0 0 4px', fontWeight: '700' }}>AI Assisted</h5>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-soft)' }}>Generate questions using AI</p>
+              </div>
+            </div>
+
+            <div 
               onClick={() => {
                 setBankFilters(prev => ({ ...prev, subject: testForm.subject }))
                 setIsBankModalOpen(true)
               }}
+              style={{
+                padding: '24px',
+                borderRadius: '16px',
+                border: '1px solid var(--border-soft)',
+                background: 'var(--surface-soft)',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                textAlign: 'center',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary-400)'
+                e.currentTarget.style.background = 'var(--surface-main)'
+                e.currentTarget.style.transform = 'translateY(-4px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-soft)'
+                e.currentTarget.style.background = 'var(--surface-soft)'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             >
-              <Database size={18} className="mr-2" /> From Question Bank
-            </Button>
+              <Search size={32} style={{ color: 'var(--color-accent-500)' }} />
+              <div>
+                <h5 style={{ margin: '0 0 4px', fontWeight: '700' }}>Question Bank</h5>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-soft)' }}>Search from your saved questions</p>
+              </div>
+            </div>
           </div>
 
           {testForm.creationMode === 'AI' ? (
@@ -481,6 +575,7 @@ export const TeacherTestWizardPage = () => {
         <Card
           title={`Question ${currentQIndex + 1} of ${questions.length}`}
           subtitle={qEditorStep === 'DETAILS' ? "Enter question text and options" : "Provide an explanation for this question"}
+          icon={<Edit3 size={20} />}
           actions={
             <div style={{ display: 'flex', gap: '8px' }}>
               <Button 
@@ -551,10 +646,9 @@ export const TeacherTestWizardPage = () => {
               <div className="form-grid" style={{ animation: 'fadeIn 0.3s ease-out' }}>
                 <label>
                   Question text
-                  <textarea
+                  <AutoExpandingTextarea
                     value={questions[currentQIndex].text}
                     placeholder="Enter question here..."
-                    style={{ height: '100px' }}
                     onChange={(event) =>
                       updateQuestion(currentQIndex, (current) => ({ ...current, text: event.target.value }))
                     }
@@ -686,10 +780,9 @@ export const TeacherTestWizardPage = () => {
               <div className="form-grid" style={{ animation: 'fadeIn 0.3s ease-out' }}>
                 <label>
                   Explanation (Optional)
-                  <textarea
+                  <AutoExpandingTextarea
                     value={questions[currentQIndex].explanation}
                     placeholder="Explain why the answer is correct..."
-                    style={{ height: '150px' }}
                     onChange={(event) =>
                       updateQuestion(currentQIndex, (current) => ({ ...current, explanation: event.target.value }))
                     }
