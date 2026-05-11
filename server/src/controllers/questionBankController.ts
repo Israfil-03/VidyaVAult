@@ -40,7 +40,8 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
     })
     .parse(req.query)
 
-  if (!req.user) {
+  const user = req.user
+  if (!user) {
     throw new ApiError('Authentication required', 401)
   }
 
@@ -55,7 +56,7 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
   let questions
 
   // Admins can see all questions from all subjects and teachers
-  if (['superadmin', 'institute_admin'].includes(req.user.role)) {
+  if (['superadmin', 'institute_admin'].includes(user.role)) {
     questions = await prisma.questionBankEntry.findMany({
       where: baseWhere,
       include: {
@@ -72,10 +73,10 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
     })
   }
   // Teachers can see questions from their subject: public questions + their own questions
-  else if (req.user.role === 'teacher_admin' && req.user.teacherId) {
+  else if (user.role === 'teacher_admin' && user.teacherId) {
     // Fetch teacher's subject
     const teacher = await prisma.teacherProfile.findUnique({
-      where: { id: req.user.teacherId },
+      where: { id: user.teacherId },
       select: { subject: true },
     })
 
@@ -91,7 +92,7 @@ export const getQuestionBank = async (req: Request, res: Response): Promise<void
         subject: teacher.subject,
         OR: [
           { isPublic: true },
-          { teacherId: req.user.teacherId },
+          { teacherId: user.teacherId },
         ],
       },
       include: {
@@ -121,14 +122,15 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
   const payload = bankQuestionSchema.parse(req.body)
   console.log('[CreateBankQuestion] Payload:', JSON.stringify(payload, null, 2))
 
-  if (!req.user) {
+  const user = req.user
+  if (!user) {
     throw new ApiError('Authentication required', 401)
   }
 
   // ONLY Teachers can create questions for their own subject
-  if (req.user.role === 'teacher_admin' && req.user.teacherId) {
+  if (user.role === 'teacher_admin' && user.teacherId) {
     const teacher = await prisma.teacherProfile.findUnique({
-      where: { id: req.user.teacherId },
+      where: { id: user.teacherId },
       select: { subject: true },
     })
 
@@ -158,7 +160,7 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
         explanation: payload.explanation,
         imageUrl: payload.imageUrl || null,
         isPublic: payload.isPublic,
-        teacherId: req.user.teacherId || null,
+        teacherId: user.teacherId || null,
         options: {
           create: payload.options.map(opt => ({
             text: opt.text,
@@ -189,7 +191,8 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
   const { id } = z.object({ id: z.string() }).parse(req.params)
   const payload = bankQuestionSchema.partial().parse(req.body)
 
-  if (!req.user) {
+  const user = req.user
+  if (!user) {
     throw new ApiError('Authentication required', 401)
   }
 
@@ -200,16 +203,16 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
 
   // Check access control: only allow if user is the owner (Teacher)
   // Admins are "View Only" as per new architecture
-  const isOwner = req.user.teacherId && existing.teacherId === req.user.teacherId
+  const isOwner = user.teacherId && existing.teacherId === user.teacherId
 
   if (!isOwner) {
     throw new ApiError('You do not have permission to edit this question. Only the creator can modify it.', 403)
   }
 
   // If teacher is updating, validate subject doesn't change or matches their subject
-  if (req.user.role === 'teacher_admin' && req.user.teacherId && payload.subject) {
+  if (user.role === 'teacher_admin' && user.teacherId && payload.subject) {
     const teacher = await prisma.teacherProfile.findUnique({
-      where: { id: req.user.teacherId },
+      where: { id: user.teacherId },
       select: { subject: true },
     })
 
@@ -270,7 +273,8 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
 export const deleteBankQuestion = async (req: Request, res: Response): Promise<void> => {
   const { id } = z.object({ id: z.string() }).parse(req.params)
 
-  if (!req.user) {
+  const user = req.user
+  if (!user) {
     throw new ApiError('Authentication required', 401)
   }
 
@@ -281,7 +285,7 @@ export const deleteBankQuestion = async (req: Request, res: Response): Promise<v
 
   // Check access control: only allow if user is the owner (Teacher)
   // Admins are "View Only" as per new architecture
-  const isOwner = req.user.teacherId && existing.teacherId === req.user.teacherId
+  const isOwner = user.teacherId && existing.teacherId === user.teacherId
 
   if (!isOwner) {
     throw new ApiError('You do not have permission to delete this question. Only the creator can remove it.', 403)
@@ -300,14 +304,15 @@ export const deleteBankQuestion = async (req: Request, res: Response): Promise<v
 export const bulkUploadQuestions = async (req: Request, res: Response): Promise<void> => {
   const { questions } = bulkUploadSchema.parse(req.body)
 
-  if (!req.user) {
+  const user = req.user
+  if (!user) {
     throw new ApiError('Authentication required', 401)
   }
 
   // ONLY Teachers can bulk upload questions for their own subject
-  if (req.user.role === 'teacher_admin' && req.user.teacherId) {
+  if (user.role === 'teacher_admin' && user.teacherId) {
     const teacher = await prisma.teacherProfile.findUnique({
-      where: { id: req.user.teacherId },
+      where: { id: user.teacherId },
       select: { subject: true },
     })
 
@@ -340,7 +345,7 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           explanation: q.explanation,
           imageUrl: q.imageUrl || null,
           isPublic: q.isPublic ?? false, // Default to private
-          teacherId: req.user.teacherId!, // Guaranteed to be present due to check above
+          teacherId: user.teacherId!, // Guaranteed to be present due to check above
           options: {
             create: q.options.map(opt => ({
               text: opt.text,
@@ -369,12 +374,13 @@ export const getQuestionBankAdmin = async (req: Request, res: Response): Promise
     })
     .parse(req.query)
 
-  if (!req.user) {
+  const user = req.user
+  if (!user) {
     throw new ApiError('Authentication required', 401)
   }
 
   // Admin only
-  if (!['superadmin', 'institute_admin'].includes(req.user.role)) {
+  if (!['superadmin', 'institute_admin'].includes(user.role)) {
     throw new ApiError('You do not have permission to access this resource', 403)
   }
 
