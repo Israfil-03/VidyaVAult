@@ -706,10 +706,9 @@ export const TeacherTestWizardPage = () => {
                         style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                       />
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <input
+                        <AutoExpandingTextarea
                           value={option.text}
                           placeholder={`Option ${optionIndex + 1}`}
-                          style={{ width: '100%' }}
                           onChange={(event) =>
                             updateQuestion(currentQIndex, (current) => ({
                               ...current,

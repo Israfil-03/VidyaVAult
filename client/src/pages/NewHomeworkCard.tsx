@@ -644,15 +644,15 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
                     }}
                     style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                   />
-                  <input 
+                  <AutoExpandingTextarea 
                     placeholder={`Option ${idx + 1}`}
                     value={opt.text}
+                    style={{ flex: 1 }}
                     onChange={(e) => {
                       const newOpts = [...currentQuestion.options]
                       newOpts[idx].text = e.target.value
                       setCurrentQuestion(q => ({ ...q, options: newOpts }))
                     }}
-                    style={{ flex: 1 }}
                   />
                   {currentQuestion.options.length > 2 && (
                     <button 
