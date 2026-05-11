@@ -1,6 +1,6 @@
 # Question Bank Feature - End-to-End Testing Guide
 
-**Date:** 2026-05-11  
+**Date:** 2026-05-11
 **Implemented Version:** Complete with Access Control, Subject Validation, and Admin Endpoints
 
 ---
@@ -467,19 +467,19 @@ JOIN "BankOption" bo ON qbe.id = bo."questionBankId";
 ## 🐛 Troubleshooting
 
 ### Issue: "Teacher profile not found" error
-**Cause:** Teacher doesn't have a TeacherProfile in database  
+**Cause:** Teacher doesn't have a TeacherProfile in database
 **Solution:** Create teacher account with profile setup
 
 ### Issue: Teacher cannot see their own questions
-**Cause:** Question has wrong subject assigned  
+**Cause:** Question has wrong subject assigned
 **Solution:** Verify question subject matches teacher subject
 
 ### Issue: Admin still cannot see all questions
-**Cause:** Code not recompiled  
+**Cause:** Code not recompiled
 **Solution:** Run `npm run build` and restart server
 
 ### Issue: Subject validation not working
-**Cause:** Old compiled code being used  
+**Cause:** Old compiled code being used
 **Solution:** Delete `dist/` folder and rebuild: `npm run build`
 
 ---
@@ -506,5 +506,5 @@ JOIN "BankOption" bo ON qbe.id = bo."questionBankId";
 
 ---
 
-**Document Generated:** 2026-05-11  
+**Document Generated:** 2026-05-11
 **Status:** ✅ Ready for Production Testing

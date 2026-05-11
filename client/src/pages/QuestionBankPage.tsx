@@ -1,12 +1,12 @@
-import { 
-  Database, 
-  Plus, 
-  Search, 
-  Trash2, 
-  Edit, 
-  Upload, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Database,
+  Plus,
+  Search,
+  Trash2,
+  Edit,
+  Upload,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   Loader2,
   Download,
@@ -39,7 +39,7 @@ const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD']
 
 export const QuestionBankPage = () => {
   const { token, user } = useAuth()
-  
+
   const navigation = [
     { label: user?.role === 'teacher_admin' ? 'Teacher Dashboard' : 'Admin Dashboard', to: user?.role === 'teacher_admin' ? '/teacher/homework' : '/institute-admin', icon: <Database size={18} /> },
     { label: 'Question Bank', to: '/admin/question-bank', icon: <Database size={18} /> }
@@ -47,7 +47,7 @@ export const QuestionBankPage = () => {
   const [questions, setQuestions] = useState<QuestionBankEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Filters
   const [filters, setFilters] = useState({
     subject: '',
@@ -110,7 +110,7 @@ export const QuestionBankPage = () => {
     try {
       const method = currentQuestion.id ? 'PUT' : 'POST'
       const url = currentQuestion.id ? `/question-bank/${currentQuestion.id}` : '/question-bank'
-      
+
       // Clean up payload
       const payload = {
         ...currentQuestion,
@@ -120,9 +120,9 @@ export const QuestionBankPage = () => {
           imageUrl: imageUrl || null
         }))
       }
-      
+
       let finalPayload = payload as Record<string, unknown>
-      
+
       // Remove id and other metadata if creating
       if (!currentQuestion.id) {
         const { id, createdAt, updatedAt, ...rest } = payload as Record<string, unknown>
@@ -135,7 +135,7 @@ export const QuestionBankPage = () => {
         token,
         body: JSON.stringify(finalPayload)
       })
-      
+
       setIsEditModalOpen(false)
       void loadQuestions()
     } catch (err) {
@@ -239,7 +239,7 @@ export const QuestionBankPage = () => {
         token,
         body: JSON.stringify({ questions: payload })
       })
-      
+
       setIsBulkModalOpen(false)
       void loadQuestions()
     } catch (err) {
@@ -257,21 +257,21 @@ export const QuestionBankPage = () => {
             {error}
           </div>
         )}
-        
+
         {/* Header Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-[300px]">
              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search questions..." 
+                <input
+                  type="text"
+                  placeholder="Search questions..."
                   className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 focus:border-primary-500 outline-none transition-all"
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 />
              </div>
-             <select 
+             <select
                className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-primary-500"
                value={filters.subject}
                onChange={(e) => setFilters(prev => ({ ...prev, subject: e.target.value }))}
@@ -323,7 +323,7 @@ export const QuestionBankPage = () => {
             </div>
           ) : (
             questions.map((q) => (
-              <motion.div 
+              <motion.div
                 key={q.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -381,7 +381,7 @@ export const QuestionBankPage = () => {
                          )}
                       </div>
                       <div className="flex flex-row md:flex-col gap-2 md:self-start self-end">
-                         <button 
+                         <button
                            onClick={() => {
                               setCurrentQuestion(q)
                               setIsEditModalOpen(true)
@@ -391,7 +391,7 @@ export const QuestionBankPage = () => {
                          >
                             <Edit size={20} />
                          </button>
-                         <button 
+                         <button
                            onClick={() => handleDelete(q.id)}
                            className="p-3 bg-danger-500/10 hover:bg-danger-500/20 text-danger-500 rounded-xl transition-all"
                            title="Delete Question"
@@ -411,7 +411,7 @@ export const QuestionBankPage = () => {
       <AnimatePresence>
         {isEditModalOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-             <motion.div 
+             <motion.div
                initial={{ scale: 0.95, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -434,7 +434,7 @@ export const QuestionBankPage = () => {
                          <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
                             <Info size={12} /> Subject
                          </label>
-                         <select 
+                         <select
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 focus:ring-4 ring-primary-500/10 transition-all appearance-none"
                            value={currentQuestion?.subject}
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, subject: e.target.value as QuestionBankEntry['subject'] }))}
@@ -447,7 +447,7 @@ export const QuestionBankPage = () => {
                          <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
                             <Info size={12} /> Difficulty
                          </label>
-                         <select 
+                         <select
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 focus:ring-4 ring-primary-500/10 transition-all appearance-none"
                            value={currentQuestion?.difficulty}
                            onChange={(e) => setCurrentQuestion(prev => ({ ...prev, difficulty: e.target.value as QuestionBankEntry['difficulty'] }))}
@@ -460,7 +460,7 @@ export const QuestionBankPage = () => {
                          <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
                             <ImageIcon size={12} /> Question Image URL
                          </label>
-                         <input 
+                         <input
                            type="text"
                            placeholder="https://example.com/image.png"
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 transition-all"
@@ -487,7 +487,7 @@ export const QuestionBankPage = () => {
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                          <label className="text-xs font-bold uppercase tracking-widest text-muted">Chapter Name</label>
-                         <input 
+                         <input
                            type="text"
                            placeholder="e.g. Thermodynamics"
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 transition-all"
@@ -497,7 +497,7 @@ export const QuestionBankPage = () => {
                       </div>
                       <div className="space-y-2">
                          <label className="text-xs font-bold uppercase tracking-widest text-muted">Concept Tag</label>
-                         <input 
+                         <input
                            type="text"
                            placeholder="e.g. Entropy"
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-primary-500 transition-all"
@@ -509,7 +509,7 @@ export const QuestionBankPage = () => {
 
                    <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-muted">Question Statement</label>
-                      <textarea 
+                      <textarea
                         placeholder="Type your question here. Use $...$ for LaTeX formulas."
                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary-500 transition-all min-h-[120px] resize-y leading-relaxed"
                         value={currentQuestion?.text}
@@ -528,9 +528,9 @@ export const QuestionBankPage = () => {
                          {currentQuestion?.options?.map((opt, idx) => (
                            <div key={idx} className={`p-5 rounded-3xl border transition-all ${opt.isCorrect ? 'bg-success-500/5 border-success-500/30' : 'bg-white/5 border-white/10'}`}>
                               <div className="flex items-center gap-3 mb-4">
-                                 <input 
-                                   type="radio" 
-                                   name="isCorrect" 
+                                 <input
+                                   type="radio"
+                                   name="isCorrect"
                                    className="w-5 h-5 accent-success-500"
                                    checked={opt.isCorrect}
                                    onChange={() => {
@@ -541,8 +541,8 @@ export const QuestionBankPage = () => {
                                  <span className="text-xs font-bold uppercase tracking-widest text-muted">Option {String.fromCharCode(65 + idx)}</span>
                               </div>
                               <div className="space-y-3">
-                                 <input 
-                                   type="text" 
+                                 <input
+                                   type="text"
                                    className="w-full bg-black/20 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-primary-500 transition-all"
                                    placeholder={`Option Text...`}
                                    value={opt.text}
@@ -555,8 +555,8 @@ export const QuestionBankPage = () => {
                                  />
                                  <div className="flex items-center gap-2">
                                     <ImageIcon size={14} className="text-muted" />
-                                    <input 
-                                      type="text" 
+                                    <input
+                                      type="text"
                                       className="flex-1 bg-black/20 border border-white/5 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary-500 transition-all"
                                       placeholder="Option Image URL (Optional)"
                                       value={opt.imageUrl || ''}
@@ -577,7 +577,7 @@ export const QuestionBankPage = () => {
                       <label className="text-xs font-bold uppercase tracking-widest text-muted flex items-center gap-2">
                          <BookOpen size={14} /> Detailed Solution / Explanation
                       </label>
-                      <textarea 
+                      <textarea
                         placeholder="Explain why the selected option is correct..."
                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary-500 transition-all min-h-[100px] resize-y text-sm text-muted"
                         value={currentQuestion?.explanation || ''}
@@ -599,7 +599,7 @@ export const QuestionBankPage = () => {
       <AnimatePresence>
         {isAiModalOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-             <motion.div 
+             <motion.div
                initial={{ scale: 0.95, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
                exit={{ scale: 0.95, opacity: 0 }}
@@ -607,7 +607,7 @@ export const QuestionBankPage = () => {
              >
                 {/* Background Glow */}
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/20 blur-[100px] pointer-events-none" />
-                
+
                 <div className="flex items-center justify-between mb-8 relative">
                    <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -626,7 +626,7 @@ export const QuestionBankPage = () => {
                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                          <label className="text-xs font-bold uppercase tracking-widest text-muted">Subject</label>
-                         <select 
+                         <select
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all appearance-none"
                            value={aiConfig.subject}
                            onChange={(e) => setAiConfig(prev => ({ ...prev, subject: e.target.value }))}
@@ -636,7 +636,7 @@ export const QuestionBankPage = () => {
                       </div>
                       <div className="space-y-2">
                          <label className="text-xs font-bold uppercase tracking-widest text-muted">Difficulty</label>
-                         <select 
+                         <select
                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all appearance-none"
                            value={aiConfig.difficulty}
                            onChange={(e) => setAiConfig(prev => ({ ...prev, difficulty: e.target.value }))}
@@ -648,7 +648,7 @@ export const QuestionBankPage = () => {
 
                    <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-muted">Topic / Chapter Name</label>
-                      <input 
+                      <input
                         type="text"
                         placeholder="e.g. Quantum Mechanics or Photosynthesis"
                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 outline-none focus:border-purple-500 transition-all"
@@ -659,7 +659,7 @@ export const QuestionBankPage = () => {
 
                    <div className="space-y-2">
                       <label className="text-xs font-bold uppercase tracking-widest text-muted">Number of Questions (1-20)</label>
-                      <input 
+                      <input
                         type="number"
                         min="1"
                         max="20"
@@ -671,10 +671,10 @@ export const QuestionBankPage = () => {
 
                    <div className="flex justify-end gap-4 mt-8">
                       <Button variant="secondary" size="lg" className="rounded-2xl px-8" onClick={() => setIsAiModalOpen(false)}>Cancel</Button>
-                      <Button 
-                        size="lg" 
-                        className="rounded-2xl px-12 !bg-purple-600 hover:!bg-purple-700 shadow-lg shadow-purple-500/20" 
-                        onClick={handleAiGenerate} 
+                      <Button
+                        size="lg"
+                        className="rounded-2xl px-12 !bg-purple-600 hover:!bg-purple-700 shadow-lg shadow-purple-500/20"
+                        onClick={handleAiGenerate}
                         isLoading={submitting}
                         disabled={!aiConfig.topic}
                       >
@@ -691,7 +691,7 @@ export const QuestionBankPage = () => {
       <AnimatePresence>
         {isBulkModalOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-             <motion.div 
+             <motion.div
                initial={{ scale: 0.95, opacity: 0 }}
                animate={{ scale: 1, opacity: 1 }}
                exit={{ scale: 0.95, opacity: 0 }}
@@ -714,7 +714,7 @@ export const QuestionBankPage = () => {
                       <Download size={14} className="mr-2" /> Download Template
                    </Button>
                 </div>
-                
+
                 <div className="bg-primary-500/5 border border-primary-500/10 rounded-2xl p-4 mb-6 flex gap-4 items-start">
                    <Info className="text-primary-500 shrink-0 mt-1" size={20} />
                    <div className="text-xs text-muted leading-relaxed">
@@ -723,12 +723,12 @@ export const QuestionBankPage = () => {
                    </div>
                 </div>
 
-                <textarea 
+                <textarea
                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary-500 min-h-[300px] font-mono text-sm custom-scrollbar"
                    placeholder="Paste CSV rows here..."
                    id="bulkCsv"
                 />
-                
+
                 <div className="flex justify-end gap-4 mt-8">
                    <Button variant="secondary" size="lg" className="rounded-2xl px-8" onClick={() => setIsBulkModalOpen(false)}>Cancel</Button>
                    <Button size="lg" className="rounded-2xl px-12" onClick={() => {

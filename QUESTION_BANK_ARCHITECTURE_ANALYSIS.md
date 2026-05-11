@@ -1,7 +1,7 @@
 # Question Bank Feature - Architecture Analysis & Issues Report
 
-**Date:** 2026-05-11  
-**Status:** 🔴 Critical Issues Identified  
+**Date:** 2026-05-11
+**Status:** 🔴 Critical Issues Identified
 **Version:** 1.0
 
 ---
@@ -115,15 +115,15 @@ const questions = await prisma.questionBankEntry.findMany({
 ```typescript
 export const updateBankQuestion = async (req: Request, res: Response) => {
   const { id } = z.object({ id: z.string() }).parse(req.params)
-  
+
   const existing = await prisma.questionBankEntry.findUnique({ where: { id } })
   if (!existing) {
     throw new ApiError('Question not found', 404)
   }
-  
+
   // ☝️ PROBLEM: No check if req.user.teacherId === existing.teacherId!
   // Any teacher_admin can edit ANY question
-  
+
   const updated = await tx.questionBankEntry.update({
     where: { id },
     // ... updates ...
@@ -163,8 +163,8 @@ export const updateBankQuestion = async (req: Request, res: Response) => {
 ```typescript
 {(user?.role === 'superadmin' || user?.role === 'teacher_admin') && (
   <div className="md:col-span-3 flex items-center gap-3 p-4 bg-primary-500/5 rounded-2xl border border-primary-500/10">
-    <input 
-      type="checkbox" 
+    <input
+      type="checkbox"
       id="isPublic"
       checked={currentQuestion?.isPublic || false}
       onChange={(e) => setCurrentQuestion(prev => ({ ...prev, isPublic: e.target.checked }))}
@@ -317,7 +317,7 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
   // Check ownership: only allow updates if user is the creator or admin
   const isAdmin = ['superadmin', 'institute_admin'].includes(req.user?.role!)
   const isOwner = existing.teacherId === req.user?.teacherId
-  
+
   if (!isAdmin && !isOwner) {
     throw new ApiError('You do not have permission to edit this question', 403)
   }
@@ -336,7 +336,7 @@ export const deleteBankQuestion = async (req: Request, res: Response): Promise<v
   // Check ownership
   const isAdmin = ['superadmin', 'institute_admin'].includes(req.user?.role!)
   const isOwner = existing.teacherId === req.user?.teacherId
-  
+
   if (!isAdmin && !isOwner) {
     throw new ApiError('You do not have permission to delete this question', 403)
   }
@@ -430,7 +430,7 @@ model QuestionAuditLog {
   timestamp DateTime  @default(now())
 
   question QuestionBankEntry @relation(fields: [questionId])
-  
+
   @@index([questionId, userId])
 }
 ```
@@ -604,6 +604,6 @@ GROUP BY u.username;
 
 ---
 
-**Document prepared by:** Code Analysis  
-**Severity:** 🔴 CRITICAL  
+**Document prepared by:** Code Analysis
+**Severity:** 🔴 CRITICAL
 **Estimated Fix Time:** 2-3 hours (quick fix) → 5-6 hours (complete redesign)
