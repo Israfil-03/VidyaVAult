@@ -76,13 +76,13 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
         concept: payload.concept,
         difficulty: payload.difficulty,
         explanation: payload.explanation,
-        imageUrl: payload.imageUrl,
+        imageUrl: payload.imageUrl || null,
         teacherId: req.user?.teacherId,
         options: {
           create: payload.options.map(opt => ({
             text: opt.text,
             isCorrect: opt.isCorrect,
-            imageUrl: opt.imageUrl
+            imageUrl: opt.imageUrl || null
           })),
         },
       },
@@ -128,13 +128,13 @@ export const updateBankQuestion = async (req: Request, res: Response): Promise<v
           concept: payload.concept,
           difficulty: payload.difficulty,
           explanation: payload.explanation,
-          imageUrl: payload.imageUrl,
+          imageUrl: payload.imageUrl || null,
           options: payload.options
             ? {
                 create: payload.options.map(opt => ({
                   text: opt.text,
                   isCorrect: opt.isCorrect,
-                  imageUrl: opt.imageUrl
+                  imageUrl: opt.imageUrl || null
                 })),
               }
             : undefined,
@@ -184,13 +184,13 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
           concept: q.concept,
           difficulty: q.difficulty,
           explanation: q.explanation,
-          imageUrl: q.imageUrl,
+          imageUrl: q.imageUrl || null,
           teacherId: req.user?.teacherId,
           options: {
             create: q.options.map(opt => ({
               text: opt.text,
               isCorrect: opt.isCorrect,
-              imageUrl: opt.imageUrl
+              imageUrl: opt.imageUrl || null
             })),
           },
         },
