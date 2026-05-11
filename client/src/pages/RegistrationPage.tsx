@@ -169,18 +169,36 @@ export const RegistrationPage = () => {
             </div>
           </motion.div>
 
-          <div className="form-row-flex gap-4 flex mb-4">
+          <div className="form-row-flex mb-4">
             <motion.div className="input-group flex-1" variants={itemVariants}>
               <label>Class</label>
-              <div className="toggle-group flex gap-2">
+              <div className="toggle-container">
                 {['11', '12'].map(c => (
                   <button
                     key={c}
                     type="button"
-                    className={`flex-1 py-2 rounded-lg border transition-all ${formData.classLevel === c ? 'bg-primary border-primary text-white' : 'bg-white/5 border-white/10 text-muted'}`}
+                    className={formData.classLevel === c ? 'active' : ''}
                     onClick={() => setFormData(prev => ({ ...prev, classLevel: c }))}
                   >
-                    {c}
+                    {formData.classLevel === c && (
+                      <motion.div
+                        layoutId="class-bg"
+                        className="selection-bg"
+                        initial={false}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                        style={{ left: 4, right: '50%' }}
+                      />
+                    )}
+                    {formData.classLevel === c && c === '12' && (
+                      <motion.div
+                        layoutId="class-bg"
+                        className="selection-bg"
+                        initial={false}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                        style={{ left: '50%', right: 4 }}
+                      />
+                    )}
+                    <span className="relative z-20">Class {c}</span>
                   </button>
                 ))}
               </div>
@@ -188,43 +206,78 @@ export const RegistrationPage = () => {
 
             <motion.div className="input-group flex-1" variants={itemVariants}>
               <label>Medium</label>
-              <div className="toggle-group flex gap-2">
+              <div className="toggle-container">
                 {[
                   { id: 'BENGALI', label: 'Bengali' },
                   { id: 'ENGLISH', label: 'English' }
-                ].map(m => (
+                ].map((m, idx) => (
                   <button
                     key={m.id}
                     type="button"
-                    className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${formData.medium === m.id ? 'bg-primary-500 border-primary-500 text-white shadow-lg' : 'bg-white/5 border-white/10 text-text-soft hover:border-white/20'}`}
+                    className={formData.medium === m.id ? 'active' : ''}
                     onClick={() => setFormData(prev => ({ ...prev, medium: m.id }))}
                   >
-                    {m.label}
+                    {formData.medium === m.id && (
+                      <motion.div
+                        layoutId="medium-bg"
+                        className="selection-bg"
+                        initial={false}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                        style={{ left: idx === 0 ? 4 : '50%', right: idx === 0 ? '50%' : 4 }}
+                      />
+                    )}
+                    <span className="relative z-20">{m.label}</span>
                   </button>
                 ))}
               </div>
             </motion.div>
           </div>
 
-          <motion.div className="input-group mb-6" variants={itemVariants}>
+          <motion.div className="input-group mb-4" variants={itemVariants}>
             <label>Subject Selection</label>
-            <div className="subjects-grid grid grid-cols-2 gap-3 mt-2">
+            <div className="subjects-grid">
               {[
                 { id: 'PHYSICS', label: 'Physics' },
                 { id: 'CHEMISTRY', label: 'Chemistry' },
-                { id: 'MATHEMATICS', label: 'Mathematics' }
+                { id: 'MATHEMATICS', label: 'Mathematics' },
+                { id: 'BIOLOGY', label: 'Biology' }
               ].map(sub => (
-                <label key={sub.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${formData.subjects.includes(sub.id) ? 'bg-primary/20 border-primary text-white' : 'bg-white/5 border-white/10 text-muted hover:bg-white/10'}`}>
+                <label 
+                  key={sub.id} 
+                  className={`subject-option ${formData.subjects.includes(sub.id) ? 'selected' : ''}`}
+                >
                   <input
                     type="checkbox"
                     className="hidden"
                     checked={formData.subjects.includes(sub.id)}
                     onChange={() => handleSubjectChange(sub.id)}
                   />
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${formData.subjects.includes(sub.id) ? 'bg-primary border-primary' : 'border-white/20'}`}>
-                    {formData.subjects.includes(sub.id) && <CheckCircle2 size={14} />}
+                  
+                  <div className="custom-checkbox">
+                    {formData.subjects.includes(sub.id) && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      >
+                        <CheckCircle2 size={16} className="text-white" />
+                      </motion.div>
+                    )}
                   </div>
-                  <span className="text-sm font-medium">{sub.label}</span>
+                  
+                  <span className="subject-label">
+                    {sub.label}
+                  </span>
+
+                  {formData.subjects.includes(sub.id) && (
+                    <motion.div 
+                      layoutId={`glow-${sub.id}`}
+                      className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent opacity-30"
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '100%' }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                    />
+                  )}
                 </label>
               ))}
             </div>
@@ -236,7 +289,8 @@ export const RegistrationPage = () => {
               <Layers className="input-icon" size={20} />
               <input
                 type="text"
-                className="login-input with-icon bg-white/5 opacity-50 cursor-not-allowed"
+                className="login-input with-icon"
+                style={{ background: 'rgba(255,255,255,0.03)', opacity: 0.6, cursor: 'not-allowed' }}
                 value={new Date().getFullYear()}
                 readOnly
               />
@@ -247,8 +301,9 @@ export const RegistrationPage = () => {
             {error && (
               <motion.div
                 className="login-error"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
               >
                 {error}
               </motion.div>
@@ -259,17 +314,19 @@ export const RegistrationPage = () => {
             type="submit"
             className="login-button mt-4"
             disabled={submitting}
+            whileHover={{ scale: 1.02, boxShadow: '0 8px 25px rgba(59, 130, 246, 0.5)' }}
+            whileTap={{ scale: 0.98 }}
             variants={itemVariants}
           >
             {submitting ? (
-              <><Loader2 className="animate-spin mr-2" size={20} /> Submitting...</>
+              <><Loader2 className="animate-spin mr-2" size={20} /> Processing...</>
             ) : (
-              <>Submit Application <ArrowRight className="ml-2" size={20} /></>
+              <>Create Account <ArrowRight className="ml-2" size={20} /></>
             )}
           </motion.button>
 
           <motion.p className="text-center mt-6 text-sm text-muted" variants={itemVariants}>
-            Already have an account? <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+            Already have an account? <Link to="/login" className="text-primary hover:underline font-semibold">Sign in</Link>
           </motion.p>
         </motion.form>
       </motion.div>

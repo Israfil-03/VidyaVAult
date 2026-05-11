@@ -264,3 +264,133 @@
   0% { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* Registration Specific Styles */
+.registration-card {
+  max-width: 520px;
+}
+
+.toggle-container {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 4px;
+  position: relative;
+}
+
+.toggle-container button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  padding: 10px 0;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  z-index: 1;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.toggle-container button.active {
+  color: white;
+}
+
+.selection-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: var(--grad-primary);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  z-index: 0;
+}
+
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.subject-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.subject-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.subject-option.selected {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 20px -5px rgba(59, 130, 246, 0.3);
+}
+
+.custom-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.selected .custom-checkbox {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.subject-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  transition: color 0.3s ease;
+}
+
+.selected .subject-label {
+  color: white;
+}
+
+.form-row-flex {
+  display: flex;
+  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .form-row-flex {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .subjects-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .login-card {
+    padding: 30px 20px;
+  }
+}
+
+/* Utilities for Framer Motion classes if Tailwind is not present */
+.bg-primary { background-color: #3b82f6; }
+.bg-primary\/10 { background-color: rgba(59, 130, 246, 0.1); }
+.border-primary { border-color: #3b82f6; }
+.text-primary { color: #3b82f6; }
+.shadow-primary\/20 { box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2); }
+.shadow-primary\/30 { box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.3); }
