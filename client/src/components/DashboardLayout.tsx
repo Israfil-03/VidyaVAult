@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { Button } from './Button'
 import { PageTransition } from './PageTransition'
+import { ThemeToggle } from './ThemeToggle'
 
 interface NavigationItem {
   label: string
@@ -96,11 +97,13 @@ export const DashboardLayout = ({ title, navigation, children }: DashboardLayout
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     aria-label="Global search" 
+                    placeholder="Search anything..."
                   />
                 </div>
             </div>
           </div>
-          <div className="topbar-actions">
+          <div className="topbar-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <ThemeToggle />
             <button className="icon-btn-ghost" aria-label="Notifications">
               <Bell size={20} />
               <span className="notification-dot"></span>

@@ -302,8 +302,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             <div className="empty-state">All caught up! No homework for today.</div>
           ) : (
             <div className="premium-list">
-              {activeTests.filter(t => t.category === 'HOMEWORK').map((test) => (
-                <div key={test.id} className="daily-item">
+              {activeTests.filter(t => t.category === 'HOMEWORK').map((test, idx) => (
+                <div key={test.id} className={`daily-item fade-in-up stagger-${(idx % 4) + 1}`}>
                   <div>
                     <strong>{test.title}</strong>
                     <div className="muted">{test.subject} • {test.durationMinutes} min</div>
@@ -322,8 +322,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             <div className="empty-state">No upcoming tasks.</div>
           ) : (
             <ul className="plain-list">
-              {upcomingTests.filter(t => t.category === 'HOMEWORK').slice(0, 4).map((test) => (
-                <li key={test.id}>
+              {upcomingTests.filter(t => t.category === 'HOMEWORK').slice(0, 4).map((test, idx) => (
+                <li key={test.id} className={`fade-in-up stagger-${(idx % 4) + 1}`}>
                   <strong>{test.title}</strong>
                   <div className="muted">{test.category.replace('_', ' ')} • {formatShortDate(test.startTime)}</div>
                 </li>
@@ -408,8 +408,8 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
               <div className="empty-state">No active weekly tests.</div>
             ) : (
               <div className="premium-list">
-                {weeklyTests.map((test) => (
-                  <div key={test.id} className="premium-item">
+                {weeklyTests.map((test, idx) => (
+                  <div key={test.id} className={`premium-item fade-in-up stagger-${(idx % 4) + 1}`}>
                     <div>
                       <strong>{test.title}</strong>
                       <div className="muted">

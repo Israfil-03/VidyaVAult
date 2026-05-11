@@ -31,6 +31,7 @@
   --grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
   --grad-streak: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
 
+  /* Default (Light) Theme Variables */
   --bg-canvas: #f1f5f9;
   --bg-gradient: radial-gradient(at 0% 0%, hsla(var(--p-h), 83%, 53%, 0.1) 0px, transparent 50%),
                  radial-gradient(at 100% 0%, hsla(262, 80%, 60%, 0.08) 0px, transparent 50%),
@@ -63,6 +64,32 @@
 
   --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] {
+  --bg-canvas: #020617;
+  --bg-gradient: radial-gradient(at 0% 0%, hsla(var(--p-h), 83%, 53%, 0.15) 0px, transparent 50%),
+                 radial-gradient(at 100% 0%, hsla(262, 80%, 60%, 0.12) 0px, transparent 50%),
+                 radial-gradient(at 50% 50%, hsla(160, 80%, 50%, 0.03) 0px, transparent 50%),
+                 linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  
+  --surface: #1e293b;
+  --surface-soft: #0f172a;
+  --surface-glass: rgba(15, 23, 42, 0.7);
+  
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1;
+  --text-soft: #94a3b8;
+  --text-on-dark: #ffffff;
+
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* Animation Keyframes */
@@ -213,6 +240,55 @@
   border-color: var(--color-primary-500);
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, 
+    var(--surface-soft) 25%, 
+    var(--border-soft) 50%, 
+    var(--surface-soft) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius-sm);
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.skeleton-text {
+  height: 1em;
+  width: 100%;
+  margin-bottom: 0.5em;
+}
+
+.skeleton-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.input-glow:focus-within {
+  box-shadow: 0 0 0 4px hsla(var(--p-h), var(--p-s), 53%, 0.15);
+  border-color: var(--color-primary-500);
+}
+
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
 @media (prefers-reduced-motion: reduce) {
   @keyframes slideInLeft { from { transform: translateX(-20px); } }
   @keyframes slideInUp { from { transform: translateY(10px); } }
@@ -221,6 +297,7 @@
   @keyframes searchPulse { 0%, 100% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); } }
   @keyframes iconFloat { from { transform: translateY(0); } to { transform: translateY(0); } }
   .fade-in-up { animation: none; opacity: 1; }
+  .skeleton { animation: none; background: var(--surface-soft); }
 }
 
 * {
@@ -328,6 +405,12 @@ a {
   min-height: 100vh;
 }
 
+@media (max-width: 1024px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -340,8 +423,22 @@ a {
   backdrop-filter: blur(20px);
   color: var(--text-on-dark);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
-  z-index: 10;
+  z-index: 100;
   animation: slideInLeft 0.4s ease-out;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    transform: translateX(-100%);
+    width: 280px;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
 }
 
 .brand-login {
@@ -447,6 +544,26 @@ a {
 
 .sidebar-backdrop {
   display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar-backdrop.open {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 1025px) {
+  .sidebar-backdrop {
+    display: none !important;
+  }
 }
 
 .dashboard-main {
@@ -697,6 +814,18 @@ a {
   background: var(--surface);
   color: var(--text-muted);
   cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .menu-btn {
+    display: flex;
+  }
+  
+  .topbar-search.hide-mobile {
+    display: none;
+  }
 }
 
 .content {
@@ -704,6 +833,12 @@ a {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 20px 16px;
+  }
 }
 
 .content > div {
@@ -871,8 +1006,8 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 4px rgba(var(--p-h), 83%, 53%, 0.1);
-  background: #fff;
+  box-shadow: 0 0 0 4px hsla(var(--p-h), var(--p-s), 53%, 0.1);
+  background: var(--surface);
 }
 
 label {
@@ -1237,23 +1372,28 @@ th {
 
 .option-btn {
   text-align: left;
-  background: #f4f7ff;
+  background: var(--surface-soft);
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   padding: 11px;
   cursor: pointer;
   transition: 0.18s ease;
+  color: var(--text-main);
 }
 
 .option-btn:hover {
-  border-color: rgba(59, 130, 246, 0.48);
-  background: #edf3ff;
+  border-color: var(--color-primary-400);
+  background: var(--surface);
 }
 
 .option-btn.selected {
-  border-color: rgba(59, 130, 246, 0.68);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.13);
-  background: #e9f1ff;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 4px hsla(var(--p-h), var(--p-s), 53%, 0.15);
+  background: var(--color-primary-50);
+}
+
+[data-theme='dark'] .option-btn.selected {
+  background: var(--color-primary-900);
 }
 
 @keyframes spin {
@@ -1547,7 +1687,7 @@ th {
 }
 
 .premium-item {
-  background: white;
+  background: var(--surface);
   border-radius: var(--radius-md);
   padding: 16px;
   display: flex;
