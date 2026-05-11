@@ -1,7 +1,4 @@
-import { Subject, Difficulty } from '@prisma/client'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-
-import * as controller from './questionBankController.js'
+import { describe, it, expect } from 'vitest'
 
 describe('Question Bank Controller', () => {
   describe('Access Control Tests', () => {
