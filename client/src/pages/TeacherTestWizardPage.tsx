@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Trash2, Plus, Database, Search, CheckCircle2, Loader2, XCircle, Info, Settings, Edit3, Users, ClipboardCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Trash2, Plus, Database, Search, CheckCircle2, Loader2, XCircle, Info, Settings, Edit3, Users, ClipboardCheck, AlertTriangle } from 'lucide-react'
 import { AutoExpandingTextarea } from '../components/AutoExpandingTextarea'
 
 import { Button } from '../components/Button'
@@ -83,6 +83,8 @@ export const TeacherTestWizardPage = () => {
   // Sub-wizard state for Step 3
   const [currentQIndex, setCurrentQIndex] = useState(0)
   const [qEditorStep, setQEditorStep] = useState<'DETAILS' | 'EXPLANATION'>('DETAILS')
+  const [similarQuestions, setSimilarQuestions] = useState<QuestionBankEntry[]>([])
+  const [isCheckingSimilar, setIsCheckingSimilar] = useState(false)
 
   const assignmentPreview = useMemo(
     () => ({
@@ -186,6 +188,35 @@ export const TeacherTestWizardPage = () => {
       void loadBankQuestions()
     }
   }, [isBankModalOpen, loadBankQuestions])
+
+  useEffect(() => {
+    const text = questions[currentQIndex]?.text || ''
+    if (text.length < 15) {
+      setSimilarQuestions([])
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      if (!token) return
+      setIsCheckingSimilar(true)
+      try {
+        const query = new URLSearchParams()
+        query.append('text', text)
+        query.append('subject', testForm.subject)
+        const response = await apiRequest<QuestionBankEntry[]>(`/question-bank/similar?${query.toString()}`, { token })
+        
+        const data = Array.isArray(response) ? response : [];
+        const currentBankId = questions[currentQIndex].bankId
+        setSimilarQuestions(data.filter((q: QuestionBankEntry) => q.id !== currentBankId))
+      } catch (err) {
+        console.error('Failed to check similar questions:', err)
+      } finally {
+        setIsCheckingSimilar(false)
+      }
+    }, 800)
+
+    return () => clearTimeout(timeoutId)
+  }, [questions[currentQIndex]?.text, currentQIndex, token, testForm.subject, questions])
 
   const saveToBank = async (questionIndex: number, isPublic: boolean = false) => {
     if (!token) return
@@ -716,6 +747,43 @@ export const TeacherTestWizardPage = () => {
                     }
                   />
                 </label>
+
+                {similarQuestions.length > 0 && (
+                  <div style={{ display: 'flex', gap: '12px', padding: '12px', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: '8px', color: 'rgb(202, 138, 4)', fontSize: '0.85rem' }}>
+                    <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                    <div>
+                      <strong style={{ display: 'block', marginBottom: '4px' }}>Similar question found in your Bank!</strong>
+                      <span>A question starting with "{similarQuestions[0].text.substring(0, 40)}..." already exists. </span>
+                      <button 
+                        onClick={() => {
+                          const sq = similarQuestions[0];
+                          updateQuestion(currentQIndex, current => ({
+                            ...current,
+                            text: sq.text,
+                            chapter: sq.chapter || '',
+                            concept: sq.concept || '',
+                            difficulty: sq.difficulty,
+                            explanation: sq.explanation || '',
+                            imageUrl: sq.imageUrl || '',
+                            savedToBank: true,
+                            bankId: sq.id,
+                            isPublic: sq.isPublic,
+                            options: sq.options.map(opt => ({
+                              text: opt.text,
+                              isCorrect: opt.isCorrect,
+                              imageUrl: opt.imageUrl || ''
+                            }))
+                          }))
+                          setSimilarQuestions([]);
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'rgb(202, 138, 4)', fontWeight: 'bold', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                      >
+                        Load it instead?
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <label>
                   Question Image URL (Optional)
                   <input
@@ -1118,6 +1186,9 @@ export const TeacherTestWizardPage = () => {
                                      source: 'MANUAL',
                                      explanation: q.explanation || '',
                                      imageUrl: q.imageUrl || '',
+                                     savedToBank: true,
+                                     bankId: q.id,
+                                     isPublic: q.isPublic,
                                      options: q.options.map((opt: { text: string; isCorrect: boolean; imageUrl?: string }) => ({
                                         text: opt.text,
                                         isCorrect: opt.isCorrect,

@@ -149,6 +149,18 @@ export const createBankQuestion = async (req: Request, res: Response): Promise<v
     throw new ApiError('Only teachers can create questions in the question bank', 403)
   }
 
+  // Exact Match Blocking
+  const existingExactMatch = await prisma.questionBankEntry.findFirst({
+    where: {
+      teacherId: user.teacherId,
+      text: { equals: payload.text, mode: 'insensitive' }
+    }
+  })
+
+  if (existingExactMatch) {
+    throw new ApiError('A question with this exact text already exists in your Question Bank.', 409)
+  }
+
   try {
     const question = await prisma.questionBankEntry.create({
       data: {
@@ -333,8 +345,26 @@ export const bulkUploadQuestions = async (req: Request, res: Response): Promise<
     throw new ApiError('Only teachers can bulk upload questions to the bank', 403)
   }
 
+  // Deduplicate against existing questions for this teacher
+  const existingQuestions = await prisma.questionBankEntry.findMany({
+    where: { teacherId: user.teacherId },
+    select: { text: true }
+  })
+  const existingTextSet = new Set(existingQuestions.map(q => q.text.toLowerCase().trim()))
+
+  const uniqueQuestions = questions.filter(q => !existingTextSet.has(q.text.toLowerCase().trim()))
+
+  if (uniqueQuestions.length === 0) {
+    res.status(200).json({
+      success: true,
+      count: 0,
+      message: 'All questions already exist in your Question Bank.'
+    })
+    return
+  }
+
   const created = await prisma.$transaction(
-    questions.map((q) =>
+    uniqueQuestions.map((q) =>
       prisma.questionBankEntry.create({
         data: {
           text: q.text,
@@ -407,5 +437,35 @@ export const getQuestionBankAdmin = async (req: Request, res: Response): Promise
   res.json({
     success: true,
     data: questions,
+  })
+}
+
+export const checkSimilarBankQuestions = async (req: Request, res: Response): Promise<void> => {
+  const query = z.object({
+    text: z.string().min(3),
+    subject: z.nativeEnum(Subject).optional()
+  }).parse(req.query)
+
+  const user = req.user
+  if (!user || !user.teacherId) {
+    throw new ApiError('Authentication required', 401)
+  }
+
+  // A basic similarity check: check if any question contains the first 30 chars
+  const searchSubstring = query.text.trim().substring(0, 30)
+
+  const questions = await prisma.questionBankEntry.findMany({
+    where: {
+      teacherId: user.teacherId,
+      subject: query.subject,
+      text: { contains: searchSubstring, mode: 'insensitive' }
+    },
+    take: 5,
+    include: { options: true }
+  })
+
+  res.json({
+    success: true,
+    data: questions
   })
 }
