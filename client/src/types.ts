@@ -39,6 +39,9 @@ export interface QuestionInput {
   explanation?: string
   imageUrl?: string
   options: OptionInput[]
+  savedToBank?: boolean
+  bankId?: string
+  isPublic?: boolean
 }
 
 export interface BankOption {

@@ -59,6 +59,7 @@ export const TeacherTestWizardPage = () => {
     endTime: '',
     durationMinutes: 60,
     creationMode: 'MANUAL',
+    autoSaveToBank: false,
   })
   const [aiConfig, setAiConfig] = useState({
     topic: '',
@@ -186,28 +187,60 @@ export const TeacherTestWizardPage = () => {
     }
   }, [isBankModalOpen, loadBankQuestions])
 
-  const saveToBank = async (question: QuestionInput) => {
+  const saveToBank = async (questionIndex: number, isPublic: boolean = false) => {
     if (!token) return
+    const question = questions[questionIndex]
     try {
-      await apiRequest('/question-bank', {
-        method: 'POST',
-        token,
-        body: JSON.stringify({
-          text: question.text,
-          subject: testForm.subject,
-          chapter: question.chapter,
-          concept: question.concept,
-          difficulty: question.difficulty,
-          explanation: question.explanation,
-          imageUrl: question.imageUrl,
-          options: question.options.map(opt => ({
-            text: opt.text,
-            isCorrect: opt.isCorrect,
-            imageUrl: opt.imageUrl
-          }))
+      if (question.savedToBank && question.bankId) {
+        await apiRequest(`/question-bank/${question.bankId}`, {
+          method: 'PUT',
+          token,
+          body: JSON.stringify({
+            text: question.text,
+            subject: testForm.subject,
+            chapter: question.chapter,
+            concept: question.concept,
+            difficulty: question.difficulty,
+            explanation: question.explanation,
+            imageUrl: question.imageUrl,
+            isPublic,
+            options: question.options.map(opt => ({
+              text: opt.text,
+              isCorrect: opt.isCorrect,
+              imageUrl: opt.imageUrl
+            }))
+          })
         })
-      })
-      alert('Question saved to bank successfully!')
+        updateQuestion(questionIndex, (current) => ({ ...current, isPublic }))
+        alert('Question bank entry updated!')
+      } else {
+        const response = await apiRequest<QuestionBankEntry>('/question-bank', {
+          method: 'POST',
+          token,
+          body: JSON.stringify({
+            text: question.text,
+            subject: testForm.subject,
+            chapter: question.chapter,
+            concept: question.concept,
+            difficulty: question.difficulty,
+            explanation: question.explanation,
+            imageUrl: question.imageUrl,
+            isPublic,
+            options: question.options.map(opt => ({
+              text: opt.text,
+              isCorrect: opt.isCorrect,
+              imageUrl: opt.imageUrl
+            }))
+          })
+        })
+        updateQuestion(questionIndex, (current) => ({
+          ...current,
+          savedToBank: true,
+          bankId: response.id,
+          isPublic
+        }))
+        alert('Question saved to bank successfully!')
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to save to bank')
     }
@@ -219,6 +252,35 @@ export const TeacherTestWizardPage = () => {
     }
     setSaving(true)
     try {
+      if (testForm.autoSaveToBank) {
+        const manualNewQuestions = questions.filter(q => !q.savedToBank && q.text.trim() !== '')
+        if (manualNewQuestions.length > 0) {
+          await apiRequest('/question-bank/bulk', {
+            method: 'POST',
+            token,
+            body: JSON.stringify({
+              questions: manualNewQuestions.map(q => ({
+                text: q.text,
+                subject: testForm.subject,
+                chapter: q.chapter,
+                concept: q.concept,
+                difficulty: q.difficulty,
+                explanation: q.explanation,
+                imageUrl: q.imageUrl,
+                isPublic: q.isPublic ?? false,
+                options: q.options.map(opt => ({
+                  text: opt.text,
+                  isCorrect: opt.isCorrect,
+                  imageUrl: opt.imageUrl
+                }))
+              }))
+            })
+          }).catch(err => {
+             console.error('Failed to auto-save to bank:', err)
+          })
+        }
+      }
+
       await apiRequest('/tests', {
         method: 'POST',
         token,
@@ -594,10 +656,10 @@ export const TeacherTestWizardPage = () => {
                 variant="secondary" 
                 size="sm"
                 className="!text-primary-500 !bg-primary-500/10 hover:!bg-primary-500/20"
-                onClick={() => saveToBank(questions[currentQIndex])}
+                onClick={() => saveToBank(currentQIndex, questions[currentQIndex].isPublic || false)}
                 disabled={!questions[currentQIndex].text}
               >
-                <Database size={14} className="mr-2" /> Save to Bank
+                <Database size={14} className="mr-2" /> {questions[currentQIndex].savedToBank ? 'Update in Bank' : 'Save to Bank'}
               </Button>
               {questions.length > 1 && (
                 <Button 
@@ -815,6 +877,30 @@ export const TeacherTestWizardPage = () => {
                     />
                   </label>
                 </div>
+
+                <div style={{ marginTop: '16px', padding: '16px', background: 'var(--color-primary-50)', border: '1px solid var(--color-primary-200)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 4px', fontSize: '0.9rem', color: 'var(--color-primary-700)' }}>Add to Question Bank</h4>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-primary-600)' }}>Save this question to reuse in future tests and homework.</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--color-primary-700)', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={questions[currentQIndex].isPublic || false}
+                        onChange={(e) => updateQuestion(currentQIndex, (current) => ({ ...current, isPublic: e.target.checked }))}
+                        style={{ width: 'auto', margin: 0 }}
+                      /> 
+                      Make Global
+                    </label>
+                    <Button 
+                      onClick={() => saveToBank(currentQIndex, questions[currentQIndex].isPublic || false)}
+                      disabled={!questions[currentQIndex].text}
+                    >
+                      <Database size={16} style={{ marginRight: '8px' }} /> {questions[currentQIndex].savedToBank ? 'Update in Bank' : 'Save to Bank'}
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -938,6 +1024,20 @@ export const TeacherTestWizardPage = () => {
             Questions: {questions.length} | Assigned Students: {assignmentPreview.students} | Assigned
             Batches: {assignmentPreview.batches}
           </p>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px', background: 'var(--surface-soft)', borderRadius: '12px', marginBottom: '16px' }}>
+            <input 
+              type="checkbox" 
+              id="bulkSaveBank"
+              checked={testForm.autoSaveToBank}
+              onChange={(e) => setTestForm(prev => ({ ...prev, autoSaveToBank: e.target.checked }))} 
+              style={{ width: 'auto', margin: 0 }}
+            />
+            <label htmlFor="bulkSaveBank" style={{ margin: 0, fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer' }}>
+              Automatically save all new questions from this test to my Question Bank
+            </label>
+          </div>
+
           <div className="inline-actions">
             <Button variant="secondary" onClick={() => setStep(4)}>
               Back
