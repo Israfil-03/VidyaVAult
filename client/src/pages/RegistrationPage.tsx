@@ -137,6 +137,10 @@ export const RegistrationPage = () => {
           initial="hidden"
           animate="visible"
         >
+          <div className="section-header first-section">
+            <User size={14} /> Personal Information
+          </div>
+
           <motion.div className="input-group" variants={itemVariants}>
             <label htmlFor="fullName">Full Name</label>
             <div className="input-wrapper">
@@ -168,6 +172,10 @@ export const RegistrationPage = () => {
               />
             </div>
           </motion.div>
+
+          <div className="section-header">
+            <Sparkles size={14} /> Academic Details
+          </div>
 
           <div className="form-row-flex mb-4">
             <motion.div className="input-group flex-1" variants={itemVariants}>
@@ -239,8 +247,7 @@ export const RegistrationPage = () => {
               {[
                 { id: 'PHYSICS', label: 'Physics' },
                 { id: 'CHEMISTRY', label: 'Chemistry' },
-                { id: 'MATHEMATICS', label: 'Mathematics' },
-                { id: 'BIOLOGY', label: 'Biology' }
+                { id: 'MATHEMATICS', label: 'Mathematics' }
               ].map(sub => (
                 <label 
                   key={sub.id} 
