@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { UserCircle, Lock, Mail, ArrowRight, Loader2, Sparkles } from 'lucide-react'
+import { User, Lock, Mail, ArrowRight, Loader2, Sparkles, Eye, EyeOff } from 'lucide-react'
 
 import { useAuth } from '../hooks/useAuth'
 import type { Role } from '../types'
@@ -39,7 +39,7 @@ export const LoginPage = () => {
   const { user, login } = useAuth()
   const [identity, setIdentity] = useState('')
   const [password, setPassword] = useState('')
-  const [roleHint, setRoleHint] = useState<Role>('superadmin')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -54,7 +54,7 @@ export const LoginPage = () => {
     setError(null)
     setSubmitting(true)
     try {
-      const loggedInUser = await login(identity, password, roleHint)
+      const loggedInUser = await login(identity, password)
       navigate(rolePath[loggedInUser.role], { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
@@ -113,27 +113,13 @@ export const LoginPage = () => {
           animate="visible"
         >
           <motion.div className="input-group" variants={itemVariants}>
-            <label htmlFor="role">Account Type</label>
-            <div className="input-wrapper">
-              <UserCircle className="input-icon" size={20} />
-              <select
-                id="role"
-                className="login-input login-select with-icon"
-                value={roleHint}
-                onChange={(event) => setRoleHint(event.target.value as Role)}
-              >
-                <option value="superadmin">Superadmin</option>
-                <option value="institute_admin">Institute Admin</option>
-                <option value="teacher_admin">Teacher Admin</option>
-                <option value="student">Student</option>
-              </select>
-            </div>
-          </motion.div>
-
-          <motion.div className="input-group" variants={itemVariants}>
             <label htmlFor="identity">Email or username</label>
             <div className="input-wrapper">
-              <Mail className="input-icon" size={20} />
+              {identity.includes('@') ? (
+                <Mail className="input-icon" size={20} />
+              ) : (
+                <User className="input-icon" size={20} />
+              )}
               <input
                 id="identity"
                 type="text"
@@ -142,6 +128,7 @@ export const LoginPage = () => {
                 value={identity}
                 onChange={(event) => setIdentity(event.target.value)}
                 required
+                autoFocus
               />
             </div>
           </motion.div>
@@ -152,13 +139,22 @@ export const LoginPage = () => {
               <Lock className="input-icon" size={20} />
               <input
                 id="password"
-                type="password"
-                className="login-input with-icon"
+                type={showPassword ? 'text' : 'password'}
+                className="login-input with-icon pr-12"
                 placeholder="••••••••"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </motion.div>
 

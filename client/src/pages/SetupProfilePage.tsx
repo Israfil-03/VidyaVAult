@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence, type Variants } from 'framer-motion'
-import { Lock, ArrowRight, Loader2, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Lock, ArrowRight, Loader2, Sparkles, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 
 import { apiRequest } from '../services/api'
 import './Login.css'
@@ -31,6 +31,8 @@ export const SetupProfilePage = () => {
   const [shortId, setShortId] = useState(searchParams.get('id') || '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -135,14 +137,23 @@ export const SetupProfilePage = () => {
               <Lock className="input-icon" size={20} />
               <input
                 id="password"
-                type="password"
-                className="login-input with-icon"
+                type={showPassword ? 'text' : 'password'}
+                className="login-input with-icon pr-12"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </motion.div>
 
@@ -152,14 +163,23 @@ export const SetupProfilePage = () => {
               <Lock className="input-icon" size={20} />
               <input
                 id="confirmPassword"
-                type="password"
-                className="login-input with-icon"
+                type={showConfirmPassword ? 'text' : 'password'}
+                className="login-input with-icon pr-12"
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                tabIndex={-1}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
           </motion.div>
 
