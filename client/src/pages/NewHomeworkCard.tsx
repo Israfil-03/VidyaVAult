@@ -1,10 +1,11 @@
-import { Plus, Check, AlertCircle, ArrowRight, ArrowLeft, Trash2, Sparkles, Wand2, Edit3 } from 'lucide-react'
+import { Plus, Check, AlertCircle, ArrowRight, ArrowLeft, Trash2, Sparkles, Wand2, Edit3, Database, Search, XCircle, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Card } from '../components/Card'
 import { Button } from '../components/Button'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import { AutoExpandingTextarea } from '../components/AutoExpandingTextarea'
+import type { QuestionBankEntry } from '../types'
 
 interface BatchOption {
   id: string
@@ -33,6 +34,12 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [autoSaveToBank, setAutoSaveToBank] = useState(false)
+  
+  // Question Bank Integration
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false)
+  const [bankQuestions, setBankQuestions] = useState<QuestionBankEntry[]>([])
+  const [bankLoading, setBankLoading] = useState(false)
+  const [bankSearch, setBankSearch] = useState('')
 
   const [step, setStep] = useState<Step>('INFO')
   
@@ -139,6 +146,32 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadBankQuestions = async () => {
+    if (!token) return
+    setBankLoading(true)
+    try {
+      const query = new URLSearchParams()
+      query.append('subject', info.subject)
+      if (bankSearch) query.append('search', bankSearch)
+      const response = await apiRequest<QuestionBankEntry[]>(`/question-bank?${query.toString()}`, { token })
+      setBankQuestions(response)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load bank')
+    } finally {
+      setBankLoading(false)
+    }
+  }
+
+  const handleImportFromBank = (q: QuestionBankEntry) => {
+    setCurrentQuestion({
+      id: crypto.randomUUID(),
+      text: q.text,
+      options: q.options.map(o => ({ text: o.text, isCorrect: o.isCorrect })),
+      explanation: q.explanation || ''
+    })
+    setIsBankModalOpen(false)
   }
 
   const handleNextFromQuestion = () => {
@@ -347,29 +380,89 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
         <Button variant="secondary" size="sm" onClick={() => { setIsCreating(false); resetAll(); }}>Cancel</Button>
       }
     >
-      <div className="stack-gap" style={{ gap: '20px' }}>
-        {/* Progress Dots */}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '4px' }}>
-          {(['INFO', 'CHOICE', 'AI_CONFIG', 'QUESTION', 'EXPLANATION', 'REVIEW'] as Step[]).map(s => {
-             // Only show relevant dots based on path
-             const isAiPath = step === 'AI_CONFIG' || step === 'REVIEW'
-             const isManualPath = step === 'QUESTION' || step === 'EXPLANATION'
-             if (isAiPath && (s === 'QUESTION' || s === 'EXPLANATION')) return null
-             if (isManualPath && (s === 'AI_CONFIG' || s === 'REVIEW')) return null
-             if (step === 'CHOICE' && (s === 'AI_CONFIG' || s === 'REVIEW' || s === 'QUESTION' || s === 'EXPLANATION')) return null
-             if (step === 'INFO' && s !== 'INFO') return null
+      <div className="stack-gap" style={{ gap: '24px' }}>
+        {/* Descriptive Stepper */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          padding: '0 10px',
+          position: 'relative',
+          marginBottom: '8px'
+        }}>
+          {/* Connector Line */}
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            left: '40px',
+            right: '40px',
+            height: '2px',
+            background: 'var(--border-soft)',
+            zIndex: 0
+          }} />
 
-             return (
+          {(['INFO', 'CHOICE', 'QUESTION', 'REVIEW'] as const).map((s, idx) => {
+            // Mapping complex steps to simple stepper steps
+            const isActive = 
+              (s === 'INFO' && step === 'INFO') ||
+              (s === 'CHOICE' && step === 'CHOICE') ||
+              (s === 'QUESTION' && (step === 'QUESTION' || step === 'EXPLANATION' || step === 'AI_CONFIG')) ||
+              (s === 'REVIEW' && step === 'REVIEW')
+            
+            const isCompleted = 
+              (s === 'INFO' && step !== 'INFO') ||
+              (s === 'CHOICE' && !['INFO', 'CHOICE'].includes(step)) ||
+              (s === 'QUESTION' && step === 'REVIEW')
+
+            const labels = { INFO: 'Details', CHOICE: 'Mode', QUESTION: 'Build', REVIEW: 'Finish' }
+
+            return (
               <div key={s} style={{ 
-                width: '8px', 
-                height: '8px', 
-                borderRadius: '50%', 
-                background: step === s ? 'var(--color-primary-500)' : 'var(--border-soft)',
-                transition: 'all 0.3s'
-              }} />
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: '8px',
+                zIndex: 1,
+                width: '60px'
+              }}>
+                <div style={{ 
+                  width: '24px', 
+                  height: '24px', 
+                  borderRadius: '50%', 
+                  background: isActive ? 'var(--color-primary-500)' : isCompleted ? 'var(--success)' : 'var(--surface-main)',
+                  border: `2px solid ${isActive || isCompleted ? 'transparent' : 'var(--border-soft)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: isActive || isCompleted ? 'white' : 'var(--text-soft)',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s'
+                }}>
+                  {isCompleted ? <Check size={14} /> : idx + 1}
+                </div>
+                <span style={{ 
+                  fontSize: '0.65rem', 
+                  fontWeight: isActive ? '700' : '500',
+                  color: isActive ? 'var(--text-main)' : 'var(--text-soft)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  {labels[s]}
+                </span>
+              </div>
             )
           })}
         </div>
+
+        {/* Scrollable Container */}
+        <div style={{ 
+          maxHeight: '480px', 
+          overflowY: 'auto', 
+          padding: '4px',
+          margin: '0 -4px',
+          paddingRight: '8px'
+        }} className="custom-scrollbar">
 
         {error && (
           <div style={{ 
@@ -657,6 +750,20 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
 
         {step === 'QUESTION' && (
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', animation: 'fadeIn 0.4s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-soft)', fontWeight: '600' }}>Question Content</span>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => {
+                   void loadBankQuestions()
+                   setIsBankModalOpen(true)
+                }}
+                className="!bg-primary-500/10 !text-primary-500 !border-primary-500/20 hover:!bg-primary-500/20"
+              >
+                <Database size={14} className="mr-2" /> Import from Bank
+              </Button>
+            </div>
             <label>
               Question Text
               <AutoExpandingTextarea 
@@ -794,6 +901,103 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
           </div>
         )}
       </div>
+    </div>
+
+      {/* Bank Modal Overlay */}
+      {isBankModalOpen && (
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          zIndex: 1000, 
+          background: 'rgba(0,0,0,0.85)', 
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{ 
+            background: '#12141c', 
+            border: '1px solid rgba(255,255,255,0.1)', 
+            borderRadius: '24px', 
+            width: '100%', 
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            animation: 'modalFadeIn 0.3s ease-out'
+          }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Import from Bank</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-soft)' }}>Available questions for {info.subject}</p>
+              </div>
+              <button onClick={() => setIsBankModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-soft)', cursor: 'pointer' }}>
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="Search questions..." 
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 10px 10px 38px', fontSize: '0.9rem' }}
+                    value={bankSearch}
+                    onChange={(e) => setBankSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && void loadBankQuestions()}
+                  />
+                </div>
+                <Button size="sm" onClick={() => void loadBankQuestions()} isLoading={bankLoading}>Search</Button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }} className="custom-scrollbar">
+              {bankLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+                  <Loader2 size={32} className="animate-spin text-primary-500" />
+                </div>
+              ) : bankQuestions.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-soft)' }}>No questions found in bank.</div>
+              ) : (
+                <div className="stack-gap" style={{ gap: '12px' }}>
+                  {bankQuestions.map(q => (
+                    <div 
+                      key={q.id} 
+                      onClick={() => handleImportFromBank(q)}
+                      style={{ 
+                        padding: '16px', 
+                        borderRadius: '16px', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                        e.currentTarget.style.borderColor = 'var(--color-primary-500)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', color: 'var(--text-soft)' }}>{q.difficulty}</span>
+                        {q.chapter && <span style={{ fontSize: '10px', color: 'var(--color-primary-400)', fontWeight: 700 }}>{q.chapter}</span>}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.5 }}>{q.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
