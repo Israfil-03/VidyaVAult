@@ -96,3 +96,13 @@
 .tilt-card {
   transform-style: preserve-3d;
 }
+
+/* Mobile Responsiveness Added */
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+  .card-header {
+    flex-wrap: wrap;
+  }
+}

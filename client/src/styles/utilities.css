@@ -84,3 +84,21 @@
 
 .relative { position: relative; }
 .absolute { position: absolute; }
+
+/* Mobile Responsiveness Added */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: block !important;
+  }
+  .flex-col-mobile {
+    flex-direction: column !important;
+  }
+}
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none !important;
+  }
+}

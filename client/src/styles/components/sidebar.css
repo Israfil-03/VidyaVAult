@@ -139,3 +139,21 @@
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Mobile Responsiveness Added */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    width: 260px;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+@media (min-width: 1025px) {
+  .sidebar-backdrop, .sidebar-backdrop.open {
+    display: none !important;
+  }
+}
