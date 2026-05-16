@@ -1,0 +1,93 @@
+:root {
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+
+  /* Professional Color Palette (Modern Slate & Royal Blue) */
+  --p-h: 221;
+  --p-s: 83%;
+  --p-l: 53%;
+  
+  --color-primary-900: hsl(var(--p-h), var(--p-s), 15%);
+  --color-primary-800: hsl(var(--p-h), var(--p-s), 25%);
+  --color-primary-700: hsl(var(--p-h), var(--p-s), 35%);
+  --color-primary-600: hsl(var(--p-h), var(--p-s), 45%);
+  --color-primary-500: hsl(var(--p-h), var(--p-s), 53%);
+  --color-primary-400: hsl(var(--p-h), var(--p-s), 65%);
+  --color-primary-100: hsl(var(--p-h), var(--p-s), 94%);
+  --color-primary-50: hsl(var(--p-h), var(--p-s), 98%);
+  
+  --a-h: 262; /* Indigo/Violet Accent */
+  --color-accent-600: hsl(var(--a-h), 80%, 50%);
+  --color-accent-500: hsl(var(--a-h), 80%, 60%);
+  --color-accent-100: hsl(var(--a-h), 80%, 95%);
+
+  --color-success-500: #10b981;
+  --color-warning-500: #f59e0b;
+  --color-danger-500: #ef4444;
+
+  /* Advanced Gradients */
+  --grad-primary: linear-gradient(135deg, hsl(var(--p-h), 83%, 53%) 0%, hsl(262, 80%, 60%) 100%);
+  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  --grad-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
+  --grad-streak: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+
+  /* Default (Light) Theme Variables */
+  --bg-canvas: #f1f5f9;
+  --bg-gradient: radial-gradient(at 0% 0%, hsla(var(--p-h), 83%, 53%, 0.1) 0px, transparent 50%),
+                 radial-gradient(at 100% 0%, hsla(262, 80%, 60%, 0.08) 0px, transparent 50%),
+                 radial-gradient(at 100% 100%, hsla(160, 80%, 50%, 0.05) 0px, transparent 50%),
+                 linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --surface-glass: rgba(255, 255, 255, 0.75);
+  
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-soft: #64748b;
+  --text-on-dark: #ffffff;
+
+  --border-soft: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.7);
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='dark'] {
+  --bg-canvas: #020617;
+  --bg-gradient: radial-gradient(at 0% 0%, hsla(var(--p-h), 83%, 53%, 0.15) 0px, transparent 50%),
+                 radial-gradient(at 100% 0%, hsla(262, 80%, 60%, 0.12) 0px, transparent 50%),
+                 radial-gradient(at 50% 50%, hsla(160, 80%, 50%, 0.03) 0px, transparent 50%),
+                 linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  
+  --surface: #1e293b;
+  --surface-soft: #0f172a;
+  --surface-glass: rgba(15, 23, 42, 0.7);
+  
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1;
+  --text-soft: #94a3b8;
+  --text-on-dark: #ffffff;
+
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
