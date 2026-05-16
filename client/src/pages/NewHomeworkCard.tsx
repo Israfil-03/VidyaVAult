@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import { AutoExpandingTextarea } from '../components/AutoExpandingTextarea'
 import type { QuestionBankEntry } from '../types'
+import './NewHomeworkCard.css'
 
 interface BatchOption {
   id: string
@@ -316,46 +317,11 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
   if (!isCreating) {
     return (
       <Card title="Quick Homework" subtitle="Create assignments in seconds" variant="glass">
-        <div 
-          onClick={() => setIsCreating(true)}
-          style={{
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%)',
-            borderRadius: '16px',
-            padding: '32px 24px',
-            border: '2px dashed rgba(59, 130, 246, 0.2)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)'
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)'
-            e.currentTarget.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)'
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%)'
-            e.currentTarget.style.transform = 'translateY(0)'
-          }}
-        >
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
-            background: 'var(--color-primary-100)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-primary-600)',
-            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)'
-          }}>
+        <div onClick={() => setIsCreating(true)} className="nhc-create-btn">
+          <div className="nhc-create-btn-icon">
             <Plus size={32} />
           </div>
-          <div style={{ textAlign: 'center' }}>
+          <div className="text-center">
             <h4 style={{ margin: '0 0 4px', fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-main)' }}>Create New Homework</h4>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-soft)' }}>Click to open the quick MCQ builder</p>
           </div>
@@ -382,24 +348,9 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
     >
       <div className="stack-gap" style={{ gap: '24px' }}>
         {/* Descriptive Stepper */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          padding: '0 10px',
-          position: 'relative',
-          marginBottom: '8px'
-        }}>
+        <div className="nhc-stepper-container">
           {/* Connector Line */}
-          <div style={{
-            position: 'absolute',
-            top: '12px',
-            left: '40px',
-            right: '40px',
-            height: '2px',
-            background: 'var(--border-soft)',
-            zIndex: 0
-          }} />
+          <div className="nhc-stepper-line" />
 
           {(['INFO', 'CHOICE', 'QUESTION', 'REVIEW'] as const).map((s, idx) => {
             // Mapping complex steps to simple stepper steps
@@ -417,37 +368,11 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
             const labels = { INFO: 'Details', CHOICE: 'Mode', QUESTION: 'Build', REVIEW: 'Finish' }
 
             return (
-              <div key={s} style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: '8px',
-                zIndex: 1,
-                width: '60px'
-              }}>
-                <div style={{ 
-                  width: '24px', 
-                  height: '24px', 
-                  borderRadius: '50%', 
-                  background: isActive ? 'var(--color-primary-500)' : isCompleted ? 'var(--success)' : 'var(--surface-main)',
-                  border: `2px solid ${isActive || isCompleted ? 'transparent' : 'var(--border-soft)'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isActive || isCompleted ? 'white' : 'var(--text-soft)',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s'
-                }}>
+              <div key={s} className="nhc-stepper-item">
+                <div className="nhc-stepper-circle" style={{ background: isActive ? 'var(--color-primary-500)' : isCompleted ? 'var(--success)' : 'var(--surface-main)', border: `2px solid ${isActive || isCompleted ? 'transparent' : 'var(--border-soft)'}`, color: isActive || isCompleted ? 'white' : 'var(--text-soft)' }}>
                   {isCompleted ? <Check size={14} /> : idx + 1}
                 </div>
-                <span style={{ 
-                  fontSize: '0.65rem', 
-                  fontWeight: isActive ? '700' : '500',
-                  color: isActive ? 'var(--text-main)' : 'var(--text-soft)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
-                }}>
+                <span className="nhc-stepper-label" style={{ fontWeight: isActive ? '700' : '500', color: isActive ? 'var(--text-main)' : 'var(--text-soft)' }}>
                   {labels[s]}
                 </span>
               </div>
@@ -456,13 +381,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
         </div>
 
         {/* Scrollable Container */}
-        <div style={{ 
-          maxHeight: '480px', 
-          overflowY: 'auto', 
-          padding: '4px',
-          margin: '0 -4px',
-          paddingRight: '8px'
-        }} className="custom-scrollbar">
+        <div className="nhc-scrollable custom-scrollbar">
 
         {error && (
           <div style={{ 
@@ -509,7 +428,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               />
             </label>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="nhc-two-col">
               <label>
                 Subject
                 <select 
@@ -538,7 +457,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               </label>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="nhc-two-col">
               <label>
                 Published At
                 <input 
@@ -566,7 +485,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
         )}
 
         {step === 'CHOICE' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', animation: 'fadeIn 0.4s ease-out' }}>
+          <div className="nhc-two-col" style={{ gap: '16px', animation: 'fadeIn 0.4s ease-out' }}>
             <div 
               onClick={() => setStep('QUESTION')}
               style={{
@@ -655,7 +574,7 @@ export const NewHomeworkCard = ({ batches, onCreated }: NewHomeworkCardProps) =>
               />
             </label>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="nhc-two-col">
               <label>
                 Difficulty
                 <select 
