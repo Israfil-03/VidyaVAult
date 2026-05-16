@@ -281,3 +281,25 @@
 .hero-actions {
   margin-top: 32px;
 }
+
+/* Mobile Responsiveness Added */
+@media (max-width: 1024px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+  .topbar-meta {
+    gap: 16px;
+  }
+  .topbar-search {
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar-search {
+    display: none; /* Hide global search on mobile by default */
+  }
+  .action-buttons {
+    gap: 8px;
+  }
+}
