@@ -60,6 +60,7 @@ const serializeUser = (
     id: string
     email: string | null
     username: string
+    fullName?: string | null
     role: UserRole
     forcePasswordChange: boolean
     teacherProfile?: { id: string } | null
@@ -68,18 +69,34 @@ const serializeUser = (
       shortId: string | null
       longId: string | null
       subjects: Subject[]
+      phone?: string | null
+      classLevel?: string | null
+      batchLinks?: Array<{
+        batch: {
+          name: string
+          teacher: {
+            user: {
+              fullName: string | null
+            }
+          }
+        }
+      }>
     } | null
   },
 ) => ({
   id: user.id,
   email: user.email,
   username: user.username,
+  fullName: user.fullName ?? undefined,
   role: userRoleToTokenRole(user.role),
   teacherId: user.teacherProfile?.id,
   studentId: user.studentProfile?.id,
   shortId: user.studentProfile?.shortId ?? undefined,
   longId: user.studentProfile?.longId ?? undefined,
   subjects: user.studentProfile?.subjects ?? undefined,
+  phone: user.studentProfile?.phone ?? undefined,
+  classLevel: user.studentProfile?.classLevel ?? undefined,
+  batchLinks: user.studentProfile?.batchLinks ?? undefined,
   forcePasswordChange: user.forcePasswordChange,
 })
 
@@ -97,7 +114,27 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           id: true,
           shortId: true,
           longId: true,
-          subjects: true
+          subjects: true,
+          phone: true,
+          classLevel: true,
+          batchLinks: {
+            include: {
+              batch: {
+                select: {
+                  name: true,
+                  teacher: {
+                    include: {
+                      user: {
+                        select: {
+                          fullName: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         } 
       },
     },
@@ -145,7 +182,27 @@ export const me = async (req: Request, res: Response): Promise<void> => {
           id: true,
           shortId: true,
           longId: true,
-          subjects: true
+          subjects: true,
+          phone: true,
+          classLevel: true,
+          batchLinks: {
+            include: {
+              batch: {
+                select: {
+                  name: true,
+                  teacher: {
+                    include: {
+                      user: {
+                        select: {
+                          fullName: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         } 
       },
     },

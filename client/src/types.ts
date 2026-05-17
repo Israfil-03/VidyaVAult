@@ -4,12 +4,25 @@ export interface AuthUser {
   id: string
   email: string | null
   username: string
+  fullName?: string | null
   role: Role
   teacherId?: string
   studentId?: string
   shortId?: string | null
   longId?: string | null
   subjects?: string[]
+  phone?: string | null
+  classLevel?: string | null
+  batchLinks?: Array<{
+    batch: {
+      name: string
+      teacher: {
+        user: {
+          fullName: string | null
+        }
+      }
+    }
+  }>
   forcePasswordChange: boolean
 }
 

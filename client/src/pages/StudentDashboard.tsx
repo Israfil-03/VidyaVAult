@@ -185,7 +185,7 @@ export const StudentDashboard = () => {
           <div className="hero-grid">
             <div className="hero-main-content">
               <span className="hero-badge">Student Portal</span>
-              <h2>Welcome back, <span className="highlight">{user?.username}</span>! 👋</h2>
+              <h2>Welcome back, <span className="highlight">{user?.fullName || user?.username}</span>! 👋</h2>
               <p>You have <strong>{activeTests.length}</strong> active tests waiting for your attention. Ready to excel today?</p>
               <div className="hero-actions">
                 <Button onClick={() => document.getElementById('active-tests')?.scrollIntoView({ behavior: 'smooth' })} className="pulse-btn">
@@ -333,12 +333,39 @@ export const StudentDashboard = () => {
             <Card title="My Registration Profile" variant="glass">
               <div className="space-y-4">
                 <div className="flex justify-between border-b border-white/5 pb-2">
-                  <span className="muted">Short ID (Username)</span>
+                  <span className="muted">Student Name</span>
+                  <span className="text-primary font-bold">{user?.fullName || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                  <span className="muted">Student ID (Short ID)</span>
                   <span className="font-mono text-primary font-bold">{user?.shortId || user?.username}</span>
                 </div>
                 <div className="flex justify-between border-b border-white/5 pb-2">
-                  <span className="muted">Permanent Long ID</span>
+                  <span className="muted">Institute ID (Long ID)</span>
                   <span className="font-mono text-xs">{user?.longId || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                  <span className="muted">Phone Number</span>
+                  <span className="font-mono text-xs">{user?.phone || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                  <span className="muted">Class Level</span>
+                  <span className="font-mono text-xs">{user?.classLevel ? `Class ${user.classLevel}` : 'N/A'}</span>
+                </div>
+                <div className="flex flex-col gap-2 pt-2 border-b border-white/5 pb-2">
+                  <span className="muted text-xs uppercase tracking-wider font-bold">Enrolled Batches</span>
+                  <div className="flex flex-col gap-1">
+                    {user?.batchLinks && user.batchLinks.length > 0 ? (
+                      user.batchLinks.map((link, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-xs">
+                          <span>• {link.batch.name}</span>
+                          <span className="muted">Teacher: {link.batch.teacher.user.fullName || 'N/A'}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="muted text-xs">No batches assigned</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2 pt-2">
                   <span className="muted text-xs uppercase tracking-wider font-bold">Enrolled Subjects</span>

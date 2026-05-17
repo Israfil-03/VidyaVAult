@@ -362,6 +362,7 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
     const user = await tx.user.create({
       data: {
         username: preview.shortId,
+        fullName: request.fullName,
         passwordHash: 'PENDING_SETUP',
         role: UserRole.STUDENT,
         forcePasswordChange: true,
