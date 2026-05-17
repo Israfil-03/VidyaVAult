@@ -327,7 +327,12 @@ export const TeacherTestWizardPage = () => {
           ],
         }),
       })
-      const target = testForm.category === 'HOMEWORK' ? '/teacher/homework' : '/teacher/test'
+      const target =
+        testForm.category === 'HOMEWORK'
+          ? '/teacher/homework'
+          : testForm.category === 'PRACTICE'
+            ? '/teacher/practice'
+            : '/teacher/test'
       navigate(target)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish test')
@@ -404,15 +409,17 @@ export const TeacherTestWizardPage = () => {
                   <option value="PRACTICE">Practice Drill</option>
                 </select>
               </label>
-              <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={testForm.isDaily}
-                  onChange={(event) => setTestForm((prev) => ({ ...prev, isDaily: event.target.checked }))}
-                  style={{ width: 'auto' }}
-                />
-                Is Daily Homework?
-              </label>
+              {testForm.category !== 'PRACTICE' && (
+                <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={testForm.isDaily}
+                    onChange={(event) => setTestForm((prev) => ({ ...prev, isDaily: event.target.checked }))}
+                    style={{ width: 'auto' }}
+                  />
+                  Is Daily Homework?
+                </label>
+              )}
             </div>
             <div className="inline-grid">
               <label>
@@ -422,36 +429,58 @@ export const TeacherTestWizardPage = () => {
                   onChange={(event) => setTestForm((prev) => ({ ...prev, classLevel: event.target.value }))}
                 />
               </label>
-              <label>
-                Duration (minutes)
-                <input
-                  type="number"
-                  value={testForm.durationMinutes}
-                  onChange={(event) =>
-                    setTestForm((prev) => ({ ...prev, durationMinutes: Number(event.target.value) }))
-                  }
-                />
-              </label>
+              {testForm.category !== 'PRACTICE' && (
+                <label>
+                  Duration (minutes)
+                  <input
+                    type="number"
+                    value={testForm.durationMinutes}
+                    onChange={(event) =>
+                      setTestForm((prev) => ({ ...prev, durationMinutes: Number(event.target.value) }))
+                    }
+                  />
+                </label>
+              )}
             </div>
-            <div className="inline-grid">
-              <label>
-                Start time
-                <input
-                  type="datetime-local"
-                  value={testForm.startTime}
-                  onChange={(event) => setTestForm((prev) => ({ ...prev, startTime: event.target.value }))}
-                />
-              </label>
-              <label>
-                End time
-                <input
-                  type="datetime-local"
-                  value={testForm.endTime}
-                  onChange={(event) => setTestForm((prev) => ({ ...prev, endTime: event.target.value }))}
-                />
-              </label>
-            </div>
-            <Button onClick={() => setStep(2)}>Continue</Button>
+            {testForm.category !== 'PRACTICE' && (
+              <div className="inline-grid">
+                <label>
+                  Start time
+                  <input
+                    type="datetime-local"
+                    value={testForm.startTime}
+                    onChange={(event) => setTestForm((prev) => ({ ...prev, startTime: event.target.value }))}
+                  />
+                </label>
+                <label>
+                  End time
+                  <input
+                    type="datetime-local"
+                    value={testForm.endTime}
+                    onChange={(event) => setTestForm((prev) => ({ ...prev, endTime: event.target.value }))}
+                  />
+                </label>
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                if (testForm.category === 'PRACTICE') {
+                  const now = new Date()
+                  const hundredYearsLater = new Date()
+                  hundredYearsLater.setFullYear(now.getFullYear() + 100)
+                  setTestForm((prev) => ({
+                    ...prev,
+                    startTime: prev.startTime || now.toISOString().slice(0, 16),
+                    endTime: prev.endTime || hundredYearsLater.toISOString().slice(0, 16),
+                    durationMinutes: 0,
+                    isDaily: false,
+                  }))
+                }
+                setStep(2)
+              }}
+            >
+              Continue
+            </Button>
           </div>
         </Card>
       ) : null}

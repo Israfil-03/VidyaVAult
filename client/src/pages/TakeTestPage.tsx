@@ -57,7 +57,7 @@ export const TakeTestPage = () => {
         setSubmissionId(submission.id)
         const detail = await apiRequest<TestDetail>(`/student/tests/${testId}/detail`, { method: 'GET', token })
         setTest(detail)
-        setTimeLeft(detail.durationMinutes * 60)
+        setTimeLeft(detail.category === 'PRACTICE' ? null : detail.durationMinutes * 60)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to start test')
       }
@@ -116,9 +116,15 @@ export const TakeTestPage = () => {
               <h2 className="fade-in-up">{test.title}</h2>
               <div className="muted">{isHomework ? 'Daily Homework Assignment' : test.category.replace('_', ' ')}</div>
             </div>
-            <div className="timer-box">
-              <Timer size={18} /> {formatTime(timeLeft)}
-            </div>
+            {test.category === 'PRACTICE' ? (
+              <div className="timer-box" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
+                Untimed Practice 🎯
+              </div>
+            ) : (
+              <div className="timer-box">
+                <Timer size={18} /> {formatTime(timeLeft)}
+              </div>
+            )}
           </div>
         </header>
 
@@ -127,12 +133,22 @@ export const TakeTestPage = () => {
             <div className="bento-item-lg-9">
               <Card variant="glass" className="overflow-hidden border-none shadow-xl">
                 <div className="h-1 bg-border-soft w-full">
-                  <motion.div 
-                    className="h-full bg-primary-500"
-                    initial={{ width: '100%' }}
-                    animate={{ width: `${(timeLeft ?? 0) / (test.durationMinutes * 60) * 100}%` }}
-                    transition={{ duration: 1, ease: 'linear' }}
-                  />
+                  {test.category === 'PRACTICE' ? (
+                    <motion.div 
+                      className="h-full bg-success-500"
+                      initial={{ width: '0%' }}
+                      animate={{ width: `${(Object.keys(answers).filter(qId => answers[qId] !== undefined).length / test.questions.length) * 100}%` }}
+                      transition={{ duration: 0.3 }}
+                      style={{ backgroundColor: '#10b981' }}
+                    />
+                  ) : (
+                    <motion.div 
+                      className="h-full bg-primary-500"
+                      initial={{ width: '100%' }}
+                      animate={{ width: `${(timeLeft ?? 0) / (test.durationMinutes * 60) * 100}%` }}
+                      transition={{ duration: 1, ease: 'linear' }}
+                    />
+                  )}
                 </div>
                 <div className="p-8">
                   <div className="flex justify-between items-center mb-6">

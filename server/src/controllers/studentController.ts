@@ -200,7 +200,7 @@ export const startSubmission = async (req: Request, res: Response): Promise<void
     throw new ApiError('Test not available', 404)
   }
 
-  if (now < test.startTime || now > test.endTime) {
+  if (test.category !== TestCategory.PRACTICE && (now < test.startTime || now > test.endTime)) {
     throw new ApiError('Test is outside active time window', 400)
   }
 
@@ -325,7 +325,7 @@ export const submitSubmission = async (req: Request, res: Response): Promise<voi
     throw new ApiError('Submission is already finalized', 400)
   }
 
-  if (now > submission.test.endTime) {
+  if (submission.test.category !== TestCategory.PRACTICE && now > submission.test.endTime) {
     throw new ApiError('Test submission window has ended', 400)
   }
 
@@ -469,5 +469,32 @@ export const getResultById = async (req: Request, res: Response): Promise<void> 
   res.json({
     success: true,
     data: result,
+  })
+}
+
+export const reattemptPracticeTest = async (req: Request, res: Response): Promise<void> => {
+  const studentId = requireStudentId(req)
+  const { testId } = z.object({ testId: z.string().min(1) }).parse(req.params)
+
+  const test = await prisma.test.findUnique({ where: { id: testId } })
+  if (!test) {
+    throw new ApiError('Practice drill not found', 404)
+  }
+
+  if (test.category !== TestCategory.PRACTICE) {
+    throw new ApiError('Only practice drills can be reattempted', 400)
+  }
+
+  // Delete old submission and its answers (cascade delete)
+  await prisma.submission.deleteMany({
+    where: {
+      testId,
+      studentId,
+    },
+  })
+
+  res.json({
+    success: true,
+    data: { message: 'Practice drill reset successfully for reattempt' },
   })
 }

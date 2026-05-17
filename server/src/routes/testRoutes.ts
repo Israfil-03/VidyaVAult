@@ -8,6 +8,7 @@ import {
   listTests,
   replaceAssignments,
   updateTest,
+  deleteTest,
 } from '../controllers/testController.js'
 import { authMiddleware, requireRole } from '../middleware/auth.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
@@ -19,6 +20,7 @@ testRouter.get('/', asyncHandler(listTests))
 testRouter.post('/', asyncHandler(createTest))
 testRouter.get('/:testId', asyncHandler(getTestById))
 testRouter.patch('/:testId', asyncHandler(updateTest))
+testRouter.delete('/:testId', asyncHandler(deleteTest))
 testRouter.post('/:testId/assignments', asyncHandler(replaceAssignments))
 testRouter.get('/:testId/analytics', asyncHandler(getTestAnalytics))
 testRouter.get('/:testId/submissions', asyncHandler(getDetailedSubmissions))

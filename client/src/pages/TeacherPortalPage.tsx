@@ -62,6 +62,7 @@ interface TestRow {
   classLevel: string
   startTime: string
   endTime: string
+  createdAt: string
   _count: {
     questions: number
     assignments: number
@@ -177,6 +178,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
           classLevel: '10',
           startTime: new Date().toISOString(),
           endTime: new Date(Date.now() + 7200000).toISOString(),
+          createdAt: new Date().toISOString(),
           _count: { questions: 20, assignments: 2, submissions: 12 },
         },
       ])
@@ -319,89 +321,154 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
     )
   }
 
-  const renderPractice = () => (
-    <div className="fade-in-up">
-      <Card 
-        title="Student Practice Attempts" 
-        subtitle="Monitor real-time progress of students in practice drills"
-        variant="glass"
-      >
-        {practiceAttempts.length === 0 ? (
-          <div className="empty-state py-12">
-            <div className="flex flex-col items-center gap-4">
-              <Sparkles className="text-primary/40" size={48} />
-              <p className="muted">No practice attempts recorded yet.</p>
+  const renderPractice = () => {
+    const practiceDrills = tests.filter(t => t.category === 'PRACTICE')
+    return (
+      <div className="fade-in-up flex flex-col gap-8">
+        <Card 
+          title="Active Practice Drills" 
+          subtitle="Manage untimed, stress-free learning cards for students"
+          variant="gradient"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-sm font-bold text-white/70">
+              Total Drills: {practiceDrills.length}
+            </span>
+            <Link to="/teacher/test/new?category=PRACTICE">
+              <Button size="sm">
+                + Create Practice Drill
+              </Button>
+            </Link>
+          </div>
+          {practiceDrills.length === 0 ? (
+            <div className="empty-state py-12">
+              <div className="flex flex-col items-center gap-4">
+                <Sparkles className="text-primary/40" size={48} />
+                <p className="muted">No practice drills created yet. Click above to create one!</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="table-wrap">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Batch</th>
-                  <th>Test Title</th>
-                  <th>Subject</th>
-                  <th>Score</th>
-                  <th>Date</th>
-                  <th className="text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {practiceAttempts.map((attempt) => {
-                  const percentage = attempt.score !== null && attempt.maxScore ? (attempt.score / attempt.maxScore) * 100 : 0
-                  return (
-                    <tr key={attempt.id}>
-                      <td>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-white">{attempt.studentName}</span>
-                          <span className="text-xs muted">{attempt.studentEmail || 'No email'}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="bg-white/5 px-2 py-1 rounded border border-white/10 text-xs text-primary-soft">
-                          {attempt.batchName}
-                        </span>
-                      </td>
-                      <td>{attempt.testTitle}</td>
-                      <td>
-                         <span className="subject-pill text-[10px]">
-                           {attempt.subject}
-                         </span>
-                      </td>
-                      <td>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-mono text-sm">
-                            {attempt.score?.toFixed(1) || '0.0'} / {attempt.maxScore?.toFixed(1) || '0.0'}
-                          </span>
-                          <div className="w-20 h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full ${percentage >= 80 ? 'bg-success' : percentage >= 50 ? 'bg-warning' : 'bg-error'}`}
-                              style={{ width: `${percentage}%` }}
-                            />
+          ) : (
+            <div className="premium-list">
+              {practiceDrills.map((drill, idx) => (
+                <div key={drill.id} className={`premium-item fade-in-up stagger-${(idx % 4) + 1}`}>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <strong className="text-white text-base">{drill.title}</strong>
+                      <span className="subject-pill text-[10px]">
+                        {drill.subject}
+                      </span>
+                    </div>
+                    <div className="muted mt-1 text-sm">
+                      Class {drill.classLevel} • {drill._count.questions} Questions • Created {new Date(drill.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      className="border border-error/20 text-error hover:bg-error/10 hover:border-error/40"
+                      onClick={async () => {
+                        if (confirm(`Are you sure you want to delete "${drill.title}"? This will also delete all student practice attempts for it.`)) {
+                          try {
+                            await apiRequest(`/tests/${drill.id}`, { method: 'DELETE', token })
+                            await loadPortalData()
+                          } catch (err) {
+                            alert(err instanceof Error ? err.message : 'Failed to delete drill')
+                          }
+                        }
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card 
+          title="Student Practice Attempts" 
+          subtitle="Monitor real-time progress of students in practice drills"
+          variant="glass"
+        >
+          {practiceAttempts.length === 0 ? (
+            <div className="empty-state py-12">
+              <div className="flex flex-col items-center gap-4">
+                <Sparkles className="text-primary/40" size={48} />
+                <p className="muted">No practice attempts recorded yet.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Batch</th>
+                    <th>Test Title</th>
+                    <th>Subject</th>
+                    <th>Score</th>
+                    <th>Date</th>
+                    <th className="text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {practiceAttempts.map((attempt) => {
+                    const percentage = attempt.score !== null && attempt.maxScore ? (attempt.score / attempt.maxScore) * 100 : 0
+                    return (
+                      <tr key={attempt.id}>
+                        <td>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-white">{attempt.studentName}</span>
+                            <span className="text-xs muted">{attempt.studentEmail || 'No email'}</span>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="text-xs muted">
-                          {new Date(attempt.submittedAt).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="text-right">
-                         <span className="status-pill status-published text-[10px]">
-                           SUBMITTED
-                         </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-    </div>
-  )
+                        </td>
+                        <td>
+                          <span className="bg-white/5 px-2 py-1 rounded border border-white/10 text-xs text-primary-soft">
+                            {attempt.batchName}
+                          </span>
+                        </td>
+                        <td>{attempt.testTitle}</td>
+                        <td>
+                           <span className="subject-pill text-[10px]">
+                             {attempt.subject}
+                           </span>
+                        </td>
+                        <td>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono text-sm">
+                              {attempt.score?.toFixed(1) || '0.0'} / {attempt.maxScore?.toFixed(1) || '0.0'}
+                            </span>
+                            <div className="w-20 h-1 bg-white/5 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full ${percentage >= 80 ? 'bg-success' : percentage >= 50 ? 'bg-warning' : 'bg-error'}`}
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className="text-xs muted">
+                            {new Date(attempt.submittedAt).toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td className="text-right">
+                           <span className="status-pill status-published text-[10px]">
+                             SUBMITTED
+                           </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+    )
+  }
 
   const renderTest = () => {
     const weeklyTests = tests.filter((t) => t.category === 'WEEKLY_TEST')

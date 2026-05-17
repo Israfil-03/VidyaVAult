@@ -108,6 +108,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     Array<{ rank: number; name: string; medium: string; averageNormalizedScore: number }>
   >([])
   const [error, setError] = useState<string | null>(null)
+  const [reloadTrigger, setReloadTrigger] = useState(0)
 
   useEffect(() => {
     const loadData = async () => {
@@ -229,7 +230,24 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     }
 
     void loadData()
-  }, [token, user?.username])
+  }, [token, user?.username, reloadTrigger])
+
+  const handleReattempt = async (testId: string) => {
+    if (!token) return
+    if (!confirm('Are you sure you want to reattempt this practice drill? Your previous score and AI analysis will be reset.')) {
+      return
+    }
+    try {
+      setError(null)
+      await apiRequest(`/student/tests/${testId}/reattempt`, {
+        method: 'POST',
+        token,
+      })
+      setReloadTrigger(prev => prev + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset practice drill')
+    }
+  }
 
   const scoreTrendData = useMemo(
     () =>
@@ -359,49 +377,166 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     </>
   )
 
-  const renderPractice = () => (
-    <>
-      <div className="two-col">
-        <Card title="Practice Coverage by Subject" subtitle="Completed attempts per subject" variant="glass">
-          <ComparisonBarChart data={subjectPracticeData} />
-        </Card>
-        <Card title="Accuracy Trend" subtitle="Recent practice quality" variant="glass">
-          <TrendAreaChart data={scoreTrendData} valueSuffix="%" />
-        </Card>
-      </div>
+  const renderPractice = () => {
+    const practiceDrills = activeTests.filter((t) => t.category === 'PRACTICE')
 
-      <Card title="Recommended Practice Cards" subtitle="Focus on weak areas first" variant="glass">
-        {weakestAttempts.length === 0 ? (
-          <div className="empty-state">Complete at least one test to get practice recommendations.</div>
-        ) : (
-          <div className="premium-list">
-            {weakestAttempts.map((attempt) => (
-              <div key={attempt.testId} className="premium-item">
-                <div>
-                  <strong>{attempt.title}</strong>
-                  <div className="muted">
-                    {attempt.subject} • Score {attempt.score.toFixed(1)}%
-                  </div>
-                </div>
-                {attempt.submissionId ? (
-                  <Link to={`/student/performance/${attempt.submissionId}`}>
-                    <Button variant="secondary" size="sm">
-                      Review
-                    </Button>
-                  </Link>
-                ) : null}
+    return (
+      <>
+        <div className="two-col">
+          <Card title="Practice Coverage by Subject" subtitle="Completed attempts per subject" variant="glass">
+            <ComparisonBarChart data={subjectPracticeData} />
+          </Card>
+          <Card title="Accuracy Trend" subtitle="Recent practice quality" variant="glass">
+            <TrendAreaChart data={scoreTrendData} valueSuffix="%" />
+          </Card>
+        </div>
+
+        <Card 
+          title="Practice Drills Library" 
+          subtitle="Stress-free, untimed modules to master your subjects" 
+          variant="gradient"
+        >
+          {practiceDrills.length === 0 ? (
+            <div className="empty-state py-12">
+              <div className="flex flex-col items-center gap-4">
+                <Sparkles className="text-primary/40" size={48} />
+                <p className="muted">No practice drills assigned to you at the moment.</p>
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
-    </>
-  )
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+              {practiceDrills.map((drill, idx) => {
+                const submission = drill.submissions?.[0]
+                const isCompleted = submission && submission.submittedAt !== null
+                const isInProgress = submission && submission.submittedAt === null
+                
+                const scorePercent = isCompleted && submission.scoreTotal !== null && submission.maxScore
+                  ? (submission.scoreTotal / submission.maxScore) * 100
+                  : 0
+
+                // Custom HSL gradients based on subjects for rich aesthetics
+                const subjectLower = drill.subject.toLowerCase()
+                let cardTheme = 'from-indigo-500/10 to-purple-500/10 hover:shadow-indigo-500/5'
+                if (subjectLower.includes('math')) cardTheme = 'from-indigo-500/10 to-blue-500/10 hover:shadow-blue-500/5'
+                else if (subjectLower.includes('chem')) cardTheme = 'from-emerald-500/10 to-teal-500/10 hover:shadow-emerald-500/5'
+                else if (subjectLower.includes('phys')) cardTheme = 'from-amber-500/10 to-orange-500/10 hover:shadow-amber-500/5'
+                else if (subjectLower.includes('biol')) cardTheme = 'from-rose-500/10 to-pink-500/10 hover:shadow-rose-500/5'
+
+                return (
+                  <div 
+                    key={drill.id} 
+                    className={`practice-drill-card fade-in-up stagger-${(idx % 4) + 1} flex flex-col justify-between p-6 rounded-2xl border border-white/10 bg-gradient-to-br ${cardTheme} backdrop-blur-md hover:scale-[1.02] hover:border-primary-500/30 transition-all duration-300 shadow-lg`}
+                  >
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-white/5 border border-white/10 text-primary-soft">
+                          {drill.subject}
+                        </span>
+                        {isCompleted ? (
+                          <span className="bg-success-500/10 text-success text-[10px] px-2 py-0.5 rounded-full font-bold border border-success-500/20">
+                            COMPLETED
+                          </span>
+                        ) : isInProgress ? (
+                          <span className="bg-warning-500/10 text-warning text-[10px] px-2 py-0.5 rounded-full font-bold border border-warning-500/20">
+                            IN PROGRESS
+                          </span>
+                        ) : (
+                          <span className="bg-white/5 text-muted text-[10px] px-2 py-0.5 rounded-full font-bold border border-white/10">
+                            NOT STARTED
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="text-lg font-bold text-white mb-2 line-clamp-2" style={{ lineHeight: 1.4 }}>
+                        {drill.title}
+                      </h4>
+                      <p className="text-xs text-white/50 mb-4">
+                        📝 {drill._count.questions} Questions • Untimed Practice
+                      </p>
+
+                      {isCompleted && submission && (
+                        <div className="mb-6 bg-black/20 p-3.5 rounded-xl border border-white/5">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs text-white/40">Latest Score</span>
+                            <strong className="text-sm text-white font-mono">
+                              {submission.scoreTotal?.toFixed(1) ?? '0.0'} / {submission.maxScore?.toFixed(1) ?? '0.0'} ({scorePercent.toFixed(0)}%)
+                            </strong>
+                          </div>
+                          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${scorePercent >= 80 ? 'bg-success' : scorePercent >= 50 ? 'bg-warning' : 'bg-error'}`}
+                              style={{ width: `${scorePercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2.5 mt-4 pt-4 border-t border-white/5" style={{ width: '100%' }}>
+                      {!isCompleted ? (
+                        <Link to={`/student/tests/${drill.id}/take`} style={{ width: '100%', display: 'block' }}>
+                          <Button className="w-full justify-center">
+                            {isInProgress ? 'Resume 📝' : 'Practice Now 🚀'}
+                          </Button>
+                        </Link>
+                      ) : (
+                        <>
+                          <Link to={`/student/performance/${submission.id}`} style={{ flex: 1 }}>
+                            <Button variant="secondary" size="sm" className="w-full justify-center text-xs">
+                              Report 📊
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            className="flex-1 justify-center text-xs text-primary-soft border border-primary-500/20 hover:bg-primary-500/10 hover:border-primary-500/40"
+                            onClick={() => handleReattempt(drill.id)}
+                          >
+                            Reattempt 🔄
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card title="Recommended Practice Cards" subtitle="Focus on weak areas first" variant="glass">
+          {weakestAttempts.length === 0 ? (
+            <div className="empty-state">Complete at least one test to get practice recommendations.</div>
+          ) : (
+            <div className="premium-list">
+              {weakestAttempts.map((attempt) => (
+                <div key={attempt.testId} className="premium-item">
+                  <div>
+                    <strong>{attempt.title}</strong>
+                    <div className="muted">
+                      {attempt.subject} • Score {attempt.score.toFixed(1)}%
+                    </div>
+                  </div>
+                  {attempt.submissionId ? (
+                    <Link to={`/student/performance/${attempt.submissionId}`}>
+                      <Button variant="secondary" size="sm">
+                        Review
+                      </Button>
+                    </Link>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </>
+    )
+  }
   const renderTest = () => {
     const weeklyTests = activeTests.filter((t) => t.category === 'WEEKLY_TEST')
     const monthlyTests = activeTests.filter((t) => t.category === 'MONTHLY_TEST')
     const upcomingSchoolTests = upcomingTests.filter((t) => t.category === 'WEEKLY_TEST' || t.category === 'MONTHLY_TEST')
-    const schoolResults = results.filter(r => r.test.category !== 'HOMEWORK')
+    const schoolResults = results.filter(r => r.test.category !== 'HOMEWORK' && r.test.category !== 'PRACTICE')
 
     const renderActiveLauncher = (testList: TestCard[], emptyMsg: string, icon: ReactElement) => {
       if (testList.length === 0) {

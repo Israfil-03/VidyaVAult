@@ -514,3 +514,33 @@ export const getDetailedSubmissions = async (req: Request, res: Response): Promi
     data: report,
   })
 }
+
+export const deleteTest = async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    throw new ApiError('Unauthorized', 401)
+  }
+
+  const { testId } = z.object({ testId: z.string().min(1) }).parse(req.params)
+
+  const test = await prisma.test.findUnique({
+    where: { id: testId },
+    select: { id: true, teacherId: true },
+  })
+
+  if (!test) {
+    throw new ApiError('Test not found', 404)
+  }
+
+  if (req.user.role === 'teacher_admin' && req.user.teacherId !== test.teacherId) {
+    throw new ApiError('Forbidden', 403)
+  }
+
+  await prisma.test.delete({
+    where: { id: testId },
+  })
+
+  res.json({
+    success: true,
+    data: { message: 'Test deleted successfully' },
+  })
+}
