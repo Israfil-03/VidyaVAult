@@ -1,0 +1,117 @@
+/* ==========================================================================
+   MCQ Options and Test-Taking Component Stylesheet
+   ========================================================================== */
+
+.mcq-options-container {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+/* MCQ Option Button Base styling */
+.mcq-option-button {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 24px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-soft);
+  background: var(--surface-soft);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-main);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Interactive Hover Feedback */
+.mcq-option-button:hover {
+  background: var(--surface);
+  border-color: var(--color-primary-400);
+  transform: translateY(-2px) translateX(4px);
+  box-shadow: var(--shadow-md), 0 4px 12px rgba(var(--p-h), var(--p-s), 53%, 0.05);
+}
+
+.mcq-option-button:active {
+  transform: translateY(0) translateX(2px);
+}
+
+/* Selected Highlight State */
+.mcq-option-button.selected {
+  border-color: var(--color-primary-500);
+  background: var(--color-primary-50);
+  box-shadow: var(--shadow-md), 0 4px 20px rgba(var(--p-h), var(--p-s), 53%, 0.08);
+}
+
+/* Dark Theme overrides for Premium Selected Glow */
+[data-theme='dark'] .mcq-option-button {
+  border-color: var(--border-soft);
+  background: var(--surface-soft);
+}
+
+[data-theme='dark'] .mcq-option-button:hover {
+  background: var(--surface);
+  border-color: var(--color-primary-400);
+  box-shadow: var(--shadow-md), 0 4px 16px rgba(var(--p-h), var(--p-s), 53%, 0.12);
+}
+
+[data-theme='dark'] .mcq-option-button.selected {
+  border-color: var(--color-primary-500);
+  background: hsla(var(--p-h), var(--p-s), 53%, 0.12);
+  box-shadow: var(--shadow-md), 0 0 16px hsla(var(--p-h), var(--p-s), 53%, 0.15);
+}
+
+/* Option Letter Circle Badge (e.g. A, B, C, D) */
+.mcq-option-letter {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  background: var(--surface);
+  color: var(--text-soft);
+  border: 1.5px solid var(--border-strong);
+  flex-shrink: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Dynamic Letter Circle updates based on parent status */
+.mcq-option-button:hover .mcq-option-letter {
+  border-color: var(--color-primary-400);
+  color: var(--color-primary-600);
+}
+
+.mcq-option-button.selected .mcq-option-letter {
+  background: var(--color-primary-500);
+  color: #ffffff;
+  border-color: transparent;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px hsla(var(--p-h), var(--p-s), 53%, 0.35);
+}
+
+/* Text Content Wrapper inside button */
+.mcq-option-text {
+  font-family: var(--font-sans);
+  font-size: 0.975rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.5;
+  transition: color 0.2s ease;
+  flex: 1;
+}
+
+.mcq-option-button.selected .mcq-option-text {
+  color: var(--color-primary-700);
+}
+
+[data-theme='dark'] .mcq-option-button.selected .mcq-option-text {
+  color: var(--text-on-dark);
+}

@@ -173,28 +173,22 @@ export const TakeTestPage = () => {
                       </div>
                     )}
                   </div>
-                  <div className="grid gap-4">
+                  <div className="mcq-options-container">
                     {activeQuestion?.options.map((option, idx) => (
                       <motion.button
                         key={option.id}
                         whileHover={{ scale: 1.01, x: 5 }}
                         whileTap={{ scale: 0.99 }}
-                        className={`flex items-center gap-4 p-5 rounded-xl border-2 text-left transition-all ${
-                          answers[activeQuestion.id] === option.id 
-                            ? 'border-primary-500 bg-primary-50/50 shadow-inner' 
-                            : 'border-transparent bg-surface-soft hover:bg-white hover:border-primary-200'
+                        className={`mcq-option-button ${
+                          answers[activeQuestion.id] === option.id ? 'selected' : ''
                         }`}
                         onClick={() => setAnswers((prev) => ({ ...prev, [activeQuestion.id]: option.id }))}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          answers[activeQuestion.id] === option.id 
-                            ? 'bg-primary-500 text-white' 
-                            : 'bg-white text-text-muted border border-border-strong'
-                        }`}>
+                        <div className="mcq-option-letter">
                           {String.fromCharCode(65 + idx)}
                         </div>
                         <div className="flex-1">
-                          <span className="font-medium block">{option.text}</span>
+                          <span className="mcq-option-text block">{option.text}</span>
                           {option.imageUrl && (
                             <div className="mt-3 rounded-lg overflow-hidden border border-border-soft bg-white/50 p-1">
                               <img src={option.imageUrl} alt={`Option ${idx + 1}`} className="max-w-full h-32 object-contain" />
