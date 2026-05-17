@@ -27,25 +27,40 @@ export const TrendAreaChart = ({ data, valueSuffix = '', height = 220 }: TrendAr
   return (
     <div className="chart-surface" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="var(--color-primary-500)" stopOpacity={0.5} />
               <stop offset="95%" stopColor="var(--color-primary-500)" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-strong)" />
-          <XAxis dataKey="label" stroke="var(--text-muted)" tickLine={false} axisLine={false} />
-          <YAxis stroke="var(--text-muted)" tickLine={false} axisLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-soft)" vertical={false} />
+          <XAxis 
+            dataKey="label" 
+            stroke="var(--text-soft)" 
+            tickLine={false} 
+            axisLine={false} 
+            tick={{ fontSize: 11, fontWeight: 600 }}
+          />
+          <YAxis 
+            stroke="var(--text-soft)" 
+            tickLine={false} 
+            axisLine={false} 
+            tick={{ fontSize: 11, fontWeight: 500 }}
+          />
           <Tooltip
             cursor={{ stroke: 'var(--color-primary-400)', strokeDasharray: '4 4' }}
             contentStyle={{
-              border: '1px solid var(--border-strong)',
-              borderRadius: 12,
-              boxShadow: 'var(--shadow-lg)',
+              border: '1px solid var(--border-soft)',
+              borderRadius: 14,
+              boxShadow: 'var(--shadow-glass)',
               background: 'var(--surface-elevated)',
+              backdropFilter: 'blur(10px)',
+              padding: '8px 12px',
             }}
-            formatter={(value) => `${Array.isArray(value) ? value[0] : value ?? 0}${valueSuffix}`}
+            labelStyle={{ fontWeight: 700, color: 'var(--color-primary-500)', fontSize: '0.8rem' }}
+            itemStyle={{ fontWeight: 600, fontSize: '0.85rem' }}
+            formatter={(value) => [`${value}${valueSuffix}`, 'Submissions']}
           />
           <Area
             type="monotone"

@@ -3,6 +3,10 @@ import {
   Layers2,
   Sparkles,
   Users,
+  HelpCircle,
+  FileText,
+  Plus,
+  BookOpen,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react'
 import { Link } from 'react-router-dom'
@@ -403,33 +407,89 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
     const weeklyTests = tests.filter((t) => t.category === 'WEEKLY_TEST')
     const monthlyTests = tests.filter((t) => t.category === 'MONTHLY_TEST')
     
-    const renderTable = (testList: TestRow[], emptyMsg: string) => (
+    const renderGrid = (testList: TestRow[], emptyMsg: string, emptyIcon: ReactElement) => (
       testList.length === 0 ? (
-        <div className="empty-state">{emptyMsg}</div>
+        <div className="empty-state-v2 compact" style={{ border: '1px dashed var(--border-strong)', borderRadius: '20px', padding: '32px 16px', background: 'var(--surface-soft)' }}>
+          <div className="empty-icon" style={{ margin: '0 auto 12px', background: 'var(--color-primary-100)', color: 'var(--color-primary-600)', width: '60px', height: '60px', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
+            {emptyIcon}
+          </div>
+          <h4 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>No Tests Configured</h4>
+          <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-soft)' }}>{emptyMsg}</p>
+        </div>
       ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Submissions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {testList.map((test) => (
-                <tr key={test.id}>
-                  <td>{test.title}</td>
-                  <td>{test.subject}</td>
-                  <td>
-                    <span className={`status-pill status-${test.status.toLowerCase()}`}>{test.status}</span>
-                  </td>
-                  <td>{test._count.submissions}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', 
+            gap: '16px',
+            marginTop: '8px'
+          }}
+        >
+          {testList.map((test) => {
+            const subjectClass = `subject-${test.subject.toLowerCase()}`
+            const submissionsCount = test._count.submissions
+            const enrolledTarget = 24 // Standard batch target
+            const submissionPercent = Math.min(100, Math.round((submissionsCount / enrolledTarget) * 100))
+
+            return (
+              <div 
+                key={test.id} 
+                className="exam-launch-card"
+              >
+                <div className="exam-launch-header">
+                  <span className={`status-pill ${subjectClass}`} style={{ fontSize: '0.7rem' }}>
+                    {test.subject}
+                  </span>
+                  <span className={`status-pill status-${test.status.toLowerCase()}`}>
+                    {test.status}
+                  </span>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '8px 0 6px', color: 'var(--text-main)', lineHeight: 1.4 }}>
+                    {test.title}
+                  </h4>
+                  <div className="exam-badge-row" style={{ marginTop: '8px', marginBottom: '14px' }}>
+                    <span className="exam-meta-pill">
+                      <HelpCircle size={12} style={{ color: 'var(--color-primary-500)' }} /> {test._count.questions} Qs
+                    </span>
+                    <span className="exam-meta-pill">
+                      <Users size={12} style={{ color: 'var(--color-primary-500)' }} /> Class {test.classLevel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Submissions Progress */}
+                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-soft)', paddingTop: '12px' }}>
+                  <div className="flex justify-between text-xs muted mb-2 font-bold" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.75rem' }}>Submissions</span>
+                    <span style={{ color: 'var(--color-primary-500)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                      {submissionsCount}/{enrolledTarget} ({submissionPercent}%)
+                    </span>
+                  </div>
+                  <div 
+                    style={{ 
+                      width: '100%', 
+                      height: '6px', 
+                      background: 'var(--border-soft)', 
+                      borderRadius: '99px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div 
+                      style={{ 
+                        width: `${submissionPercent}%`, 
+                        height: '100%', 
+                        background: 'var(--grad-primary)',
+                        borderRadius: '99px',
+                        transition: 'width 0.5s ease-out'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )
     )
@@ -443,11 +503,11 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
             variant="glass"
             actions={
               <Link to="/teacher/test/new">
-                <Button size="sm">New Weekly Test</Button>
+                <Button size="sm" className="flex items-center gap-1"><Plus size={14} /> New Weekly Test</Button>
               </Link>
             }
           >
-            {renderTable(weeklyTests, "No weekly tests created yet.")}
+            {renderGrid(weeklyTests, "Deploy short-form weekly check-ins.", <BookOpen size={24} />)}
           </Card>
 
           <Card
@@ -456,11 +516,11 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
             variant="glass"
             actions={
               <Link to="/teacher/test/new">
-                <Button size="sm">New Monthly Test</Button>
+                <Button size="sm" className="flex items-center gap-1"><Plus size={14} /> New Monthly Test</Button>
               </Link>
             }
           >
-            {renderTable(monthlyTests, "No monthly tests created yet.")}
+            {renderGrid(monthlyTests, "Evaluate long-form chapter milestones.", <FileText size={24} />)}
           </Card>
         </div>
 

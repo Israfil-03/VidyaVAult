@@ -7,6 +7,7 @@ import {
   Sparkles,
   Trophy,
   UserRound,
+  ChevronRight,
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { Link } from 'react-router-dom'
@@ -400,122 +401,186 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     const weeklyTests = activeTests.filter((t) => t.category === 'WEEKLY_TEST')
     const monthlyTests = activeTests.filter((t) => t.category === 'MONTHLY_TEST')
     const upcomingSchoolTests = upcomingTests.filter((t) => t.category === 'WEEKLY_TEST' || t.category === 'MONTHLY_TEST')
-    return (
-      <>
-        <div className="two-col">
-          <Card title="Weekly Assessments" subtitle="Regular progress checks" variant="glass">
-            {weeklyTests.length === 0 ? (
-              <div className="empty-state">No active weekly tests.</div>
-            ) : (
-              <div className="premium-list">
-                {weeklyTests.map((test, idx) => (
-                  <div key={test.id} className={`premium-item fade-in-up stagger-${(idx % 4) + 1}`}>
-                    <div>
-                      <strong>{test.title}</strong>
-                      <div className="muted">
-                        {test.subject} • {test._count.questions} Qs • ends {formatShortDate(test.endTime)}
-                      </div>
-                    </div>
-                    <Link to={`/student/tests/${test.id}/take`}>
-                      <Button size="sm">Attempt</Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+    const schoolResults = results.filter(r => r.test.category !== 'HOMEWORK')
 
-          <Card title="Monthly Assessments" subtitle="Monthly milestone tests" variant="glass">
-            {monthlyTests.length === 0 ? (
-              <div className="empty-state">No active monthly tests.</div>
-            ) : (
-              <div className="premium-list">
-                {monthlyTests.map((test) => (
-                  <div key={test.id} className="premium-item">
-                    <div>
-                      <strong>{test.title}</strong>
-                      <div className="muted">
-                        {test.subject} • {test._count.questions} Qs • ends {formatShortDate(test.endTime)}
-                      </div>
-                    </div>
-                    <Link to={`/student/tests/${test.id}/take`}>
-                      <Button size="sm">Attempt</Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-
-        <div className="two-col">
-          <Card title="Upcoming Assessments" subtitle="Plan your revision" variant="glass">
-            {upcomingSchoolTests.length === 0 ? (
-              <div className="empty-state">No upcoming assessments.</div>
-            ) : (
-              <ul className="plain-list">
-                {upcomingSchoolTests.map((test) => (
-                  <li key={test.id}>
-                    <strong>{test.title}</strong>
-                    <div className="muted">
-                      {test.subject} • {test.category.replace('_', ' ')} • {formatShortDate(test.startTime)}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card title="Readiness Snapshot" subtitle="Quick indicators before you start" variant="glass">
-            <div className="stats-grid">
-              <StatCard label="Ready Now" value={weeklyTests.length + monthlyTests.length} icon={<Clock3 size={18} />} />
-              <StatCard label="Upcoming" value={upcomingSchoolTests.length} icon={<CalendarClock size={18} />} tone="warning" />
-              <StatCard
-                label="Avg. Performance"
-                value={`${averageScore.toFixed(1)}%`}
-                icon={<Sparkles size={18} />}
-                tone="success"
-              />
-              <StatCard label="Streak Points" value={Math.max(1, completedTests.length)} icon={<Flame size={18} />} />
+    const renderActiveLauncher = (testList: TestCard[], emptyMsg: string, icon: ReactElement) => {
+      if (testList.length === 0) {
+        return (
+          <div className="empty-state-v2 compact" style={{ border: '1px dashed var(--border-strong)', borderRadius: '20px', padding: '32px 16px', background: 'var(--surface-soft)' }}>
+            <div className="empty-icon" style={{ margin: '0 auto 12px', background: 'var(--color-primary-100)', color: 'var(--color-primary-600)', width: '50px', height: '50px', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
+              {icon}
             </div>
-          </Card>
-        </div>
+            <h4 style={{ margin: '0 0 4px', fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>No Active Exams</h4>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-soft)' }}>{emptyMsg}</p>
+          </div>
+        )
+      }
 
-        <Card title="Test Records & Results" subtitle="Your past formal assessments" variant="glass">
-          {results.filter(r => r.test.category !== 'HOMEWORK').length === 0 ? (
-            <div className="empty-state">No test records yet.</div>
-          ) : (
-            <div className="premium-list">
-              {results.filter(r => r.test.category !== 'HOMEWORK').map((row) => (
-                <div key={row.id} className="premium-item">
-                  <div>
-                    <strong>{row.test.title}</strong>
-                    <div className="muted">
-                      {row.test.subject} • {row.test.category.replace('_', ' ')} • {row.scoreTotal ?? 0}/{row.maxScore ?? 0}
-                    </div>
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+          {testList.map((test) => {
+            const subjectClass = `subject-${test.subject.toLowerCase()}`
+            const hoursLeft = Math.max(1, Math.round((new Date(test.endTime).getTime() - Date.now()) / 3600000))
+            const closesSoon = hoursLeft <= 24
+
+            return (
+              <div key={test.id} className="exam-launch-card">
+                <div>
+                  <div className="exam-launch-header">
+                    <span className={`status-pill ${subjectClass}`} style={{ fontSize: '0.7rem' }}>
+                      {test.subject}
+                    </span>
+                    {closesSoon ? (
+                      <span className="status-pill status-closed" style={{ fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ⚠️ Closes in {hoursLeft}h
+                      </span>
+                    ) : (
+                      <span className="status-pill status-active" style={{ fontSize: '0.7rem' }}>
+                        ACTIVE
+                      </span>
+                    )}
                   </div>
-                  <Link to={`/student/performance/${row.id}`}>
-                    <Button variant="secondary" size="sm">View Detailed Report</Button>
+
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: '8px 0 10px', color: 'var(--text-main)', lineHeight: 1.4 }}>
+                    {test.title}
+                  </h4>
+
+                  <div className="exam-badge-row">
+                    <span className="exam-meta-pill">
+                      ⏱️ {test.durationMinutes} mins
+                    </span>
+                    <span className="exam-meta-pill">
+                      📝 {test._count.questions} Qs
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-soft)', paddingTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <Link to={`/student/tests/${test.id}/take`}>
+                    <Button size="sm" className="flex items-center gap-1">
+                      Attempt Now 🚀
+                    </Button>
                   </Link>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
 
-        <Card title="Readiness Snapshot" subtitle="Quick indicators before you start" variant="glass">
+    return (
+      <>
+        {/* Consolidated Readiness Snapshot Cluster at top */}
+        <Card title="Readiness Snapshot" subtitle="Key assessment vitals & streaks" variant="glass">
           <div className="stats-grid">
-            <StatCard label="Ready Now" value={activeTests.filter(t => t.category !== 'HOMEWORK').length} icon={<Clock3 size={18} />} />
-            <StatCard label="Upcoming" value={upcomingTests.filter(t => t.category !== 'HOMEWORK').length} icon={<CalendarClock size={18} />} tone="warning" />
+            <StatCard label="Ready Now" value={weeklyTests.length + monthlyTests.length} icon={<Clock3 size={18} />} tone="primary" />
+            <StatCard label="Upcoming" value={upcomingSchoolTests.length} icon={<CalendarClock size={18} />} tone="warning" />
             <StatCard
               label="Avg. Performance"
               value={`${averageScore.toFixed(1)}%`}
               icon={<Sparkles size={18} />}
               tone="success"
             />
-            <StatCard label="Streak Points" value={Math.max(1, completedTests.length)} icon={<Flame size={18} />} />
+            <StatCard label="Streak Points" value={Math.max(1, completedTests.length)} icon={<Flame size={18} />} tone="danger" />
           </div>
         </Card>
+
+        {/* Live assessment grids */}
+        <div className="two-col">
+          <Card title="Weekly Assessments" subtitle="Regular progress checks" variant="glass">
+            {renderActiveLauncher(weeklyTests, "All weekly check-ins complete.", <CircleCheckBig size={20} />)}
+          </Card>
+
+          <Card title="Monthly Assessments" subtitle="Monthly milestone tests" variant="glass">
+            {renderActiveLauncher(monthlyTests, "No active monthly milestone exams.", <Trophy size={20} />)}
+          </Card>
+        </div>
+
+        {/* Upcoming tests stepper timeline and history */}
+        <div className="two-col" style={{ alignItems: 'start' }}>
+          <Card title="Upcoming Assessments" subtitle="Revise key topics ahead of schedule" variant="glass">
+            {upcomingSchoolTests.length === 0 ? (
+              <div className="empty-state">No upcoming assessments scheduled.</div>
+            ) : (
+              <div className="timeline-stepper">
+                {upcomingSchoolTests.map((test) => {
+                  const testDate = new Date(test.startTime)
+                  const day = testDate.getDate()
+                  const monthStr = testDate.toLocaleDateString([], { month: 'short' }).toUpperCase()
+                  const subjectClass = `subject-${test.subject.toLowerCase()}`
+
+                  return (
+                    <div key={test.id} className="timeline-step">
+                      <div className="timeline-node-card">
+                        <div className="date-badge" style={{ flexShrink: 0 }}>
+                          <span className="day">{day}</span>
+                          <span className="month" style={{ fontSize: '0.65rem' }}>{monthStr}</span>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span className={`status-pill ${subjectClass}`} style={{ fontSize: '0.65rem', padding: '2px 6px', marginBottom: '4px' }}>
+                            {test.subject}
+                          </span>
+                          <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-main)', marginTop: '4px' }}>
+                            {test.title}
+                          </strong>
+                          <span className="muted" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            ⏰ {testDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {test.durationMinutes}m
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </Card>
+
+          {/* Test Records & Detailed Radial Report Card Grid */}
+          <Card title="Test Records & Results" subtitle="Your past formal assessments" variant="glass">
+            {schoolResults.length === 0 ? (
+              <div className="empty-state">No completed test records found.</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                {schoolResults.map((row) => {
+                  const scorePercent = getNormalizedPercent(row.scoreTotal, row.maxScore)
+                  const toneClass = scorePercent >= 80 ? 'score-high' : scorePercent >= 50 ? 'score-mid' : 'score-low'
+                  const subjectClass = `subject-${row.test.subject.toLowerCase()}`
+
+                  return (
+                    <div key={row.id} className="report-score-card">
+                      <div style={{ flex: 1, paddingRight: '12px' }}>
+                        <span className={`status-pill ${subjectClass}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                          {row.test.subject}
+                        </span>
+                        <h5 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '8px 0 4px', color: 'var(--text-main)' }}>
+                          {row.test.title}
+                        </h5>
+                        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-soft)' }}>
+                          Attempted: {row.submittedAt ? new Date(row.submittedAt).toLocaleDateString() : '—'}
+                        </p>
+                        <div style={{ marginTop: '10px' }}>
+                          <Link to={`/student/performance/${row.id}`}>
+                            <Button variant="secondary" size="sm" className="flex items-center gap-1" style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
+                              Detailed Report <ChevronRight size={12} />
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+
+                      {/* Dynamic Conic-gradient Radial Progress */}
+                      <div 
+                        className={`radial-progress ${toneClass}`} 
+                        data-score={`${row.scoreTotal?.toFixed(0) ?? 0}/${row.maxScore?.toFixed(0) ?? 0}`}
+                        style={{ '--percent': scorePercent } as React.CSSProperties}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
       </>
     )
   }
