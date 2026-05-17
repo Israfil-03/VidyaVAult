@@ -998,11 +998,11 @@ const PracticeReportWizard = ({ submissionId, onClose, token, onReattempt }: Pra
       setLoading(true)
       setError(null)
       try {
-        const response = await apiRequest<{ data: ResultDetail }>(`/student/results/${submissionId}`, {
+        const response = await apiRequest<ResultDetail>(`/student/results/${submissionId}`, {
           token,
         })
-        if (response?.data) {
-          setDetail(response.data)
+        if (response) {
+          setDetail(response)
         } else {
           setError('Failed to load assessment report details.')
         }
