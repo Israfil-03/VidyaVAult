@@ -118,6 +118,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
   const location = useLocation()
   const [selectedReportSubmissionId, setSelectedReportSubmissionId] = useState<string | null>(null)
+  const [reportWizardMode, setReportWizardMode] = useState<'practice' | 'homework' | 'assessment'>('practice')
 
   useEffect(() => {
     const routerState = location.state as { showReportSubmissionId?: string } | null
@@ -384,9 +385,16 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                     {row.submittedAt ? formatShortDate(row.submittedAt) : 'Not submitted'}
                   </div>
                 </div>
-                <Link to={`/student/performance/${row.id}`}>
-                  <Button variant="secondary" size="sm">Review</Button>
-                </Link>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setReportWizardMode('homework')
+                    setSelectedReportSubmissionId(row.id)
+                  }}
+                >
+                  Review 📋
+                </Button>
               </div>
             ))}
           </div>
@@ -539,11 +547,16 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                     </div>
                   </div>
                   {attempt.submissionId ? (
-                    <Link to={`/student/performance/${attempt.submissionId}`}>
-                      <Button variant="secondary" size="sm">
-                        Review
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setReportWizardMode('practice')
+                        setSelectedReportSubmissionId(attempt.submissionId!)
+                      }}
+                    >
+                      Review
+                    </Button>
                   ) : null}
                 </div>
               ))}
@@ -716,11 +729,18 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                           Attempted: {row.submittedAt ? new Date(row.submittedAt).toLocaleDateString() : '—'}
                         </p>
                         <div style={{ marginTop: '10px' }}>
-                          <Link to={`/student/performance/${row.id}`}>
-                            <Button variant="secondary" size="sm" className="flex items-center gap-1" style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
-                              Detailed Report <ChevronRight size={12} />
-                            </Button>
-                          </Link>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                            onClick={() => {
+                              setReportWizardMode('assessment')
+                              setSelectedReportSubmissionId(row.id)
+                            }}
+                          >
+                            Detailed Report <ChevronRight size={12} />
+                          </Button>
                         </div>
                       </div>
 
@@ -916,8 +936,9 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
       <AnimatePresence>
         {selectedReportSubmissionId && (
-          <PracticeReportWizard
+          <TestReviewWizard
             submissionId={selectedReportSubmissionId}
+            mode={reportWizardMode}
             onClose={() => setSelectedReportSubmissionId(null)}
             token={token}
             onReattempt={(testId) => {
@@ -979,14 +1000,15 @@ interface ResultDetail {
   }>
 }
 
-interface PracticeReportWizardProps {
+interface TestReviewWizardProps {
   submissionId: string
+  mode: 'practice' | 'homework' | 'assessment'
   onClose: () => void
   token: string | null
   onReattempt: (testId: string) => void
 }
 
-const PracticeReportWizard = ({ submissionId, onClose, token, onReattempt }: PracticeReportWizardProps) => {
+const TestReviewWizard = ({ submissionId, mode, onClose, token, onReattempt }: TestReviewWizardProps) => {
   const [detail, setDetail] = useState<ResultDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -1015,12 +1037,14 @@ const PracticeReportWizard = ({ submissionId, onClose, token, onReattempt }: Pra
     void fetchResultDetail()
   }, [submissionId, token])
 
+  const modeLabel = mode === 'homework' ? 'Homework' : mode === 'assessment' ? 'Assessment' : 'Drill'
+
   if (loading) {
     return (
       <div className="report-modal-overlay">
         <div className="report-modal-box justify-center items-center py-12" style={{ maxWidth: '480px' }}>
           <Loader2 className="animate-spin text-primary-500 mb-4" size={40} />
-          <p className="muted font-bold">Analyzing Drill Performance...</p>
+          <p className="muted font-bold">Analyzing {modeLabel} Performance...</p>
         </div>
       </div>
     )
@@ -1110,6 +1134,16 @@ const PracticeReportWizard = ({ submissionId, onClose, token, onReattempt }: Pra
             <h3>{detail.test.title}</h3>
             <div className="report-modal-header-meta">
               <span className={`badge ${themeStyles.pill} border`}>{detail.test.subject}</span>
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  background: mode === 'homework' ? 'rgba(59,130,246,0.1)' : mode === 'assessment' ? 'rgba(245,158,11,0.1)' : 'rgba(139,92,246,0.1)',
+                  color: mode === 'homework' ? '#3b82f6' : mode === 'assessment' ? '#f59e0b' : '#8b5cf6',
+                  border: mode === 'homework' ? '1px solid rgba(59,130,246,0.2)' : mode === 'assessment' ? '1px solid rgba(245,158,11,0.2)' : '1px solid rgba(139,92,246,0.2)',
+                }}
+              >
+                {mode === 'homework' ? '📚 Homework' : mode === 'assessment' ? '🏆 Assessment' : '🎯 Practice Drill'}
+              </span>
               <span className="text-xs text-white/40">
                 Completed on {detail.submittedAt ? formatShortDate(detail.submittedAt) : 'N/A'}
               </span>
@@ -1264,14 +1298,24 @@ const PracticeReportWizard = ({ submissionId, onClose, token, onReattempt }: Pra
 
         {/* Footer Navigation */}
         <div className="report-modal-footer">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="!text-purple-400 !border-purple-500/20 hover:!bg-purple-500/10 hover:!border-purple-500/40"
-            onClick={() => onReattempt(detail.test.id)}
-          >
-            Reattempt Drill 🔄
-          </Button>
+          {mode === 'practice' ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="!text-purple-400 !border-purple-500/20 hover:!bg-purple-500/10 hover:!border-purple-500/40"
+              onClick={() => onReattempt(detail.test.id)}
+            >
+              Reattempt Drill 🔄
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onClose}
+            >
+              Close {mode === 'homework' ? 'Homework' : 'Assessment'} Report
+            </Button>
+          )}
 
           <div className="report-nav-btns">
             <Button
