@@ -280,17 +280,40 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     [results],
   )
 
+  // ─── Practice-ONLY derived data (strict category isolation) ─────────────
+  const practiceCompletedTests = useMemo(
+    () => completedTests.filter((t) => t.category === 'PRACTICE'),
+    [completedTests],
+  )
+
+  const practiceResults = useMemo(
+    () => results.filter((r) => r.test.category === 'PRACTICE'),
+    [results],
+  )
+
   const subjectPracticeData = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const row of completedTests) {
+    for (const row of practiceCompletedTests) {         // ✅ PRACTICE only
       counts.set(row.subject, (counts.get(row.subject) ?? 0) + 1)
     }
     return [...counts.entries()].map(([label, value]) => ({ label, value }))
-  }, [completedTests])
+  }, [practiceCompletedTests])
+
+  const practiceTrendData = useMemo(
+    () =>
+      practiceResults
+        .slice(0, 8)
+        .reverse()
+        .map((item, index) => ({
+          label: `T${index + 1}`,
+          value: getNormalizedPercent(item.scoreTotal, item.maxScore),
+        })),
+    [practiceResults],
+  )
 
   const weakestAttempts = useMemo(
     () =>
-      completedTests
+      practiceCompletedTests                           // ✅ PRACTICE only
         .map((test) => {
           const submission = test.submissions[0]
           return {
@@ -303,7 +326,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         })
         .sort((left, right) => left.score - right.score)
         .slice(0, 3),
-    [completedTests],
+    [practiceCompletedTests],
   )
 
   const classRank = useMemo(
@@ -409,11 +432,11 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     return (
       <>
         <div className="two-col">
-          <Card title="Practice Coverage by Subject" subtitle="Completed attempts per subject" variant="glass">
+          <Card title="Practice Coverage by Subject" subtitle="Completed practice attempts per subject" variant="glass">
             <ComparisonBarChart data={subjectPracticeData} />
           </Card>
-          <Card title="Accuracy Trend" subtitle="Recent practice quality" variant="glass">
-            <TrendAreaChart data={scoreTrendData} valueSuffix="%" />
+          <Card title="Accuracy Trend" subtitle="Recent practice drill quality" variant="glass">
+            <TrendAreaChart data={practiceTrendData} valueSuffix="%" />
           </Card>
         </div>
 

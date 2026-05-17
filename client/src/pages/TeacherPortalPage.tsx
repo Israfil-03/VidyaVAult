@@ -7,6 +7,15 @@ import {
   FileText,
   Plus,
   BookOpen,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  X,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Award,
+  TrendingUp,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react'
 import { Link } from 'react-router-dom'
@@ -84,6 +93,24 @@ interface PracticeAttempt {
   submittedAt: string
 }
 
+interface AssessmentAnalytics {
+  totalSubmissions: number
+  averageScore: number
+  topPerformers: Array<{ studentId: string; username: string; scoreTotal: number | null; maxScore: number | null }>
+  bottomPerformers: Array<{ studentId: string; username: string; scoreTotal: number | null; maxScore: number | null }>
+}
+
+interface DetailedStudentSubmission {
+  studentId: string
+  username: string
+  email: string | null
+  status: 'SUBMITTED' | 'IN_PROGRESS' | 'NOT_STARTED'
+  submittedAt: string | null
+  score: number
+  maxScore: number
+  answers: Array<{ questionText: string; selectedOption: string | null | undefined; isCorrect: boolean; marks: number }>
+}
+
 const sectionTitle: Record<DashboardSection, string> = {
   homework: 'Homework Section',
   practice: 'Practice',
@@ -134,6 +161,14 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   >([])
   const [practiceAttempts, setPracticeAttempts] = useState<PracticeAttempt[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  // Assessment Review Wizard state
+  const [selectedReviewTest, setSelectedReviewTest] = useState<TestRow | null>(null)
+  const [reviewAnalytics, setReviewAnalytics] = useState<AssessmentAnalytics | null>(null)
+  const [reviewSubmissions, setReviewSubmissions] = useState<DetailedStudentSubmission[]>([])
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null)
 
   const [resetStudent, setResetStudent] = useState({
     studentId: '',
@@ -233,6 +268,28 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   useEffect(() => {
     void loadPortalData()
   }, [loadPortalData])
+
+  const openAssessmentReview = async (test: TestRow) => {
+    if (!token) return
+    setSelectedReviewTest(test)
+    setReviewLoading(true)
+    setReviewError(null)
+    setReviewAnalytics(null)
+    setReviewSubmissions([])
+    setExpandedStudentId(null)
+    try {
+      const [analyticsData, submissionsData] = await Promise.all([
+        apiRequest<AssessmentAnalytics>(`/tests/${test.id}/analytics`, { method: 'GET', token }),
+        apiRequest<DetailedStudentSubmission[]>(`/tests/${test.id}/submissions`, { method: 'GET', token }),
+      ])
+      setReviewAnalytics(analyticsData)
+      setReviewSubmissions(submissionsData)
+    } catch (err) {
+      setReviewError(err instanceof Error ? err.message : 'Failed to load assessment review')
+    } finally {
+      setReviewLoading(false)
+    }
+  }
 
   const resetStudentPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -495,8 +552,6 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
           {testList.map((test) => {
             const subjectClass = `subject-${test.subject.toLowerCase()}`
             const submissionsCount = test._count.submissions
-            const enrolledTarget = 24 // Standard batch target
-            const submissionPercent = Math.min(100, Math.round((submissionsCount / enrolledTarget) * 100))
 
             return (
               <div 
@@ -526,33 +581,20 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
                   </div>
                 </div>
 
-                {/* Submissions Progress */}
-                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-soft)', paddingTop: '12px' }}>
-                  <div className="flex justify-between text-xs muted mb-2 font-bold" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.75rem' }}>Submissions</span>
-                    <span style={{ color: 'var(--color-primary-500)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                      {submissionsCount}/{enrolledTarget} ({submissionPercent}%)
-                    </span>
-                  </div>
-                  <div 
-                    style={{ 
-                      width: '100%', 
-                      height: '6px', 
-                      background: 'var(--border-soft)', 
-                      borderRadius: '99px',
-                      overflow: 'hidden'
-                    }}
+                {/* Submissions footer */}
+                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-soft)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-soft)', fontFamily: 'var(--font-mono)' }}>
+                    {submissionsCount} submitted
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                    style={{ fontSize: '0.75rem' }}
+                    onClick={() => void openAssessmentReview(test)}
                   >
-                    <div 
-                      style={{ 
-                        width: `${submissionPercent}%`, 
-                        height: '100%', 
-                        background: 'var(--grad-primary)',
-                        borderRadius: '99px',
-                        transition: 'width 0.5s ease-out'
-                      }}
-                    />
-                  </div>
+                    <BarChart3 size={13} /> View Results
+                  </Button>
                 </div>
               </div>
             )
@@ -810,10 +852,11 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
           <div className="inline-actions">
             <span className="status-pill status-upcoming">Students: {overview?.studentCount ?? 0}</span>
             <span className="status-pill status-completed">
-              {section === 'homework' ? 'Homework' : 'School Tests'}: {
-                section === 'homework' 
-                  ? tests.filter(t => t.category === 'HOMEWORK').length 
-                  : tests.filter(t => t.category !== 'HOMEWORK').length
+              {section === 'homework'
+                ? `Homework: ${tests.filter(t => t.category === 'HOMEWORK').length}`
+                : section === 'practice'
+                  ? `Drills: ${tests.filter(t => t.category === 'PRACTICE').length}`
+                  : `Assessments: ${tests.filter(t => t.category === 'WEEKLY_TEST' || t.category === 'MONTHLY_TEST').length}`
               }
             </span>
             <span className="status-pill status-draft">Batches: {batches.length}</span>
@@ -822,6 +865,204 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
 
         {contentBySection[section]}
       </div>
+
+      {/* Assessment Review Modal */}
+      {selectedReviewTest && (
+        <div className="report-modal-overlay" onClick={() => setSelectedReviewTest(null)}>
+          <div
+            className="report-modal-box"
+            style={{ maxWidth: '860px', maxHeight: '90vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="report-modal-header">
+              <div className="report-modal-header-info">
+                <h3>{selectedReviewTest.title}</h3>
+                <div className="report-modal-header-meta">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    {selectedReviewTest.category === 'WEEKLY_TEST' ? '📅 Weekly Test' : '📆 Monthly Test'}
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.2)' }}>
+                    {selectedReviewTest.subject}
+                  </span>
+                  <span className="text-xs text-white/40">Class {selectedReviewTest.classLevel}</span>
+                </div>
+              </div>
+              <button className="report-modal-close-btn" onClick={() => setSelectedReviewTest(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="report-modal-body custom-scrollbar">
+              {reviewLoading && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', gap: '16px' }}>
+                  <Loader2 className="animate-spin" size={40} style={{ color: 'var(--color-primary-500)' }} />
+                  <p className="muted font-bold">Loading assessment results...</p>
+                </div>
+              )}
+
+              {reviewError && (
+                <div style={{ padding: '24px', textAlign: 'center' }}>
+                  <XCircle size={40} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
+                  <p style={{ color: '#ef4444' }}>{reviewError}</p>
+                </div>
+              )}
+
+              {!reviewLoading && !reviewError && reviewAnalytics && (
+                <>
+                  {/* Analytics Overview */}
+                  <div className="report-stats-card" style={{ marginBottom: '20px' }}>
+                    <div className="report-stat-item">
+                      <span className="report-stat-label">Total Submissions</span>
+                      <span className="report-stat-value font-mono" style={{ color: 'var(--color-primary-400)' }}>
+                        {reviewAnalytics.totalSubmissions}
+                      </span>
+                    </div>
+                    <div className="report-stat-item">
+                      <span className="report-stat-label">Avg Score</span>
+                      <span className="report-stat-value font-mono"
+                        style={{ color: reviewAnalytics.averageScore >= 80 ? '#10b981' : reviewAnalytics.averageScore >= 50 ? '#f59e0b' : '#ef4444' }}
+                      >
+                        {reviewAnalytics.averageScore.toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="report-stat-item">
+                      <span className="report-stat-label">Not Started</span>
+                      <span className="report-stat-value font-mono" style={{ color: 'var(--text-soft)' }}>
+                        {reviewSubmissions.filter(s => s.status === 'NOT_STARTED').length}
+                      </span>
+                    </div>
+                    <div className="report-stat-item">
+                      <span className="report-stat-label">In Progress</span>
+                      <span className="report-stat-value font-mono" style={{ color: '#f59e0b' }}>
+                        {reviewSubmissions.filter(s => s.status === 'IN_PROGRESS').length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Top & Bottom Performers */}
+                  {(reviewAnalytics.topPerformers.length > 0 || reviewAnalytics.bottomPerformers.length > 0) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                      <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '14px', padding: '16px' }}>
+                        <h4 style={{ margin: '0 0 12px', fontSize: '0.85rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Award size={14} /> Top Performers
+                        </h4>
+                        {reviewAnalytics.topPerformers.map((p, i) => (
+                          <div key={p.studentId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < reviewAnalytics.topPerformers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 600 }}>#{i + 1} {p.username}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#10b981', fontWeight: 700 }}>
+                              {p.scoreTotal?.toFixed(1) ?? '0'}/{p.maxScore?.toFixed(1) ?? '0'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '14px', padding: '16px' }}>
+                        <h4 style={{ margin: '0 0 12px', fontSize: '0.85rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <TrendingUp size={14} /> Needs Improvement
+                        </h4>
+                        {reviewAnalytics.bottomPerformers.map((p, i) => (
+                          <div key={p.studentId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: i < reviewAnalytics.bottomPerformers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 600 }}>{p.username}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#ef4444', fontWeight: 700 }}>
+                              {p.scoreTotal?.toFixed(1) ?? '0'}/{p.maxScore?.toFixed(1) ?? '0'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Per-Student Submission List */}
+                  <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={15} style={{ color: 'var(--color-primary-400)' }} /> All Student Results
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {reviewSubmissions.length === 0 ? (
+                      <div className="empty-state">No students assigned to this test yet.</div>
+                    ) : reviewSubmissions.map((student) => {
+                      const pct = student.maxScore > 0 ? (student.score / student.maxScore) * 100 : 0
+                      const isExpanded = expandedStudentId === student.studentId
+                      const statusColor = student.status === 'SUBMITTED' ? '#10b981' : student.status === 'IN_PROGRESS' ? '#f59e0b' : 'var(--text-soft)'
+
+                      return (
+                        <div key={student.studentId} style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-soft)', borderRadius: '12px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                          {/* Row header */}
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: student.status === 'SUBMITTED' ? 'pointer' : 'default' }}
+                            onClick={() => {
+                              if (student.status === 'SUBMITTED') {
+                                setExpandedStudentId(isExpanded ? null : student.studentId)
+                              }
+                            }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-main)' }}>{student.username}</span>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: statusColor, background: `${statusColor}18`, padding: '2px 6px', borderRadius: '6px', border: `1px solid ${statusColor}30` }}>
+                                  {student.status}
+                                </span>
+                              </div>
+                              {student.email && <span style={{ fontSize: '0.72rem', color: 'var(--text-soft)' }}>{student.email}</span>}
+                            </div>
+
+                            {student.status === 'SUBMITTED' && (
+                              <>
+                                <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444' }}>
+                                    {student.score.toFixed(1)}/{student.maxScore.toFixed(1)}
+                                  </div>
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--text-soft)' }}>{pct.toFixed(0)}%</div>
+                                </div>
+                                <div style={{ width: '60px', height: '6px', background: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden', flexShrink: 0 }}>
+                                  <div style={{ width: `${pct}%`, height: '100%', background: pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444', borderRadius: '99px', transition: 'width 0.5s ease-out' }} />
+                                </div>
+                                {isExpanded
+                                  ? <ChevronUp size={16} style={{ color: 'var(--text-soft)', flexShrink: 0 }} />
+                                  : <ChevronDown size={16} style={{ color: 'var(--text-soft)', flexShrink: 0 }} />}
+                              </>
+                            )}
+
+                            {student.status !== 'SUBMITTED' && (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-soft)' }}>—</span>
+                            )}
+                          </div>
+
+                          {/* Expanded answer breakdown */}
+                          {isExpanded && student.answers.length > 0 && (
+                            <div style={{ borderTop: '1px solid var(--border-soft)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.15)' }}>
+                              {student.answers.map((ans, aidx) => (
+                                <div key={aidx} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '10px', alignItems: 'start', padding: '8px 10px', borderRadius: '8px', background: ans.isCorrect ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)', border: `1px solid ${ans.isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                                  {ans.isCorrect
+                                    ? <CheckCircle2 size={14} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+                                    : <XCircle size={14} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />}
+                                  <div>
+                                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-main)', fontWeight: 600, lineHeight: 1.4 }}>Q{aidx + 1}: {ans.questionText}</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: 'var(--text-soft)' }}>Selected: {ans.selectedOption ?? <em>Not answered</em>}</p>
+                                  </div>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: ans.isCorrect ? '#10b981' : '#ef4444', whiteSpace: 'nowrap' }}>+{ans.marks} mk</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="report-modal-footer">
+              <span className="muted" style={{ fontSize: '0.8rem' }}>
+                {selectedReviewTest._count.submissions} submitted • {selectedReviewTest._count.questions} questions
+              </span>
+              <Button variant="secondary" size="sm" onClick={() => setSelectedReviewTest(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }
