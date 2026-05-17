@@ -525,7 +525,7 @@ export const getResultById = async (req: Request, res: Response): Promise<void> 
       },
       selectedOption: null,
     }))
-    result.answers.push(...(blankAnswers as any))
+    result.answers.push(...(blankAnswers as unknown as typeof result.answers))
   }
 
   // Sort answers to match the order of questions in the test
