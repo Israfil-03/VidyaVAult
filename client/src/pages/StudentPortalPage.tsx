@@ -8,9 +8,15 @@ import {
   Trophy,
   UserRound,
   ChevronRight,
+  X,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  ChevronLeft,
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
@@ -109,6 +115,18 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
   >([])
   const [error, setError] = useState<string | null>(null)
   const [reloadTrigger, setReloadTrigger] = useState(0)
+
+  const location = useLocation()
+  const [selectedReportSubmissionId, setSelectedReportSubmissionId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const routerState = location.state as { showReportSubmissionId?: string } | null
+    if (routerState?.showReportSubmissionId) {
+      setSelectedReportSubmissionId(routerState.showReportSubmissionId)
+      // Clear the history state so that clicking refresh doesn't reopen the modal
+      window.history.replaceState({}, document.title)
+    }
+  }, [location])
 
   useEffect(() => {
     const loadData = async () => {
@@ -481,11 +499,14 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                         </Link>
                       ) : (
                         <>
-                          <Link to={`/student/performance/${submission.id}`} style={{ flex: 1 }}>
-                            <Button variant="secondary" size="sm" className="w-full justify-center text-xs">
-                              Report 📊
-                            </Button>
-                          </Link>
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="flex-1 justify-center text-xs"
+                            onClick={() => setSelectedReportSubmissionId(submission.id)}
+                          >
+                            Report 📊
+                          </Button>
                           <Button 
                             variant="secondary" 
                             size="sm"
@@ -892,6 +913,391 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
         {contentBySection[section]}
       </div>
+
+      <AnimatePresence>
+        {selectedReportSubmissionId && (
+          <PracticeReportWizard
+            submissionId={selectedReportSubmissionId}
+            onClose={() => setSelectedReportSubmissionId(null)}
+            token={token}
+            onReattempt={(testId) => {
+              setSelectedReportSubmissionId(null)
+              void handleReattempt(testId)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </DashboardLayout>
+  )
+}
+
+interface ResultDetail {
+  id: string
+  testId: string
+  studentId: string
+  scoreTotal: number | null
+  maxScore: number | null
+  submittedAt: string | null
+  aiAnalysisSummary: string | null
+  test: {
+    id: string
+    title: string
+    subject: string
+    category: string
+    questions: Array<{
+      id: string
+      text: string
+      explanation: string | null
+      options: Array<{
+        id: string
+        text: string
+        isCorrect: boolean
+      }>
+    }>
+  }
+  answers: Array<{
+    id: string
+    questionId: string
+    selectedOptionId: string | null
+    isCorrect: boolean
+    marksObtained: number
+    question: {
+      id: string
+      text: string
+      explanation: string | null
+      options: Array<{
+        id: string
+        text: string
+        isCorrect: boolean
+      }>
+    }
+    selectedOption: {
+      id: string
+      text: string
+      isCorrect: boolean
+    } | null
+  }>
+}
+
+interface PracticeReportWizardProps {
+  submissionId: string
+  onClose: () => void
+  token: string | null
+  onReattempt: (testId: string) => void
+}
+
+const PracticeReportWizard = ({ submissionId, onClose, token, onReattempt }: PracticeReportWizardProps) => {
+  const [detail, setDetail] = useState<ResultDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeQuestionIdx, setActiveQuestionIdx] = useState(0)
+
+  useEffect(() => {
+    const fetchResultDetail = async () => {
+      if (!token) return
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await apiRequest<{ data: ResultDetail }>(`/student/results/${submissionId}`, {
+          token,
+        })
+        if (response?.data) {
+          setDetail(response.data)
+        } else {
+          setError('Failed to load assessment report details.')
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error fetching report')
+      } finally {
+        setLoading(false)
+      }
+    }
+    void fetchResultDetail()
+  }, [submissionId, token])
+
+  if (loading) {
+    return (
+      <div className="report-modal-overlay">
+        <div className="report-modal-box justify-center items-center py-12" style={{ maxWidth: '480px' }}>
+          <Loader2 className="animate-spin text-primary-500 mb-4" size={40} />
+          <p className="muted font-bold">Analyzing Drill Performance...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !detail) {
+    return (
+      <div className="report-modal-overlay">
+        <div className="report-modal-box justify-center items-center p-8 text-center" style={{ maxWidth: '480px' }}>
+          <XCircle className="text-danger mb-4" size={48} />
+          <h3 className="mb-2 text-white">Oops! Something went wrong</h3>
+          <p className="muted mb-6">{error || 'Unable to retrieve your report.'}</p>
+          <Button onClick={onClose}>Close Report</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const subjectLower = detail.test.subject.toLowerCase()
+  let themeStyles = {
+    bg: 'from-indigo-600/20 to-purple-600/20 border-purple-500/30',
+    pill: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    accent: 'var(--color-accent-600)',
+    bar: 'linear-gradient(90deg, #8b5cf6, #3b82f6)',
+    glow: 'rgba(139, 92, 246, 0.25)',
+  }
+
+  if (subjectLower.includes('math')) {
+    themeStyles = {
+      bg: 'from-blue-600/20 to-indigo-600/20 border-blue-500/30',
+      pill: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      accent: 'var(--color-primary-500)',
+      bar: 'linear-gradient(90deg, #3b82f6, #2563eb)',
+      glow: 'rgba(59, 130, 246, 0.25)',
+    }
+  } else if (subjectLower.includes('chem')) {
+    themeStyles = {
+      bg: 'from-emerald-600/20 to-teal-600/20 border-emerald-500/30',
+      pill: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      accent: '#10b981',
+      bar: 'linear-gradient(90deg, #10b981, #059669)',
+      glow: 'rgba(16, 185, 129, 0.25)',
+    }
+  } else if (subjectLower.includes('phys')) {
+    themeStyles = {
+      bg: 'from-amber-600/20 to-orange-600/20 border-amber-500/30',
+      pill: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      accent: '#f59e0b',
+      bar: 'linear-gradient(90deg, #f59e0b, #d97706)',
+      glow: 'rgba(245, 158, 11, 0.25)',
+    }
+  } else if (subjectLower.includes('biol')) {
+    themeStyles = {
+      bg: 'from-rose-600/20 to-pink-600/20 border-rose-500/30',
+      pill: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+      accent: '#f43f5e',
+      bar: 'linear-gradient(90deg, #f43f5e, #e11d48)',
+      glow: 'rgba(244, 63, 94, 0.25)',
+    }
+  }
+
+  // Answer stats breakdown
+  const totalQuestions = detail.answers.length
+  const correctCount = detail.answers.filter((a) => a.isCorrect).length
+  const skippedCount = detail.answers.filter((a) => a.selectedOptionId === null).length
+  const incorrectCount = totalQuestions - correctCount - skippedCount
+  const accuracyPercent = detail.maxScore && detail.scoreTotal !== null
+    ? (detail.scoreTotal / detail.maxScore) * 100
+    : 0
+
+  const activeAnswer = detail.answers[activeQuestionIdx]
+  const activeQuestion = activeAnswer?.question
+
+  return (
+    <div className="report-modal-overlay">
+      <div
+        className="report-modal-box"
+        style={{
+          '--subject-grad-bar': themeStyles.bar,
+          '--subject-color-accent': themeStyles.accent,
+          '--subject-glow': themeStyles.glow,
+        } as React.CSSProperties}
+      >
+        {/* Header */}
+        <div className="report-modal-header">
+          <div className="report-modal-header-info">
+            <h3>{detail.test.title}</h3>
+            <div className="report-modal-header-meta">
+              <span className={`badge ${themeStyles.pill} border`}>{detail.test.subject}</span>
+              <span className="text-xs text-white/40">
+                Completed on {detail.submittedAt ? formatShortDate(detail.submittedAt) : 'N/A'}
+              </span>
+            </div>
+          </div>
+          <button className="report-modal-close-btn" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="report-modal-body custom-scrollbar">
+          {/* Quick Vitals Dashboard */}
+          <div className="report-stats-card">
+            <div className="report-stat-item">
+              <span className="report-stat-label">Accuracy</span>
+              <span
+                className="report-stat-value font-mono"
+                style={{ color: accuracyPercent >= 80 ? '#10b981' : accuracyPercent >= 50 ? '#f59e0b' : '#ef4444' }}
+              >
+                {accuracyPercent.toFixed(0)}%
+              </span>
+            </div>
+            <div className="report-stat-item">
+              <span className="report-stat-label">Correct</span>
+              <span className="report-stat-value text-success font-mono">{correctCount}</span>
+            </div>
+            <div className="report-stat-item">
+              <span className="report-stat-label">Incorrect</span>
+              <span className="report-stat-value text-danger font-mono">{incorrectCount}</span>
+            </div>
+            <div className="report-stat-item">
+              <span className="report-stat-label">Skipped</span>
+              <span className="report-stat-value muted font-mono">{skippedCount}</span>
+            </div>
+          </div>
+
+          {/* AI Mentorship Banner */}
+          {detail.aiAnalysisSummary && (
+            <div className="report-ai-banner">
+              <div className="report-ai-icon-box">
+                <Sparkles size={20} />
+              </div>
+              <div className="report-ai-content">
+                <h4>AI Mentorship Insight</h4>
+                <p className="report-ai-summary">"{detail.aiAnalysisSummary}"</p>
+              </div>
+            </div>
+          )}
+
+          {/* Interactive Questions Stepper Grid */}
+          <div className="report-stepper-grid">
+            {/* Stepper Index column */}
+            <div className="report-question-list">
+              <h4>Questions</h4>
+              <div className="report-question-tabs">
+                {detail.answers.map((ans, idx) => {
+                  let statusClass = 'skipped'
+                  if (ans.selectedOptionId !== null) {
+                    statusClass = ans.isCorrect ? 'correct' : 'incorrect'
+                  }
+                  const isActive = activeQuestionIdx === idx
+                  return (
+                    <button
+                      key={ans.id}
+                      className={`report-q-tab ${statusClass} ${isActive ? 'active' : ''}`}
+                      onClick={() => setActiveQuestionIdx(idx)}
+                    >
+                      {idx + 1}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Active Question Inspector */}
+            {activeQuestion && activeAnswer && (
+              <div className="report-question-inspector">
+                <div className="report-inspector-header">
+                  <span>Question {activeQuestionIdx + 1} of {totalQuestions}</span>
+                  <span
+                    className="font-mono px-2 py-0.5 rounded-md text-[11px] font-bold"
+                    style={{
+                      background: activeAnswer.selectedOptionId === null
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : activeAnswer.isCorrect
+                        ? 'rgba(16, 185, 129, 0.1)'
+                        : 'rgba(239, 68, 68, 0.1)',
+                      color: activeAnswer.selectedOptionId === null
+                        ? 'var(--text-soft)'
+                        : activeAnswer.isCorrect
+                        ? '#10b981'
+                        : '#ef4444',
+                      border: activeAnswer.selectedOptionId === null
+                        ? '1px solid var(--border-soft)'
+                        : activeAnswer.isCorrect
+                        ? '1px solid rgba(16, 185, 129, 0.2)'
+                        : '1px solid rgba(239, 68, 68, 0.2)',
+                    }}
+                  >
+                    {activeAnswer.selectedOptionId === null
+                      ? 'SKIPPED'
+                      : activeAnswer.isCorrect
+                      ? `CORRECT (+${activeAnswer.marksObtained} Marks)`
+                      : 'INCORRECT (0 Marks)'}
+                  </span>
+                </div>
+
+                <p className="report-question-text">{activeQuestion.text}</p>
+
+                <div className="report-options-list">
+                  {activeQuestion.options.map((opt, oIdx) => {
+                    const optionLetter = String.fromCharCode(65 + oIdx)
+                    const isCorrect = opt.isCorrect
+                    const isSelected = activeAnswer.selectedOptionId === opt.id
+
+                    let optionClass = ''
+                    if (isSelected) {
+                      optionClass = isCorrect ? 'chosen-correct' : 'chosen-incorrect'
+                    } else if (isCorrect) {
+                      optionClass = 'correct-unselected'
+                    }
+
+                    return (
+                      <div key={opt.id} className={`report-option-card ${optionClass}`}>
+                        <span className="report-option-letter">{optionLetter}</span>
+                        <span className="flex-1">{opt.text}</span>
+                        {isSelected && isCorrect && (
+                          <CheckCircle2 className="text-success ml-auto flex-shrink-0" size={18} />
+                        )}
+                        {isSelected && !isCorrect && (
+                          <XCircle className="text-danger ml-auto flex-shrink-0" size={18} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {activeQuestion.explanation && (
+                  <div className="report-explanation-box">
+                    <div className="report-explanation-title">
+                      <Sparkles size={13} />
+                      Concept Explanation
+                    </div>
+                    <p className="report-explanation-text">{activeQuestion.explanation}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="report-modal-footer">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="!text-purple-400 !border-purple-500/20 hover:!bg-purple-500/10 hover:!border-purple-500/40"
+            onClick={() => onReattempt(detail.test.id)}
+          >
+            Reattempt Drill 🔄
+          </Button>
+
+          <div className="report-nav-btns">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={activeQuestionIdx === 0}
+              onClick={() => setActiveQuestionIdx((prev) => prev - 1)}
+            >
+              <ChevronLeft size={16} className="mr-1" /> Previous
+            </Button>
+            {activeQuestionIdx < totalQuestions - 1 ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setActiveQuestionIdx((prev) => prev + 1)}
+              >
+                Next <ChevronRight size={16} className="ml-1" />
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={onClose}>
+                Close Report
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

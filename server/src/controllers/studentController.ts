@@ -268,7 +268,7 @@ export const saveAnswers = async (req: Request, res: Response): Promise<void> =>
     return {
       submissionId,
       questionId: question.id,
-      selectedOptionId: selectedOption?.id,
+      selectedOptionId: selectedOption?.id ?? null,
       isCorrect,
       marksObtained,
     }
@@ -329,11 +329,35 @@ export const submitSubmission = async (req: Request, res: Response): Promise<voi
     throw new ApiError('Test submission window has ended', 400)
   }
 
-  const maxScore = submission.test.questions.reduce((sum, question) => sum + question.marks, 0)
-  const scoreTotal = submission.answers.reduce((sum, answer) => sum + answer.marksObtained, 0)
+  // Ensure every question has an answer record in the database
+  const allQuestions = submission.test.questions
+  const existingQuestionIds = new Set(submission.answers.map((a) => a.questionId))
+  const missingQuestions = allQuestions.filter((q) => !existingQuestionIds.has(q.id))
 
-  const answerByQuestion = new Map(submission.answers.map((answer) => [answer.questionId, answer]))
-  const aiPayloadEntries = submission.test.questions.map((question) => {
+  if (missingQuestions.length > 0) {
+    const blankAnswers = missingQuestions.map((q) => ({
+      submissionId,
+      questionId: q.id,
+      selectedOptionId: null,
+      isCorrect: false,
+      marksObtained: 0,
+    }))
+
+    await prisma.answer.createMany({
+      data: blankAnswers,
+    })
+  }
+
+  // Refetch all answers to get correct score totals
+  const allAnswers = await prisma.answer.findMany({
+    where: { submissionId },
+  })
+
+  const maxScore = allQuestions.reduce((sum, question) => sum + question.marks, 0)
+  const scoreTotal = allAnswers.reduce((sum, answer) => sum + answer.marksObtained, 0)
+
+  const answerByQuestion = new Map(allAnswers.map((answer) => [answer.questionId, answer]))
+  const aiPayloadEntries = allQuestions.map((question) => {
     const answer = answerByQuestion.get(question.id)
     return {
       chapter: question.chapter,
@@ -447,6 +471,11 @@ export const getResultById = async (req: Request, res: Response): Promise<void> 
       test: {
         include: {
           assignments: true,
+          questions: {
+            include: {
+              options: true,
+            },
+          },
         },
       },
       answers: {
@@ -465,6 +494,43 @@ export const getResultById = async (req: Request, res: Response): Promise<void> 
   if (!result) {
     throw new ApiError('Result not found', 404)
   }
+
+  // Support backward compatibility for old submissions that may not have all Answer records in DB
+  const allQuestions = result.test.questions
+  const existingQuestionIds = new Set(result.answers.map((a) => a.questionId))
+  const missingQuestions = allQuestions.filter((q) => !existingQuestionIds.has(q.id))
+
+  if (missingQuestions.length > 0) {
+    const blankAnswers = missingQuestions.map((q) => ({
+      id: `blank-${q.id}`,
+      submissionId: result.id,
+      questionId: q.id,
+      selectedOptionId: null,
+      isCorrect: false,
+      marksObtained: 0,
+      question: {
+        id: q.id,
+        testId: result.testId,
+        text: q.text,
+        chapter: q.chapter,
+        concept: q.concept,
+        difficulty: q.difficulty,
+        marks: q.marks,
+        source: q.source,
+        explanation: q.explanation,
+        imageUrl: q.imageUrl,
+        createdAt: q.createdAt,
+        updatedAt: q.updatedAt,
+        options: q.options,
+      },
+      selectedOption: null,
+    }))
+    result.answers.push(...(blankAnswers as any))
+  }
+
+  // Sort answers to match the order of questions in the test
+  const questionOrder = allQuestions.map((q) => q.id)
+  result.answers.sort((a, b) => questionOrder.indexOf(a.questionId) - questionOrder.indexOf(b.questionId))
 
   res.json({
     success: true,

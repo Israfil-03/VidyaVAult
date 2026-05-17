@@ -82,13 +82,17 @@ export const TakeTestPage = () => {
     try {
       await saveAnswers()
       await apiRequest(`/student/submissions/${submissionId}/submit`, { method: 'POST', token })
-      navigate(`/student/performance/${submissionId}`)
+      if (test?.category === 'PRACTICE') {
+        navigate('/student/practice', { state: { showReportSubmissionId: submissionId } })
+      } else {
+        navigate(`/student/performance/${submissionId}`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit test')
     } finally {
       setSubmitting(false)
     }
-  }, [navigate, saveAnswers, submissionId, token])
+  }, [navigate, saveAnswers, submissionId, token, test])
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0 || !submissionId) return
