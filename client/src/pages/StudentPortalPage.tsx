@@ -604,7 +604,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         <Card title="Student Profile" subtitle="Account and classroom identity" variant="glass">
           <ul className="plain-list">
             <li>
-              <strong>Name:</strong> {user?.fullName || user?.username ?? '—'}
+              <strong>Name:</strong> {(user?.fullName || user?.username) ?? '—'}
             </li>
             <li>
               <strong>Email:</strong> {user?.email ?? 'Not provided'}
