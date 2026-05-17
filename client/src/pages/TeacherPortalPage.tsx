@@ -23,6 +23,7 @@ import type { DashboardSection } from './shared/dashboardNavigation'
 import { getDashboardNavigation } from './shared/dashboardNavigation'
 import { HomeworkCard } from './HomeworkCard'
 import { NewHomeworkCard } from './NewHomeworkCard'
+import { NewPracticeDrillCard } from './NewPracticeDrillCard'
 
 interface TeacherOverview {
   studentCount: number
@@ -325,67 +326,66 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
     const practiceDrills = tests.filter(t => t.category === 'PRACTICE')
     return (
       <div className="fade-in-up flex flex-col gap-8">
-        <Card 
-          title="Active Practice Drills" 
-          subtitle="Manage untimed, stress-free learning cards for students"
-          variant="gradient"
-        >
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-sm font-bold text-white/70">
-              Total Drills: {practiceDrills.length}
-            </span>
-            <Link to="/teacher/test/new?category=PRACTICE">
-              <Button size="sm">
-                + Create Practice Drill
-              </Button>
-            </Link>
-          </div>
-          {practiceDrills.length === 0 ? (
-            <div className="empty-state py-12">
-              <div className="flex flex-col items-center gap-4">
-                <Sparkles className="text-primary/40" size={48} />
-                <p className="muted">No practice drills created yet. Click above to create one!</p>
-              </div>
+        <div className="two-col" style={{ alignItems: 'start' }}>
+          <Card 
+            title="Active Practice Drills" 
+            subtitle="Manage untimed, stress-free learning cards for students"
+            variant="gradient"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-sm font-bold text-white/70">
+                Total Drills: {practiceDrills.length}
+              </span>
             </div>
-          ) : (
-            <div className="premium-list">
-              {practiceDrills.map((drill, idx) => (
-                <div key={drill.id} className={`premium-item fade-in-up stagger-${(idx % 4) + 1}`}>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <strong className="text-white text-base">{drill.title}</strong>
-                      <span className="subject-pill text-[10px]">
-                        {drill.subject}
-                      </span>
-                    </div>
-                    <div className="muted mt-1 text-sm">
-                      Class {drill.classLevel} • {drill._count.questions} Questions • Created {new Date(drill.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      className="border border-error/20 text-error hover:bg-error/10 hover:border-error/40"
-                      onClick={async () => {
-                        if (confirm(`Are you sure you want to delete "${drill.title}"? This will also delete all student practice attempts for it.`)) {
-                          try {
-                            await apiRequest(`/tests/${drill.id}`, { method: 'DELETE', token })
-                            await loadPortalData()
-                          } catch (err) {
-                            alert(err instanceof Error ? err.message : 'Failed to delete drill')
-                          }
-                        }
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </div>
+            {practiceDrills.length === 0 ? (
+              <div className="empty-state py-12">
+                <div className="flex flex-col items-center gap-4">
+                  <Sparkles className="text-primary/40" size={48} />
+                  <p className="muted">No practice drills created yet. Use the card on the right to set one up!</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+              </div>
+            ) : (
+              <div className="premium-list">
+                {practiceDrills.map((drill, idx) => (
+                  <div key={drill.id} className={`premium-item fade-in-up stagger-${(idx % 4) + 1}`}>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <strong className="text-white text-base">{drill.title}</strong>
+                        <span className="subject-pill text-[10px]">
+                          {drill.subject}
+                        </span>
+                      </div>
+                      <div className="muted mt-1 text-sm">
+                        Class {drill.classLevel} • {drill._count.questions} Questions • Created {new Date(drill.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        className="border border-error/20 text-error hover:bg-error/10 hover:border-error/40"
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to delete "${drill.title}"? This will also delete all student practice attempts for it.`)) {
+                            try {
+                              await apiRequest(`/tests/${drill.id}`, { method: 'DELETE', token })
+                              await loadPortalData()
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : 'Failed to delete drill')
+                            }
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <NewPracticeDrillCard batches={batches} onCreated={loadPortalData} />
+        </div>
 
         <Card 
           title="Student Practice Attempts" 
