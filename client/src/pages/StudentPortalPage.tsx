@@ -604,7 +604,7 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         <Card title="Student Profile" subtitle="Account and classroom identity" variant="glass">
           <ul className="plain-list">
             <li>
-              <strong>Name:</strong> {user?.username ?? '—'}
+              <strong>Name:</strong> {user?.fullName || user?.username ?? '—'}
             </li>
             <li>
               <strong>Email:</strong> {user?.email ?? 'Not provided'}
@@ -613,7 +613,30 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
               <strong>Role:</strong> Student
             </li>
             <li>
-              <strong>Student ID:</strong> {user?.studentId ?? 'N/A'}
+              <strong>Student ID (Short ID):</strong> {user?.shortId || user?.username || 'N/A'}
+            </li>
+            <li>
+              <strong>Institute ID (Long ID):</strong> {user?.longId || 'N/A'}
+            </li>
+            <li>
+              <strong>Phone Number:</strong> {user?.phone || 'N/A'}
+            </li>
+            <li>
+              <strong>Class Level:</strong> {user?.classLevel ? `Class ${user.classLevel}` : 'N/A'}
+            </li>
+            <li>
+              <strong>Enrolled Batches:</strong>
+              {user?.batchLinks && user.batchLinks.length > 0 ? (
+                <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
+                  {user.batchLinks.map((link, idx) => (
+                    <li key={idx} style={{ padding: '2px 0' }}>
+                      {link.batch.name} <span className="muted" style={{ fontSize: '0.85em' }}>(by {link.batch.teacher.user.fullName || 'Teacher'})</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                ' No batches assigned'
+              )}
             </li>
           </ul>
         </Card>
