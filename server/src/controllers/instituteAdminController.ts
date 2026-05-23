@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { prisma } from '../prisma/client.js'
 import { generateLongId, generateShortId, getSubjectBatchNo } from '../utils/idGenerator.js'
 import { ApiError } from '../utils/apiError.js'
+import { hashPassword } from '../auth/password.js'
 
 const requestIdParamSchema = z.object({
   requestId: z.string().min(1),
@@ -43,6 +44,7 @@ const approvalAssignmentSchema = z
 
 const approveRequestSchema = z.object({
   assignments: z.array(approvalAssignmentSchema).min(1),
+  password: z.string().min(8),
 })
 
 type ApprovalAssignment = z.infer<typeof approvalAssignmentSchema>
@@ -359,11 +361,13 @@ export const approveRequest = async (req: Request, res: Response): Promise<void>
     const teacherIds = [...new Set(payload.assignments.map((assignment) => assignment.teacherId))]
     const uniqueBatchIds = [...new Set(assignedBatchIds)]
 
+    const passwordHash = await hashPassword(payload.password)
+
     const user = await tx.user.create({
       data: {
         username: preview.shortId,
         fullName: request.fullName,
-        passwordHash: 'PENDING_SETUP',
+        passwordHash,
         role: UserRole.STUDENT,
         forcePasswordChange: true,
       },

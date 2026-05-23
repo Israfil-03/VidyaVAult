@@ -17,7 +17,7 @@ import {
   Award,
   TrendingUp,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '../components/Button'
@@ -170,11 +170,6 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null)
 
-  const [resetStudent, setResetStudent] = useState({
-    studentId: '',
-    newPassword: '',
-  })
-
   const loadPortalData = useCallback(async () => {
     if (import.meta.env.VITE_UI_ONLY === 'true') {
       setOverview({
@@ -288,23 +283,6 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
       setReviewError(err instanceof Error ? err.message : 'Failed to load assessment review')
     } finally {
       setReviewLoading(false)
-    }
-  }
-
-  const resetStudentPassword = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!token) {
-      return
-    }
-    try {
-      await apiRequest('/auth/reset-password', {
-        method: 'POST',
-        token,
-        body: JSON.stringify(resetStudent),
-      })
-      setResetStudent({ studentId: '', newPassword: '' })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset student password')
     }
   }
 
@@ -757,7 +735,7 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
 
   const renderProfile = () => (
     <>
-      <div className="two-col">
+      <div>
         <Card title="Teacher Profile" subtitle="Identity and account scope" variant="glass">
           <ul className="plain-list">
             <li>
@@ -781,36 +759,6 @@ export const TeacherPortalPage = ({ section }: TeacherPortalPageProps) => {
               <Button variant="secondary">Rewards Guide</Button>
             </Link>
           </div>
-        </Card>
-
-        <Card title="Reset Student Password" subtitle="Issue temporary access credentials" variant="glass">
-          <form className="form-grid" onSubmit={resetStudentPassword}>
-            <label>
-              Student
-              <select
-                value={resetStudent.studentId}
-                onChange={(event) => setResetStudent((prev) => ({ ...prev, studentId: event.target.value }))}
-                required
-              >
-                <option value="">Select student</option>
-                {students.map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.username}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              New Password
-              <input
-                type="password"
-                value={resetStudent.newPassword}
-                onChange={(event) => setResetStudent((prev) => ({ ...prev, newPassword: event.target.value }))}
-                required
-              />
-            </label>
-            <Button type="submit">Reset Password</Button>
-          </form>
         </Card>
       </div>
 

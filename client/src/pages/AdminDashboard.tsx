@@ -1,4 +1,4 @@
-import { Phone, User, UserCheck, Loader2, Database } from 'lucide-react'
+import { Phone, User, UserCheck, Loader2, Database, Key, Eye, EyeOff } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
@@ -123,6 +123,8 @@ export const AdminDashboard = () => {
   const [previewLoading, setPreviewLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [wizardError, setWizardError] = useState<string | null>(null)
+  const [studentPassword, setStudentPassword] = useState('')
+  const [showApprovalPassword, setShowApprovalPassword] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!token) return
@@ -158,6 +160,8 @@ export const AdminDashboard = () => {
     setPreviewLoading(false)
     setActionLoading(false)
     setWizardError(null)
+    setStudentPassword('')
+    setShowApprovalPassword(false)
   }
 
   const getSubjectOption = (subject: string): SubjectApprovalOption | undefined =>
@@ -249,6 +253,10 @@ export const AdminDashboard = () => {
   const validateWizard = (): string | null => {
     if (!approvalContext) {
       return 'Approval details not loaded yet.'
+    }
+
+    if (!studentPassword || studentPassword.length < 8) {
+      return 'Password must be at least 8 characters long.'
     }
 
     if (useSharedBatchName && sharedBatchName.trim().length === 0) {
@@ -359,6 +367,7 @@ export const AdminDashboard = () => {
 
     return {
       assignments,
+      password: studentPassword,
     }
   }
 
@@ -389,7 +398,7 @@ export const AdminDashboard = () => {
         },
       )
 
-      alert(`Student approved.\nShort ID: ${result.shortId}\nLong ID: ${result.longId}`)
+      alert(`Student approved successfully!\n\nShort ID (Username): ${result.shortId}\nLong ID: ${result.longId}\nPassword: ${studentPassword}\n\nPlease share these credentials with the student.`)
       resetWizard()
       await loadData()
     } catch (err) {
@@ -725,6 +734,38 @@ export const AdminDashboard = () => {
                         )
                       })}
 
+                      <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
+                        <div className="font-semibold text-white flex items-center gap-2">
+                          <Key size={16} className="text-primary" />
+                          Account Credentials Configuration
+                        </div>
+                        <div className="input-group">
+                          <label className="text-xs font-bold uppercase tracking-wider mb-2 block text-white/70">
+                            Temporary Password for Student
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showApprovalPassword ? 'text' : 'password'}
+                              className="w-full bg-[#1e2230]/50 border border-white/10 rounded-lg px-4 py-2 pr-10 focus:border-primary outline-none text-white"
+                              placeholder="Enter at least 8 characters"
+                              value={studentPassword}
+                              onChange={(e) => setStudentPassword(e.target.value)}
+                              required
+                            />
+                            <button
+                              type="button"
+                              className="absolute right-3 top-2.5 text-muted hover:text-white"
+                              onClick={() => setShowApprovalPassword(!showApprovalPassword)}
+                            >
+                              {showApprovalPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                          <p className="text-xs muted mt-1">
+                            The student will be forced to change this temporary password on their first login.
+                          </p>
+                        </div>
+                      </div>
+
                       <div className="flex justify-between">
                         <Button variant="secondary" onClick={() => setWizardStep(1)}>
                           Back
@@ -762,6 +803,10 @@ export const AdminDashboard = () => {
                               </div>
                             )
                           })}
+                        </div>
+                        <div className="border-t border-white/5 mt-4 pt-3 space-y-1">
+                          <div className="text-xs muted">Set Password</div>
+                          <div className="text-sm font-semibold text-white tracking-wide">{studentPassword}</div>
                         </div>
                       </div>
 

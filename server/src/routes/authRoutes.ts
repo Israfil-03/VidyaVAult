@@ -38,7 +38,7 @@ authRouter.post(
 authRouter.post(
   '/reset-password',
   authMiddleware,
-  requireRole('superadmin', 'teacher_admin'),
+  requireRole('superadmin', 'institute_admin'),
   asyncHandler(resetPassword),
 )
 

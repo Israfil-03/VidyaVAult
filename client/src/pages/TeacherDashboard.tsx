@@ -80,10 +80,6 @@ export const TeacherDashboard = () => {
     classLevel: '10',
     boardTarget: 'WEST_BENGAL',
   })
-  const [resetStudent, setResetStudent] = useState({
-    studentId: '',
-    newPassword: '',
-  })
 
   const firstClassLevel = useMemo(() => students[0]?.classLevel ?? '10', [students])
 
@@ -179,23 +175,6 @@ export const TeacherDashboard = () => {
       await loadDashboard()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assign student to batch')
-    }
-  }
-
-  const resetStudentPassword = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!token) {
-      return
-    }
-    try {
-      await apiRequest('/auth/reset-password', {
-        method: 'POST',
-        token,
-        body: JSON.stringify(resetStudent),
-      })
-      setResetStudent({ studentId: '', newPassword: '' })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset student password')
     }
   }
 
@@ -302,36 +281,6 @@ export const TeacherDashboard = () => {
              </div>
           </Card>
         </div>
-
-        <Card title="Reset Student Password" subtitle="Issue a temporary password for selected student">
-          <form className="inline-grid" onSubmit={resetStudentPassword}>
-            <label>
-              Student
-              <select
-                value={resetStudent.studentId}
-                onChange={(event) => setResetStudent((prev) => ({ ...prev, studentId: event.target.value }))}
-                required
-              >
-                <option value="">Select student</option>
-                {students.map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.username}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              New Password
-              <input
-                type="password"
-                value={resetStudent.newPassword}
-                onChange={(event) => setResetStudent((prev) => ({ ...prev, newPassword: event.target.value }))}
-                required
-              />
-            </label>
-            <Button type="submit">Reset Password</Button>
-          </form>
-        </Card>
 
         <div className="two-col">
           <Card title="Students">

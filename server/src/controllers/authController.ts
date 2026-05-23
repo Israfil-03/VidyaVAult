@@ -364,19 +364,11 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     where: { id: studentId },
     include: {
       user: true,
-      teacherLinks: true,
     },
   })
 
   if (!student) {
     throw new ApiError('Student not found', 404)
-  }
-
-  if (req.user?.role === 'teacher_admin') {
-    const ownsStudent = student.teacherLinks.some((link) => link.teacherId === req.user!.teacherId)
-    if (!ownsStudent) {
-      throw new ApiError('You cannot reset password for this student', 403)
-    }
   }
 
   const passwordHash = await hashPassword(newPassword)
