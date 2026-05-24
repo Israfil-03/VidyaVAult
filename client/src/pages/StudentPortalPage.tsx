@@ -284,7 +284,9 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
         return
       }
       try {
-        const rows = await apiRequest<any[]>(`/leaderboards/gamified?subject=${leaderboardSubject}`, {
+        const rows = await apiRequest<
+          Array<{ rank: number; studentId: string; username: string; fullName: string; xp: number; level: number }>
+        >(`/leaderboards/gamified?subject=${leaderboardSubject}`, {
           method: 'GET',
           token,
         })

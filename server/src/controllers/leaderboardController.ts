@@ -210,16 +210,17 @@ export const getGamifiedLeaderboard = async (req: Request, res: Response): Promi
     },
   })
 
-  let sortFn = (a: any, b: any) => b.totalXP - a.totalXP
+  type StudentWithUser = typeof students[number]
+  let sortFn = (a: StudentWithUser, b: StudentWithUser) => b.totalXP - a.totalXP
   if (subject === 'PHYSICS') {
-    sortFn = (a: any, b: any) => b.physicsXp - a.physicsXp
+    sortFn = (a: StudentWithUser, b: StudentWithUser) => b.physicsXp - a.physicsXp
   } else if (subject === 'CHEMISTRY') {
-    sortFn = (a: any, b: any) => b.chemistryXp - a.chemistryXp
+    sortFn = (a: StudentWithUser, b: StudentWithUser) => b.chemistryXp - a.chemistryXp
   } else if (subject === 'MATHEMATICS') {
-    sortFn = (a: any, b: any) => b.mathematicsXp - a.mathematicsXp
+    sortFn = (a: StudentWithUser, b: StudentWithUser) => b.mathematicsXp - a.mathematicsXp
   }
 
-  const sorted = students
+  const sorted = [...students]
     .sort(sortFn)
     .map((student, idx) => ({
       rank: idx + 1,
