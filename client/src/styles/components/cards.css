@@ -285,3 +285,22 @@
   background: conic-gradient(var(--color-danger-500) calc(var(--percent) * 1%), var(--border-soft) 0);
 }
 
+/* Dark Theme Overrides for Premium Card Visibility */
+[data-theme='dark'] .card {
+  background: rgba(30, 41, 59, 0.7); /* Slate 800 with opacity */
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3),
+              0 4px 10px -2px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .glass-card {
+  background: rgba(15, 23, 42, 0.65); /* Slate 900 with opacity */
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-glass);
+}
+

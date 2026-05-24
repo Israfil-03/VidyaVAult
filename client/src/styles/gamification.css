@@ -860,3 +860,59 @@
   font-weight: 700;
   color: rgba(255, 255, 255, 0.3);
 }
+
+/* Light Mode Overrides for Gamified Leaderboard Components */
+[data-theme='light'] .leaderboard-tabs-nav {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme='light'] .leaderboard-tab-btn {
+  color: var(--text-muted);
+}
+
+[data-theme='light'] .leaderboard-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+[data-theme='light'] .leaderboard-tab-btn.active {
+  color: #fff;
+  background: var(--color-primary-500);
+}
+
+[data-theme='light'] .gamified-leader-row {
+  border-color: var(--border-soft);
+  background: var(--surface);
+}
+
+[data-theme='light'] .gamified-leader-row:hover {
+  border-color: var(--color-primary-300);
+  background: var(--surface-soft);
+}
+
+[data-theme='light'] .leader-name {
+  color: var(--text-main);
+}
+
+[data-theme='light'] .leader-level {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.08);
+  color: var(--text-soft);
+}
+
+[data-theme='light'] .leader-rank-other {
+  background: rgba(15, 23, 42, 0.02);
+  color: var(--text-soft);
+  border-color: rgba(15, 23, 42, 0.06);
+}
+
+[data-theme='light'] .leader-avatar-letter {
+  background: var(--color-primary-100);
+  border-color: var(--border-soft);
+  color: var(--color-primary-600);
+}
+
+[data-theme='light'] .leader-score-unit {
+  color: var(--text-soft);
+}

@@ -303,3 +303,23 @@
     gap: 8px;
   }
 }
+
+/* Dark Theme Overrides for Premium Topbar Visuals */
+[data-theme='dark'] .topbar {
+  background: rgba(15, 23, 42, 0.85); /* Slate 900 */
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .topbar-search {
+  background: linear-gradient(135deg, var(--surface-soft) 0%, rgba(30, 41, 59, 0.4) 100%);
+}
+
+[data-theme='dark'] .topbar-search:hover {
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(30, 41, 59, 0.6) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+[data-theme='dark'] .topbar-search:has(input:focus) {
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(30, 41, 59, 0.8) 100%);
+  border-color: var(--color-primary-500);
+}

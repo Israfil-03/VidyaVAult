@@ -41,6 +41,12 @@
   --surface: #ffffff;
   --surface-soft: #f8fafc;
   --surface-glass: rgba(255, 255, 255, 0.75);
+  --surface-elevated: #ffffff;
+  
+  --bg-pill-primary: var(--color-primary-100);
+  --text-pill-primary: var(--color-primary-700);
+  --bg-pill-accent: var(--color-accent-100);
+  --text-pill-accent: var(--color-accent-600);
   
   --text-main: #0f172a;
   --text-muted: #475569;
@@ -76,6 +82,12 @@
   --surface: #1e293b;
   --surface-soft: #0f172a;
   --surface-glass: rgba(15, 23, 42, 0.7);
+  --surface-elevated: #1e293b;
+  
+  --bg-pill-primary: rgba(59, 130, 246, 0.16);
+  --text-pill-primary: var(--color-primary-400);
+  --bg-pill-accent: rgba(168, 85, 247, 0.16);
+  --text-pill-accent: var(--color-accent-500);
   
   --text-main: #f8fafc;
   --text-muted: #cbd5e1;
