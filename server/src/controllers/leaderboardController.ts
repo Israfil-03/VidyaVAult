@@ -207,32 +207,157 @@ export const getGamifiedLeaderboard = async (req: Request, res: Response): Promi
           fullName: true,
         },
       },
+      achievements: {
+        select: { achievementType: true },
+      },
+      StudentMedal: {
+        select: { medalName: true, medalType: true, subject: true },
+      },
     },
   })
 
-  type StudentWithUser = typeof students[number]
-  let sortFn = (a: StudentWithUser, b: StudentWithUser) => b.totalXP - a.totalXP
+  // Medal tier ordering for top-tier display
+  const MEDAL_TIER_ORDER: Record<string, number> = { PLATINUM: 4, GOLD: 3, SILVER: 2, BRONZE: 1 }
+
+  // Flair badge definitions — priority order (highest priority first)
+  const FLAIR_BADGES: Array<{
+    achievementType?: string
+    label: string
+    icon: string
+    color: string
+    check: (achievementSet: Set<string>, medalSet: Set<string>, streakCount: number) => boolean
+  }> = [
+    {
+      achievementType: 'MARATHON_RUNNER',
+      label: 'Marathon Runner',
+      icon: '🏃',
+      color: 'purple',
+      check: (a) => a.has('MARATHON_RUNNER'),
+    },
+    {
+      achievementType: 'MANIAC',
+      label: 'Maniac',
+      icon: '🔥',
+      color: 'orange',
+      check: (a) => a.has('MANIAC'),
+    },
+    {
+      achievementType: 'EPIC_COMEBACK',
+      label: 'Epic Comeback',
+      icon: '⚡',
+      color: 'yellow',
+      check: (a) => a.has('EPIC_COMEBACK'),
+    },
+    {
+      achievementType: 'TRIPLE_CROWN',
+      label: 'Triple Crown',
+      icon: '👑',
+      color: 'gold',
+      check: (a) => a.has('TRIPLE_CROWN'),
+    },
+    {
+      achievementType: 'ACCURACY_CHAMPION',
+      label: 'Accuracy Champion',
+      icon: '🎯',
+      color: 'blue',
+      check: (a) => a.has('ACCURACY_CHAMPION'),
+    },
+    {
+      achievementType: 'PERFECTIONIST',
+      label: 'Perfectionist',
+      icon: '⭐',
+      color: 'gold',
+      check: (a) => a.has('PERFECTIONIST'),
+    },
+    {
+      achievementType: 'COMEBACK_KID',
+      label: 'Comeback Kid',
+      icon: '📈',
+      color: 'green',
+      check: (a) => a.has('COMEBACK_KID'),
+    },
+    {
+      achievementType: 'CENTURION',
+      label: 'Centurion',
+      icon: '💯',
+      color: 'silver',
+      check: (a) => a.has('CENTURION'),
+    },
+    {
+      achievementType: 'KNOWLEDGE_SEEKER',
+      label: 'Knowledge Seeker',
+      icon: '📚',
+      color: 'teal',
+      check: (a) => a.has('KNOWLEDGE_SEEKER'),
+    },
+    {
+      label: 'Streak ≥5',
+      icon: '🔥',
+      color: 'red',
+      check: (_a, _m, streakCount) => streakCount >= 5,
+    },
+  ]
+
+  type StudentWithRelations = typeof students[number]
+  let sortFn = (a: StudentWithRelations, b: StudentWithRelations) => b.totalXP - a.totalXP
   if (subject === 'PHYSICS') {
-    sortFn = (a: StudentWithUser, b: StudentWithUser) => b.physicsXp - a.physicsXp
+    sortFn = (a: StudentWithRelations, b: StudentWithRelations) => b.physicsXp - a.physicsXp
   } else if (subject === 'CHEMISTRY') {
-    sortFn = (a: StudentWithUser, b: StudentWithUser) => b.chemistryXp - a.chemistryXp
+    sortFn = (a: StudentWithRelations, b: StudentWithRelations) => b.chemistryXp - a.chemistryXp
   } else if (subject === 'MATHEMATICS') {
-    sortFn = (a: StudentWithUser, b: StudentWithUser) => b.mathematicsXp - a.mathematicsXp
+    sortFn = (a: StudentWithRelations, b: StudentWithRelations) => b.mathematicsXp - a.mathematicsXp
+  }
+
+  const LEVEL_NAMES = [
+    'Novice', 'Apprentice', 'Scholar', 'Adept', 'Expert',
+    'Virtuoso', 'Sage', 'Master', 'Grand Master', 'Legend', 'Transcendent',
+  ]
+  const getLevelName = (level: number) => {
+    if (level <= 0) return LEVEL_NAMES[0]
+    if (level <= LEVEL_NAMES.length) return LEVEL_NAMES[level - 1]
+    return LEVEL_NAMES[LEVEL_NAMES.length - 1]
   }
 
   const sorted = [...students]
     .sort(sortFn)
-    .map((student, idx) => ({
-      rank: idx + 1,
-      studentId: student.id,
-      username: student.user.username,
-      fullName: student.user.fullName || student.user.username,
-      xp: subject === 'overall' ? student.totalXP
-        : subject === 'PHYSICS' ? student.physicsXp
-        : subject === 'CHEMISTRY' ? student.chemistryXp
-        : student.mathematicsXp,
-      level: student.currentLevel,
-    }))
+    .map((student, idx) => {
+      const achievementSet = new Set(student.achievements.map((a) => a.achievementType))
+      const medalSet = new Set(student.StudentMedal.map((m) => `${m.medalName}_${m.medalType}_${m.subject}`))
+
+      // Calculate top medal tier
+      const tierValues = student.StudentMedal.map((m) => MEDAL_TIER_ORDER[m.medalType] ?? 0)
+      const topTierValue = tierValues.length > 0 ? Math.max(...tierValues) : 0
+      const topMedalTier = Object.entries(MEDAL_TIER_ORDER).find(([, v]) => v === topTierValue)?.[0] ?? null
+
+      // Build flair badges (max 3)
+      const flair = FLAIR_BADGES
+        .filter((badge) => badge.check(achievementSet, medalSet, student.streakCount))
+        .slice(0, 3)
+        .map((badge) => ({
+          id: badge.achievementType ?? badge.label,
+          icon: badge.icon,
+          label: badge.label,
+          color: badge.color,
+        }))
+
+      return {
+        rank: idx + 1,
+        studentId: student.id,
+        username: student.user.username,
+        fullName: student.user.fullName || student.user.username,
+        xp: subject === 'overall' ? student.totalXP
+          : subject === 'PHYSICS' ? student.physicsXp
+          : subject === 'CHEMISTRY' ? student.chemistryXp
+          : student.mathematicsXp,
+        level: student.currentLevel,
+        levelName: getLevelName(student.currentLevel),
+        streakCount: student.streakCount,
+        topMedalTier,
+        flair,
+        achievementCount: student.achievements.length,
+        medalCount: student.StudentMedal.length,
+      }
+    })
 
   res.json({
     success: true,

@@ -59,9 +59,9 @@ model StudentProfile {
   currentLevel         Int                   @default(1)
   lastAchievementAt    DateTime?
   totalXP              Int                   @default(0)
-  physicsXp            Int                   @default(0)
   chemistryXp          Int                   @default(0)
   mathematicsXp        Int                   @default(0)
+  physicsXp            Int                   @default(0)
   batchLinks           BatchStudent[]
   achievements         StudentAchievement[]
   badges               StudentBadge[]
@@ -411,6 +411,7 @@ enum Subject {
   BIOLOGY
   MATHEMATICS
   PHYSICS
+  SPECIAL
 }
 
 enum TestStatus {
@@ -468,6 +469,18 @@ enum AchievementType {
   KNOWLEDGE_SEEKER
   VERSATILITY_AWARD
   FIRST_ATTEMPT_WIN
+  // New enhanced achievements
+  EPIC_COMEBACK
+  MANIAC
+  NIGHT_OWL
+  EARLY_BIRD
+  CENTURION
+  GRIND_MODE
+  TRIPLE_CROWN
+  PERFECTIONIST
+  SUBJECT_DEVOTEE
+  RESILIENT
+  MARATHON_RUNNER
 }
 
 enum MedalTier {

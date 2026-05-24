@@ -458,7 +458,8 @@ export const submitSubmission = async (req: Request, res: Response): Promise<voi
       finalized.test.category,
       finalized.test.subject,
       scoreTotal,
-      maxScore
+      maxScore,
+      finalized.id,
     )
   } catch (err) {
     console.error('Failed to award gamification XP/medals:', err)

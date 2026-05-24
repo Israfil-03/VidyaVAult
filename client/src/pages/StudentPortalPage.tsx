@@ -125,7 +125,20 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
   const [leaderboardSubject, setLeaderboardSubject] = useState<'overall' | 'PHYSICS' | 'CHEMISTRY' | 'MATHEMATICS'>('overall')
   const [gamifiedLeaderboard, setGamifiedLeaderboard] = useState<
-    Array<{ rank: number; studentId: string; username: string; fullName: string; xp: number; level: number }>
+    Array<{
+      rank: number
+      studentId: string
+      username: string
+      fullName: string
+      xp: number
+      level: number
+      levelName?: string
+      streakCount?: number
+      topMedalTier?: string | null
+      flair?: Array<{ id: string; icon: string; label: string; color: string }>
+      achievementCount?: number
+      medalCount?: number
+    }>
   >([])
 
   const [activeCelebration, setActiveCelebration] = useState<{
@@ -874,8 +887,18 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                 const isCurrentUser = entry.username === user?.username
                 const rankClass = entry.rank === 1 ? 'leader-rank-1' : entry.rank === 2 ? 'leader-rank-2' : entry.rank === 3 ? 'leader-rank-3' : 'leader-rank-other'
                 
+                // Medal tier border glow
+                const medalGlow = entry.topMedalTier === 'PLATINUM' ? '0 0 12px rgba(167,139,250,0.5)'
+                  : entry.topMedalTier === 'GOLD' ? '0 0 10px rgba(251,191,36,0.4)'
+                  : entry.topMedalTier === 'SILVER' ? '0 0 8px rgba(156,163,175,0.3)'
+                  : 'none'
+
                 return (
-                  <div key={entry.studentId} className={`gamified-leader-row ${isCurrentUser ? 'highlighted' : ''}`}>
+                  <div
+                    key={entry.studentId}
+                    className={`gamified-leader-row ${isCurrentUser ? 'highlighted' : ''}`}
+                    style={medalGlow !== 'none' ? { boxShadow: medalGlow } : {}}
+                  >
                     <div className={`leader-rank-box ${rankClass}`}>
                       {entry.rank === 1 ? '👑' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : entry.rank}
                     </div>
@@ -888,11 +911,39 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                       <span className="leader-name">
                         {entry.fullName} {isCurrentUser ? '(You)' : ''}
                       </span>
-                      <span className="leader-level">LVL {entry.level}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span className="leader-level">{entry.levelName ?? `LVL ${entry.level}`}</span>
+                        {/* Flair badges */}
+                        {entry.flair && entry.flair.slice(0, 3).map((badge) => (
+                          <span
+                            key={badge.id}
+                            title={badge.label}
+                            style={{
+                              fontSize: '13px',
+                              cursor: 'help',
+                              padding: '1px 4px',
+                              borderRadius: '4px',
+                              background: 'rgba(255,255,255,0.08)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {badge.icon}
+                          </span>
+                        ))}
+                        {(entry.streakCount ?? 0) >= 5 && !entry.flair?.some(f => f.label.includes('streak') || f.label.includes('Maniac')) && (
+                          <span title={`${entry.streakCount} day streak`} style={{ fontSize: '12px', opacity: 0.85 }}>🔥</span>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="leader-score-value">
-                      {entry.xp} <span className="leader-score-unit">XP</span>
+                      <div>{entry.xp} <span className="leader-score-unit">XP</span></div>
+                      {(entry.medalCount ?? 0) > 0 && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-soft)', marginTop: '2px' }}>
+                          🏅 {entry.medalCount} medals
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
@@ -956,27 +1007,82 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     </>
   )
 
+  const [medalFilter, setMedalFilter] = useState<'all' | 'General' | 'Physics' | 'Chemistry' | 'Mathematics' | 'Special'>('all')
+
   const MEDALS_LIST = [
-    { id: 'QUICK_LEARNER', title: 'First Step', desc: 'Completed your first assignment or drill!', points: 50, icon: 'first_step', category: 'General' },
-    { id: 'CONSISTENCY_BONUS', title: 'Consistent Scholar', desc: 'Maintained a 3-day streak in daily homework!', points: 100, icon: 'consistent_scholar', category: 'General' },
-    { id: 'STREAK_MILESTONE', title: 'Daily Champion', desc: 'Reached a 5-day daily homework streak!', points: 200, icon: 'daily_champion', category: 'General' },
-    { id: 'PERFECT_SCORE', title: 'Perfect Scholar', desc: 'Scored 100% accuracy on any assignment!', points: 150, icon: 'perfect_scholar', category: 'General' },
-    { id: 'SUBJECT_MASTERY', title: 'Academic Titan', desc: 'Reached Level 5 in overall progress!', points: 300, icon: 'academic_titan', category: 'General' },
+    // ── General Achievements ──
+    { id: 'QUICK_LEARNER', title: 'First Step', desc: 'Completed your first assignment or drill!', points: 50, icon: 'first_step', category: 'General', rarity: 'common' },
+    { id: 'DAILY_GOAL', title: 'Daily Double', desc: 'Homework + practice drill in a single day!', points: 100, icon: 'daily_goal', category: 'General', rarity: 'common' },
+    { id: 'CONSISTENCY_BONUS', title: 'Consistent Scholar', desc: 'Maintained a 3-day streak!', points: 100, icon: 'consistent_scholar', category: 'General', rarity: 'common' },
+    { id: 'STREAK_MILESTONE', title: 'Daily Champion', desc: 'Reached a 5-day homework streak!', points: 200, icon: 'daily_champion', category: 'General', rarity: 'uncommon' },
+    { id: 'MANIAC', title: 'Maniac', desc: 'Absolutely relentless — 10-day homework streak!', points: 400, icon: 'maniac', category: 'General', rarity: 'rare' },
+    { id: 'MARATHON_RUNNER', title: 'Marathon Runner', desc: 'Legendary 30-day homework streak!', points: 750, icon: 'marathon_runner', category: 'General', rarity: 'legendary' },
+    { id: 'PERFECT_SCORE', title: 'Perfect Scholar', desc: 'Scored 100% accuracy on any assignment!', points: 150, icon: 'perfect_scholar', category: 'General', rarity: 'uncommon' },
+    { id: 'PERFECTIONIST', title: 'Perfectionist', desc: '3 consecutive perfect scores. Exceptional!', points: 250, icon: 'perfectionist', category: 'General', rarity: 'rare' },
+    { id: 'ACCURACY_CHAMPION', title: 'Accuracy Champion', desc: '5 consecutive perfect practice drills!', points: 300, icon: 'accuracy_champion', category: 'General', rarity: 'rare' },
+    { id: 'FIRST_ATTEMPT_WIN', title: 'First Strike', desc: '90%+ on your very first formal test!', points: 200, icon: 'first_strike', category: 'General', rarity: 'rare' },
+    { id: 'SPEED_DEMON', title: 'Speed Demon', desc: '80%+ score using <30% of allowed time!', points: 200, icon: 'speed_demon', category: 'General', rarity: 'rare' },
+    { id: 'COMEBACK_KID', title: 'Comeback Kid', desc: 'Improved score by 30%+ on the same test!', points: 200, icon: 'comeback_kid', category: 'General', rarity: 'uncommon' },
+    { id: 'EPIC_COMEBACK', title: 'Epic Comeback', desc: 'From below 40% to above 80% in same subject!', points: 350, icon: 'epic_comeback', category: 'General', rarity: 'epic' },
+    { id: 'RESILIENT', title: 'Resilient', desc: 'Bounced back above 50% after a rough patch!', points: 150, icon: 'resilient', category: 'General', rarity: 'common' },
+    { id: 'KNOWLEDGE_SEEKER', title: 'Knowledge Seeker', desc: 'Practice drills in all 3 subjects!', points: 250, icon: 'knowledge_seeker', category: 'General', rarity: 'uncommon' },
+    { id: 'VERSATILITY_AWARD', title: 'Polymath', desc: 'Tests across multiple subjects!', points: 200, icon: 'polymath', category: 'General', rarity: 'uncommon' },
+    { id: 'SUBJECT_MASTERY', title: 'Academic Titan', desc: 'Reached Level 5 overall!', points: 300, icon: 'academic_titan', category: 'General', rarity: 'rare' },
+    { id: 'SUBJECT_DEVOTEE', title: 'Subject Devotee', desc: '20+ submissions in a single subject!', points: 300, icon: 'subject_devotee', category: 'General', rarity: 'rare' },
+    { id: 'CENTURION', title: 'Century Club', desc: '100 total submissions completed!', points: 500, icon: 'centurion', category: 'General', rarity: 'epic' },
+    { id: 'GRIND_MODE', title: 'Grind Mode', desc: '5 submissions in a single day!', points: 150, icon: 'grind_mode', category: 'General', rarity: 'uncommon' },
+    { id: 'TRIPLE_CROWN', title: 'Triple Crown', desc: 'Gold medals in all 3 subjects!', points: 600, icon: 'triple_crown', category: 'General', rarity: 'legendary' },
+    { id: 'NIGHT_OWL', title: 'Night Owl', desc: 'Submitted after 10 PM!', points: 75, icon: 'night_owl', category: 'General', rarity: 'common' },
+    { id: 'EARLY_BIRD', title: 'Early Bird', desc: 'Submitted before 7 AM!', points: 75, icon: 'early_bird', category: 'General', rarity: 'common' },
 
-    { id: 'Newtonian Pioneer_BRONZE_PHYSICS', title: 'Newtonian Pioneer', desc: 'Submitted your first Physics assignment!', points: 50, icon: 'newtonian_pioneer', category: 'Physics' },
-    { id: 'Galileo\'s Observer_SILVER_PHYSICS', title: 'Galileo\'s Observer', desc: 'Completed 3 practice drills in Physics!', points: 75, icon: 'galileos_observer', category: 'Physics' },
-    { id: 'Quantum Leap_GOLD_PHYSICS', title: 'Quantum Leap', desc: 'Achieved 100% accuracy on a Physics test!', points: 100, icon: 'quantum_leap', category: 'Physics' },
-    { id: 'Cosmic Explorer_PLATINUM_PHYSICS', title: 'Cosmic Explorer', desc: 'Scored >= 90% on a Physics Monthly/Weekly exam!', points: 200, icon: 'cosmic_explorer', category: 'Physics' },
+    // ── Physics Medals ──
+    { id: 'Newtonian Pioneer_BRONZE_PHYSICS', title: 'Newtonian Pioneer', desc: 'First Physics submission!', points: 50, icon: 'newtonian_pioneer', category: 'Physics', rarity: 'common' },
+    { id: 'Force Field Master_BRONZE_PHYSICS', title: 'Force Field Master', desc: '5 Physics submissions!', points: 60, icon: 'force_field_master', category: 'Physics', rarity: 'common' },
+    { id: 'Wave Rider_BRONZE_PHYSICS', title: 'Wave Rider', desc: '>70% on a Physics practice drill!', points: 55, icon: 'wave_rider', category: 'Physics', rarity: 'common' },
+    { id: "Galileo's Observer_SILVER_PHYSICS", title: "Galileo's Observer", desc: '3 Physics practice drills!', points: 75, icon: 'galileos_observer', category: 'Physics', rarity: 'uncommon' },
+    { id: 'Relativistic Scholar_SILVER_PHYSICS', title: 'Relativistic Scholar', desc: '10 Physics submissions!', points: 100, icon: 'relativistic_scholar', category: 'Physics', rarity: 'uncommon' },
+    { id: 'Optics Ace_SILVER_PHYSICS', title: 'Optics Ace', desc: '5 Physics practice drills!', points: 90, icon: 'optics_ace', category: 'Physics', rarity: 'uncommon' },
+    { id: 'Quantum Leap_GOLD_PHYSICS', title: 'Quantum Leap', desc: '100% on a Physics test!', points: 100, icon: 'quantum_leap', category: 'Physics', rarity: 'rare' },
+    { id: 'Einsteinian Genius_GOLD_PHYSICS', title: 'Einsteinian Genius', desc: '85%+ on 3 consecutive Physics tests!', points: 150, icon: 'einsteinian_genius', category: 'Physics', rarity: 'rare' },
+    { id: 'Particle Pioneer_GOLD_PHYSICS', title: 'Particle Pioneer', desc: '20 Physics submissions!', points: 150, icon: 'particle_pioneer', category: 'Physics', rarity: 'rare' },
+    { id: 'Cosmic Explorer_PLATINUM_PHYSICS', title: 'Cosmic Explorer', desc: '≥90% on Weekly/Monthly Physics!', points: 200, icon: 'cosmic_explorer', category: 'Physics', rarity: 'epic' },
+    { id: 'Singularity_PLATINUM_PHYSICS', title: 'Singularity', desc: '100% on a Physics Monthly test!', points: 300, icon: 'singularity', category: 'Physics', rarity: 'legendary' },
+    { id: 'Nobel Contender_PLATINUM_PHYSICS', title: 'Nobel Contender', desc: '50 Physics submissions!', points: 400, icon: 'nobel_contender', category: 'Physics', rarity: 'legendary' },
 
-    { id: 'Molecular Apprentice_BRONZE_CHEMISTRY', title: 'Molecular Apprentice', desc: 'Submitted your first Chemistry assignment!', points: 50, icon: 'molecular_apprentice', category: 'Chemistry' },
-    { id: 'Alchemist\'s Trial_SILVER_CHEMISTRY', title: 'Alchemist\'s Trial', desc: 'Completed 3 practice drills in Chemistry!', points: 75, icon: 'alchemists_trial', category: 'Chemistry' },
-    { id: 'Covalent Bond_GOLD_CHEMISTRY', title: 'Covalent Bond', desc: 'Achieved 100% accuracy on a Chemistry test!', points: 100, icon: 'covalent_bond', category: 'Chemistry' },
-    { id: 'Noble Gas Status_PLATINUM_CHEMISTRY', title: 'Noble Gas Status', desc: 'Scored >= 90% on a Chemistry Monthly/Weekly exam!', points: 200, icon: 'noble_gas_status', category: 'Chemistry' },
+    // ── Chemistry Medals ──
+    { id: 'Molecular Apprentice_BRONZE_CHEMISTRY', title: 'Molecular Apprentice', desc: 'First Chemistry submission!', points: 50, icon: 'molecular_apprentice', category: 'Chemistry', rarity: 'common' },
+    { id: 'Lab Initiate_BRONZE_CHEMISTRY', title: 'Lab Initiate', desc: '5 Chemistry submissions!', points: 60, icon: 'lab_initiate', category: 'Chemistry', rarity: 'common' },
+    { id: 'Titration Expert_BRONZE_CHEMISTRY', title: 'Titration Expert', desc: '>70% on a Chemistry practice drill!', points: 55, icon: 'titration_expert', category: 'Chemistry', rarity: 'common' },
+    { id: "Alchemist's Trial_SILVER_CHEMISTRY", title: "Alchemist's Trial", desc: '3 Chemistry practice drills!', points: 75, icon: 'alchemists_trial', category: 'Chemistry', rarity: 'uncommon' },
+    { id: 'Reaction Specialist_SILVER_CHEMISTRY', title: 'Reaction Specialist', desc: '10 Chemistry submissions!', points: 100, icon: 'reaction_specialist', category: 'Chemistry', rarity: 'uncommon' },
+    { id: 'Organic Voyager_SILVER_CHEMISTRY', title: 'Organic Voyager', desc: '5 Chemistry practice drills!', points: 90, icon: 'organic_voyager', category: 'Chemistry', rarity: 'uncommon' },
+    { id: 'Covalent Bond_GOLD_CHEMISTRY', title: 'Covalent Bond', desc: '100% on a Chemistry test!', points: 100, icon: 'covalent_bond', category: 'Chemistry', rarity: 'rare' },
+    { id: 'Periodic Master_GOLD_CHEMISTRY', title: 'Periodic Master', desc: '85%+ on 3 consecutive Chemistry tests!', points: 150, icon: 'periodic_master', category: 'Chemistry', rarity: 'rare' },
+    { id: 'Electrode Pioneer_GOLD_CHEMISTRY', title: 'Electrode Pioneer', desc: '20 Chemistry submissions!', points: 150, icon: 'electrode_pioneer', category: 'Chemistry', rarity: 'rare' },
+    { id: 'Noble Gas Status_PLATINUM_CHEMISTRY', title: 'Noble Gas Status', desc: '≥90% on Weekly/Monthly Chemistry!', points: 200, icon: 'noble_gas_status', category: 'Chemistry', rarity: 'epic' },
+    { id: 'Catalyst Prime_PLATINUM_CHEMISTRY', title: 'Catalyst Prime', desc: '100% on a Chemistry Monthly test!', points: 300, icon: 'catalyst_prime', category: 'Chemistry', rarity: 'legendary' },
+    { id: 'Curie Award_PLATINUM_CHEMISTRY', title: 'Curie Award', desc: '50 Chemistry submissions!', points: 400, icon: 'curie_award', category: 'Chemistry', rarity: 'legendary' },
 
-    { id: 'Arithmetic Ace_BRONZE_MATHEMATICS', title: 'Arithmetic Ace', desc: 'Submitted your first Mathematics assignment!', points: 50, icon: 'arithmetic_ace', category: 'Mathematics' },
-    { id: 'Euler\'s Disciple_SILVER_MATHEMATICS', title: 'Euler\'s Disciple', desc: 'Completed 3 practice drills in Mathematics!', points: 75, icon: 'eulers_disciple', category: 'Mathematics' },
-    { id: 'Pythagorean Explorer_GOLD_MATHEMATICS', title: 'Pythagorean Explorer', desc: 'Achieved 100% accuracy on a Mathematics test!', points: 100, icon: 'pythagorean_explorer', category: 'Mathematics' },
-    { id: 'Fields Medalist_PLATINUM_MATHEMATICS', title: 'Fields Medalist', desc: 'Scored >= 90% on a Mathematics Monthly/Weekly exam!', points: 200, icon: 'fields_medalist', category: 'Mathematics' },
+    // ── Mathematics Medals ──
+    { id: 'Arithmetic Ace_BRONZE_MATHEMATICS', title: 'Arithmetic Ace', desc: 'First Mathematics submission!', points: 50, icon: 'arithmetic_ace', category: 'Mathematics', rarity: 'common' },
+    { id: 'Geometry Initiate_BRONZE_MATHEMATICS', title: 'Geometry Initiate', desc: '5 Mathematics submissions!', points: 60, icon: 'geometry_initiate', category: 'Mathematics', rarity: 'common' },
+    { id: 'Number Theorist_BRONZE_MATHEMATICS', title: 'Number Theorist', desc: '>70% on a Mathematics practice drill!', points: 55, icon: 'number_theorist', category: 'Mathematics', rarity: 'common' },
+    { id: "Euler's Disciple_SILVER_MATHEMATICS", title: "Euler's Disciple", desc: '3 Mathematics practice drills!', points: 75, icon: 'eulers_disciple', category: 'Mathematics', rarity: 'uncommon' },
+    { id: 'Algebra Specialist_SILVER_MATHEMATICS', title: 'Algebra Specialist', desc: '10 Mathematics submissions!', points: 100, icon: 'algebra_specialist', category: 'Mathematics', rarity: 'uncommon' },
+    { id: 'Trigonometry Ace_SILVER_MATHEMATICS', title: 'Trigonometry Ace', desc: '5 Mathematics practice drills!', points: 90, icon: 'trigonometry_ace', category: 'Mathematics', rarity: 'uncommon' },
+    { id: 'Pythagorean Explorer_GOLD_MATHEMATICS', title: 'Pythagorean Explorer', desc: '100% on a Mathematics test!', points: 100, icon: 'pythagorean_explorer', category: 'Mathematics', rarity: 'rare' },
+    { id: 'Calculus Commander_GOLD_MATHEMATICS', title: 'Calculus Commander', desc: '85%+ on 3 consecutive Math tests!', points: 150, icon: 'calculus_commander', category: 'Mathematics', rarity: 'rare' },
+    { id: 'Infinite Series_GOLD_MATHEMATICS', title: 'Infinite Series', desc: '20 Mathematics submissions!', points: 150, icon: 'infinite_series', category: 'Mathematics', rarity: 'rare' },
+    { id: 'Fields Medalist_PLATINUM_MATHEMATICS', title: 'Fields Medalist', desc: '≥90% on Weekly/Monthly Mathematics!', points: 200, icon: 'fields_medalist', category: 'Mathematics', rarity: 'epic' },
+    { id: "Ramanujan's Heir_PLATINUM_MATHEMATICS", title: "Ramanujan's Heir", desc: '100% on a Mathematics Monthly test!', points: 300, icon: 'ramanujans_heir', category: 'Mathematics', rarity: 'legendary' },
+    { id: 'Abel Prize_PLATINUM_MATHEMATICS', title: 'Abel Prize', desc: '50 Mathematics submissions!', points: 400, icon: 'abel_prize', category: 'Mathematics', rarity: 'legendary' },
+
+    // ── Special Cross-Subject Medals ──
+    { id: 'Triple Scholar_BRONZE_SPECIAL', title: 'Triple Scholar', desc: '1 submission in all 3 subjects!', points: 100, icon: 'triple_scholar', category: 'Special', rarity: 'uncommon' },
+    { id: 'Multidisciplinary_SILVER_SPECIAL', title: 'Multidisciplinary', desc: '5 submissions in each subject!', points: 200, icon: 'multidisciplinary', category: 'Special', rarity: 'rare' },
+    { id: 'Omniscient_GOLD_SPECIAL', title: 'Omniscient', desc: '10 submissions in each subject!', points: 300, icon: 'omniscient', category: 'Special', rarity: 'epic' },
+    { id: 'Polymath Supreme_PLATINUM_SPECIAL', title: 'Polymath Supreme', desc: '100% in each of the 3 subjects!', points: 600, icon: 'polymath_supreme', category: 'Special', rarity: 'legendary' },
+    { id: 'Grand Champion_PLATINUM_SPECIAL', title: 'Grand Champion', desc: 'All 3 gold medals + Triple Crown!', points: 800, icon: 'grand_champion', category: 'Special', rarity: 'legendary' },
   ]
 
   const renderProfile = () => {
@@ -1057,25 +1163,71 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
           </div>
         </div>
 
-        <Card title="🎓 Student Medal Case & Achievements" subtitle="Click on any unlocked medal to celebrate your achievement!" variant="gradient">
+        <Card title="🎓 Student Medal Case & Achievements" subtitle="Your earned badges — filter by category" variant="gradient">
+          {/* Category filter tabs */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+            {(['all', 'General', 'Physics', 'Chemistry', 'Mathematics', 'Special'] as const).map((cat) => {
+              const catUnlocked = cat === 'all'
+                ? MEDALS_LIST.filter(item =>
+                    item.category === 'General'
+                      ? overview?.achievements?.some(a => a.achievementType === item.id)
+                      : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
+                  ).length
+                : MEDALS_LIST.filter(item => item.category === cat).filter(item =>
+                    item.category === 'General'
+                      ? overview?.achievements?.some(a => a.achievementType === item.id)
+                      : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
+                  ).length
+              const catTotal = cat === 'all' ? MEDALS_LIST.length : MEDALS_LIST.filter(i => i.category === cat).length
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setMedalFilter(cat)}
+                  style={{
+                    padding: '5px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    border: medalFilter === cat ? '1.5px solid var(--color-primary-500)' : '1px solid rgba(255,255,255,0.12)',
+                    background: medalFilter === cat ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
+                    color: medalFilter === cat ? 'var(--color-primary-400)' : 'var(--text-soft)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {cat === 'all' ? 'All' : cat} <span style={{ opacity: 0.7 }}>({catUnlocked}/{catTotal})</span>
+                </button>
+              )
+            })}
+          </div>
+
           <div className="medal-case-grid">
-            {MEDALS_LIST.map((item) => {
+            {MEDALS_LIST.filter(item => medalFilter === 'all' || item.category === medalFilter).map((item) => {
               const isUnlocked = item.category === 'General'
                 ? overview?.achievements?.some(a => a.achievementType === item.id)
                 : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
 
-              const subjectClass = item.category === 'Physics' ? 'subject-physics' : item.category === 'Chemistry' ? 'subject-chemistry' : item.category === 'Mathematics' ? 'subject-mathematics' : ''
+              const subjectClass = item.category === 'Physics' ? 'subject-physics'
+                : item.category === 'Chemistry' ? 'subject-chemistry'
+                : item.category === 'Mathematics' ? 'subject-mathematics'
+                : item.category === 'Special' ? 'subject-special'
+                : ''
+
+              const rarityGlow = item.rarity === 'legendary' ? '0 0 14px rgba(251,191,36,0.5)'
+                : item.rarity === 'epic' ? '0 0 10px rgba(167,139,250,0.5)'
+                : 'none'
 
               return (
                 <div 
                   key={item.id} 
-                  className={`medal-slot ${isUnlocked ? 'unlocked animate-pulse' : 'locked'} ${subjectClass}`}
+                  className={`medal-slot ${isUnlocked ? 'unlocked' : 'locked'} ${subjectClass}`}
+                  style={isUnlocked && rarityGlow !== 'none' ? { boxShadow: rarityGlow } : {}}
                   onClick={() => {
                     if (isUnlocked) {
                       setActiveCelebration({
                         type: 'MEDAL',
                         title: item.title,
-                        subtitle: `${item.category} Achievement`,
+                        subtitle: `${item.category} ${item.rarity === 'legendary' ? '✨ Legendary' : item.rarity === 'epic' ? '⚡ Epic' : item.rarity === 'rare' ? '💎 Rare' : ''}`,
                         description: item.desc,
                         points: item.points,
                         iconName: item.icon
@@ -1088,6 +1240,12 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                   </div>
                   <div className="medal-slot-title">{item.title}</div>
                   <div className="medal-slot-points">+{item.points} XP</div>
+                  {item.rarity === 'legendary' && isUnlocked && (
+                    <div style={{ fontSize: '9px', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>✨ Legendary</div>
+                  )}
+                  {item.rarity === 'epic' && isUnlocked && (
+                    <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>⚡ Epic</div>
+                  )}
 
                   <div className="medal-tooltip">
                     <h5>{item.title}</h5>
