@@ -153,6 +153,9 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
   const location = useLocation()
   const [selectedReportSubmissionId, setSelectedReportSubmissionId] = useState<string | null>(null)
   const [reportWizardMode, setReportWizardMode] = useState<'practice' | 'homework' | 'assessment'>('practice')
+  const [medalsViewMode, setMedalsViewMode] = useState<'wizard' | 'scroll'>('wizard')
+  const [medalsPageIndex, setMedalsPageIndex] = useState(0)
+  const [medalsExpanded, setMedalsExpanded] = useState(true)
 
   useEffect(() => {
     const routerState = location.state as { showReportSubmissionId?: string } | null
@@ -1094,12 +1097,32 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
     const physicsXp = overview?.physicsXp ?? 0
     const physicsLevel = Math.floor(physicsXp / 500) + 1
+    const physicsXpInLevel = physicsXp % 500
+    const physicsXpPercent = (physicsXpInLevel / 500) * 100
     
     const chemistryXp = overview?.chemistryXp ?? 0
     const chemistryLevel = Math.floor(chemistryXp / 500) + 1
+    const chemistryXpInLevel = chemistryXp % 500
+    const chemistryXpPercent = (chemistryXpInLevel / 500) * 100
     
     const mathematicsXp = overview?.mathematicsXp ?? 0
     const mathLevel = Math.floor(mathematicsXp / 500) + 1
+    const mathematicsXpInLevel = mathematicsXp % 500
+    const mathXpPercent = (mathematicsXpInLevel / 500) * 100
+
+    const totalMedals = MEDALS_LIST.length
+    const unlockedMedals = MEDALS_LIST.filter(item =>
+      item.category === 'General'
+        ? overview?.achievements?.some(a => a.achievementType === item.id)
+        : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
+    ).length
+    const medalCompletionPercent = Math.round((unlockedMedals / totalMedals) * 100)
+
+    const filteredMedals = MEDALS_LIST.filter(item => medalFilter === 'all' || item.category === medalFilter)
+    const pageSize = 10
+    const totalPages = Math.max(1, Math.ceil(filteredMedals.length / pageSize))
+    const safePageIndex = Math.min(medalsPageIndex, totalPages - 1)
+    const paginatedMedals = filteredMedals.slice(safePageIndex * pageSize, (safePageIndex + 1) * pageSize)
 
     return (
       <>
@@ -1139,8 +1162,19 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                 <span className="subject-mastery-title">Physics Mastery</span>
                 <div className="subject-mastery-icon-box">⚛️</div>
               </div>
-              <div className="subject-mastery-xp">{physicsXp} XP</div>
-              <div className="subject-mastery-rank">Rank: LVL {physicsLevel}</div>
+              <div>
+                <div className="subject-mastery-xp">{physicsXp} XP</div>
+                <div className="subject-mastery-rank">Rank: LVL {physicsLevel}</div>
+              </div>
+              <div className="subject-mastery-progress-wrapper">
+                <div className="subject-progress-label">
+                  <span>Level progress</span>
+                  <span>{physicsXpInLevel} / 500 XP</span>
+                </div>
+                <div className="subject-progress-track">
+                  <div className="subject-progress-fill" style={{ width: `${physicsXpPercent}%` }} />
+                </div>
+              </div>
             </div>
 
             <div className="subject-mastery-card subject-chemistry">
@@ -1148,8 +1182,19 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                 <span className="subject-mastery-title">Chemistry Mastery</span>
                 <div className="subject-mastery-icon-box">🧪</div>
               </div>
-              <div className="subject-mastery-xp">{chemistryXp} XP</div>
-              <div className="subject-mastery-rank">Rank: LVL {chemistryLevel}</div>
+              <div>
+                <div className="subject-mastery-xp">{chemistryXp} XP</div>
+                <div className="subject-mastery-rank">Rank: LVL {chemistryLevel}</div>
+              </div>
+              <div className="subject-mastery-progress-wrapper">
+                <div className="subject-progress-label">
+                  <span>Level progress</span>
+                  <span>{chemistryXpInLevel} / 500 XP</span>
+                </div>
+                <div className="subject-progress-track">
+                  <div className="subject-progress-fill" style={{ width: `${chemistryXpPercent}%` }} />
+                </div>
+              </div>
             </div>
 
             <div className="subject-mastery-card subject-mathematics">
@@ -1157,32 +1202,117 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
                 <span className="subject-mastery-title">Math Mastery</span>
                 <div className="subject-mastery-icon-box">🔢</div>
               </div>
-              <div className="subject-mastery-xp">{mathematicsXp} XP</div>
-              <div className="subject-mastery-rank">Rank: LVL {mathLevel}</div>
+              <div>
+                <div className="subject-mastery-xp">{mathematicsXp} XP</div>
+                <div className="subject-mastery-rank">Rank: LVL {mathLevel}</div>
+              </div>
+              <div className="subject-mastery-progress-wrapper">
+                <div className="subject-progress-label">
+                  <span>Level progress</span>
+                  <span>{mathematicsXpInLevel} / 500 XP</span>
+                </div>
+                <div className="subject-progress-track">
+                  <div className="subject-progress-fill" style={{ width: `${mathXpPercent}%` }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <Card title="🎓 Student Medal Case & Achievements" subtitle="Your earned badges — filter by category" variant="gradient">
+        <Card 
+          title="🎓 Student Medal Case & Achievements" 
+          subtitle="Your earned badges — filter by category" 
+          variant="gradient"
+          actions={
+            <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="bg-white/5 border border-white/10 p-0.5 rounded-lg text-xs" style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '2px', borderRadius: '8px' }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMedalsViewMode('wizard'); }}
+                  className="px-2.5 py-1 rounded-md font-bold transition-all duration-200"
+                  style={{
+                    background: medalsViewMode === 'wizard' ? 'var(--color-primary-500)' : 'transparent',
+                    color: medalsViewMode === 'wizard' ? '#ffffff' : 'rgba(255, 255, 255, 0.45)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '6px'
+                  }}
+                >
+                  Wizard 🧙‍♂️
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setMedalsViewMode('scroll'); }}
+                  className="px-2.5 py-1 rounded-md font-bold transition-all duration-200"
+                  style={{
+                    background: medalsViewMode === 'scroll' ? 'var(--color-primary-500)' : 'transparent',
+                    color: medalsViewMode === 'scroll' ? '#ffffff' : 'rgba(255, 255, 255, 0.45)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '6px'
+                  }}
+                >
+                  Scroller 📜
+                </button>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setMedalsExpanded(!medalsExpanded); }}
+                className="px-2.5 py-1 rounded-lg font-bold transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  padding: '5px 10px',
+                  borderRadius: '8px'
+                }}
+              >
+                {medalsExpanded ? 'Collapse 🔼' : 'Expand 🔽'}
+              </button>
+            </div>
+          }
+        >
+          {/* Medal Case Completion Stats */}
+          <div className="mb-5 p-4 rounded-2xl bg-white/5 border border-white/10" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '16px', borderRadius: '16px', marginBottom: '20px' }}>
+            <div className="flex justify-between items-center mb-2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span className="text-xs font-bold text-white/60 tracking-wider uppercase" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.05em' }}>Medal Case Completion</span>
+              <span className="text-xs font-mono font-bold text-yellow-400" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'monospace' }}>{unlockedMedals} / {totalMedals} Earned ({medalCompletionPercent}%)</span>
+            </div>
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden" style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div 
+                className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full" 
+                style={{ 
+                  width: `${medalCompletionPercent}%`, 
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #fbbf24, #f97316)',
+                  borderRadius: '9999px',
+                  transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
+                }} 
+              />
+            </div>
+          </div>
+
           {/* Category filter tabs */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
             {(['all', 'General', 'Physics', 'Chemistry', 'Mathematics', 'Special'] as const).map((cat) => {
               const catUnlocked = cat === 'all'
-                ? MEDALS_LIST.filter(item =>
-                    item.category === 'General'
-                      ? overview?.achievements?.some(a => a.achievementType === item.id)
-                      : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
-                  ).length
+                ? unlockedMedals
                 : MEDALS_LIST.filter(item => item.category === cat).filter(item =>
                     item.category === 'General'
                       ? overview?.achievements?.some(a => a.achievementType === item.id)
                       : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
                   ).length
-              const catTotal = cat === 'all' ? MEDALS_LIST.length : MEDALS_LIST.filter(i => i.category === cat).length
+              const catTotal = cat === 'all' ? totalMedals : MEDALS_LIST.filter(i => i.category === cat).length
               return (
                 <button
                   key={cat}
-                  onClick={() => setMedalFilter(cat)}
+                  onClick={() => {
+                    setMedalFilter(cat)
+                    setMedalsPageIndex(0)
+                  }}
                   style={{
                     padding: '5px 14px',
                     borderRadius: '20px',
@@ -1201,62 +1331,164 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
             })}
           </div>
 
-          <div className="medal-case-grid">
-            {MEDALS_LIST.filter(item => medalFilter === 'all' || item.category === medalFilter).map((item) => {
-              const isUnlocked = item.category === 'General'
-                ? overview?.achievements?.some(a => a.achievementType === item.id)
-                : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
+          {/* Collapsible Wrapper wrapper */}
+          <div className={`medal-case-collapse-wrapper ${medalsExpanded ? 'expanded' : 'collapsed'}`}>
+            {medalsViewMode === 'scroll' ? (
+              <div className="medal-case-scroll-container custom-scrollbar">
+                <div className="medal-case-grid">
+                  {filteredMedals.map((item) => {
+                    const isUnlocked = item.category === 'General'
+                      ? overview?.achievements?.some(a => a.achievementType === item.id)
+                      : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
 
-              const subjectClass = item.category === 'Physics' ? 'subject-physics'
-                : item.category === 'Chemistry' ? 'subject-chemistry'
-                : item.category === 'Mathematics' ? 'subject-mathematics'
-                : item.category === 'Special' ? 'subject-special'
-                : ''
+                    const subjectClass = item.category === 'Physics' ? 'subject-physics'
+                      : item.category === 'Chemistry' ? 'subject-chemistry'
+                      : item.category === 'Mathematics' ? 'subject-mathematics'
+                      : item.category === 'Special' ? 'subject-special'
+                      : ''
 
-              const rarityGlow = item.rarity === 'legendary' ? '0 0 14px rgba(251,191,36,0.5)'
-                : item.rarity === 'epic' ? '0 0 10px rgba(167,139,250,0.5)'
-                : 'none'
+                    const rarityGlow = item.rarity === 'legendary' ? '0 0 14px rgba(251,191,36,0.5)'
+                      : item.rarity === 'epic' ? '0 0 10px rgba(167,139,250,0.5)'
+                      : 'none'
 
-              return (
-                <div 
-                  key={item.id} 
-                  className={`medal-slot ${isUnlocked ? 'unlocked' : 'locked'} ${subjectClass}`}
-                  style={isUnlocked && rarityGlow !== 'none' ? { boxShadow: rarityGlow } : {}}
-                  onClick={() => {
-                    if (isUnlocked) {
-                      setActiveCelebration({
-                        type: 'MEDAL',
-                        title: item.title,
-                        subtitle: `${item.category} ${item.rarity === 'legendary' ? '✨ Legendary' : item.rarity === 'epic' ? '⚡ Epic' : item.rarity === 'rare' ? '💎 Rare' : ''}`,
-                        description: item.desc,
-                        points: item.points,
-                        iconName: item.icon
-                      })
-                    }
-                  }}
-                >
-                  <div className="medal-icon-wrapper">
-                    {renderBadgeIcon(item.icon, 36)}
-                  </div>
-                  <div className="medal-slot-title">{item.title}</div>
-                  <div className="medal-slot-points">+{item.points} XP</div>
-                  {item.rarity === 'legendary' && isUnlocked && (
-                    <div style={{ fontSize: '9px', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>✨ Legendary</div>
-                  )}
-                  {item.rarity === 'epic' && isUnlocked && (
-                    <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>⚡ Epic</div>
-                  )}
+                    return (
+                      <div 
+                        key={item.id} 
+                        className={`medal-slot ${isUnlocked ? 'unlocked' : 'locked'} ${subjectClass}`}
+                        style={isUnlocked && rarityGlow !== 'none' ? { boxShadow: rarityGlow } : {}}
+                        onClick={() => {
+                          if (isUnlocked) {
+                            setActiveCelebration({
+                              type: 'MEDAL',
+                              title: item.title,
+                              subtitle: `${item.category} ${item.rarity === 'legendary' ? '✨ Legendary' : item.rarity === 'epic' ? '⚡ Epic' : item.rarity === 'rare' ? '💎 Rare' : ''}`,
+                              description: item.desc,
+                              points: item.points,
+                              iconName: item.icon
+                            })
+                          }
+                        }}
+                      >
+                        <div className="medal-icon-wrapper">
+                          {renderBadgeIcon(item.icon, 36)}
+                        </div>
+                        <div className="medal-slot-title">{item.title}</div>
+                        <div className="medal-slot-points">+{item.points} XP</div>
+                        {item.rarity === 'legendary' && isUnlocked && (
+                          <div style={{ fontSize: '9px', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>✨ Legendary</div>
+                        )}
+                        {item.rarity === 'epic' && isUnlocked && (
+                          <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>⚡ Epic</div>
+                        )}
 
-                  <div className="medal-tooltip">
-                    <h5>{item.title}</h5>
-                    <p>{item.desc}</p>
-                    <div className={`medal-tooltip-status ${isUnlocked ? 'unlocked' : 'locked'}`}>
-                      {isUnlocked ? '🔓 UNLOCKED' : '🔒 LOCKED'}
-                    </div>
-                  </div>
+                        <div className="medal-tooltip">
+                          <h5>{item.title}</h5>
+                          <p>{item.desc}</p>
+                          <div className={`medal-tooltip-status ${isUnlocked ? 'unlocked' : 'locked'}`}>
+                            {isUnlocked ? '🔓 UNLOCKED' : '🔒 LOCKED'}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              </div>
+            ) : (
+              <div className="medal-wizard-container">
+                <div className="medal-case-grid">
+                  {paginatedMedals.map((item) => {
+                    const isUnlocked = item.category === 'General'
+                      ? overview?.achievements?.some(a => a.achievementType === item.id)
+                      : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
+
+                    const subjectClass = item.category === 'Physics' ? 'subject-physics'
+                      : item.category === 'Chemistry' ? 'subject-chemistry'
+                      : item.category === 'Mathematics' ? 'subject-mathematics'
+                      : item.category === 'Special' ? 'subject-special'
+                      : ''
+
+                    const rarityGlow = item.rarity === 'legendary' ? '0 0 14px rgba(251,191,36,0.5)'
+                      : item.rarity === 'epic' ? '0 0 10px rgba(167,139,250,0.5)'
+                      : 'none'
+
+                    return (
+                      <div 
+                        key={item.id} 
+                        className={`medal-slot ${isUnlocked ? 'unlocked' : 'locked'} ${subjectClass}`}
+                        style={isUnlocked && rarityGlow !== 'none' ? { boxShadow: rarityGlow } : {}}
+                        onClick={() => {
+                          if (isUnlocked) {
+                            setActiveCelebration({
+                              type: 'MEDAL',
+                              title: item.title,
+                              subtitle: `${item.category} ${item.rarity === 'legendary' ? '✨ Legendary' : item.rarity === 'epic' ? '⚡ Epic' : item.rarity === 'rare' ? '💎 Rare' : ''}`,
+                              description: item.desc,
+                              points: item.points,
+                              iconName: item.icon
+                            })
+                          }
+                        }}
+                      >
+                        <div className="medal-icon-wrapper">
+                          {renderBadgeIcon(item.icon, 36)}
+                        </div>
+                        <div className="medal-slot-title">{item.title}</div>
+                        <div className="medal-slot-points">+{item.points} XP</div>
+                        {item.rarity === 'legendary' && isUnlocked && (
+                          <div style={{ fontSize: '9px', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>✨ Legendary</div>
+                        )}
+                        {item.rarity === 'epic' && isUnlocked && (
+                          <div style={{ fontSize: '9px', color: '#a78bfa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>⚡ Epic</div>
+                        )}
+
+                        <div className="medal-tooltip">
+                          <h5>{item.title}</h5>
+                          <p>{item.desc}</p>
+                          <div className={`medal-tooltip-status ${isUnlocked ? 'unlocked' : 'locked'}`}>
+                            {isUnlocked ? '🔓 UNLOCKED' : '🔒 LOCKED'}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Wizard Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="wizard-pagination">
+                    <button
+                      className="wizard-nav-btn"
+                      disabled={safePageIndex === 0}
+                      onClick={(e) => { e.stopPropagation(); setMedalsPageIndex(prev => Math.max(0, prev - 1)); }}
+                      style={{ border: '1px solid var(--border-strong)', cursor: safePageIndex === 0 ? 'not-allowed' : 'pointer' }}
+                    >
+                      ◀
+                    </button>
+                    
+                    <div className="wizard-dots" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {Array.from({ length: totalPages }).map((_, idx) => (
+                        <button
+                          key={idx}
+                          className={`wizard-dot ${safePageIndex === idx ? 'active' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); setMedalsPageIndex(idx); }}
+                          style={{ border: 'none', cursor: 'pointer', padding: 0 }}
+                          title={`Page ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      className="wizard-nav-btn"
+                      disabled={safePageIndex === totalPages - 1}
+                      onClick={(e) => { e.stopPropagation(); setMedalsPageIndex(prev => Math.min(totalPages - 1, prev + 1)); }}
+                      style={{ border: '1px solid var(--border-strong)', cursor: safePageIndex === totalPages - 1 ? 'not-allowed' : 'pointer' }}
+                    >
+                      ▶
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </Card>
 
