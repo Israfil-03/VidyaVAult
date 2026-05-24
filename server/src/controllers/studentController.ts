@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { prisma } from '../prisma/client.js'
 import { analysePerformance } from '../services/aiService.js'
 import { ApiError } from '../utils/apiError.js'
+import { awardXPAndCheckAchievements } from '../services/gamificationService.js'
 
 const answerInputSchema = z.object({
   answers: z.array(
@@ -81,7 +82,17 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
     }),
     prisma.studentProfile.findUnique({
       where: { id: studentId },
-      select: { streakCount: true, lastHomeworkDate: true },
+      select: {
+        streakCount: true,
+        lastHomeworkDate: true,
+        totalXP: true,
+        currentLevel: true,
+        physicsXp: true,
+        chemistryXp: true,
+        mathematicsXp: true,
+        achievements: true,
+        StudentMedal: true,
+      },
     }),
   ])
 
@@ -93,6 +104,13 @@ export const getStudentOverview = async (req: Request, res: Response): Promise<v
       completed,
       activeHomework,
       streakCount: studentProfile?.streakCount ?? 0,
+      totalXP: studentProfile?.totalXP ?? 0,
+      currentLevel: studentProfile?.currentLevel ?? 1,
+      physicsXp: studentProfile?.physicsXp ?? 0,
+      chemistryXp: studentProfile?.chemistryXp ?? 0,
+      mathematicsXp: studentProfile?.mathematicsXp ?? 0,
+      achievements: studentProfile?.achievements ?? [],
+      medals: studentProfile?.StudentMedal ?? [],
     },
   })
 }
@@ -432,9 +450,26 @@ export const submitSubmission = async (req: Request, res: Response): Promise<voi
     })
   }
 
+  // Award XP and check achievements / medals
+  let gamification = null
+  try {
+    gamification = await awardXPAndCheckAchievements(
+      studentId,
+      finalized.test.category,
+      finalized.test.subject,
+      scoreTotal,
+      maxScore
+    )
+  } catch (err) {
+    console.error('Failed to award gamification XP/medals:', err)
+  }
+
   res.json({
     success: true,
-    data: finalized,
+    data: {
+      ...finalized,
+      gamification,
+    },
   })
 }
 

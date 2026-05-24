@@ -6,7 +6,6 @@ import {
   ListChecks,
   Sparkles,
   Trophy,
-  UserRound,
   ChevronRight,
   X,
   CheckCircle2,
@@ -28,6 +27,7 @@ import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import type { DashboardSection } from './shared/dashboardNavigation'
 import { getDashboardNavigation } from './shared/dashboardNavigation'
+import { GamificationCelebration, renderBadgeIcon } from '../components/GamificationCelebration'
 
 interface StudentOverview {
   active: number
@@ -35,6 +35,13 @@ interface StudentOverview {
   completed: number
   activeHomework: number
   streakCount: number
+  totalXP?: number
+  currentLevel?: number
+  physicsXp?: number
+  chemistryXp?: number
+  mathematicsXp?: number
+  achievements?: Array<{ id: string; studentId: string; achievementType: string; description: string; xpRewarded: number }>
+  medals?: Array<{ id: string; studentId: string; medalName: string; medalType: string; subject: string; iconName: string }>
 }
 
 interface TestCard {
@@ -115,6 +122,20 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
   >([])
   const [error, setError] = useState<string | null>(null)
   const [reloadTrigger, setReloadTrigger] = useState(0)
+
+  const [leaderboardSubject, setLeaderboardSubject] = useState<'overall' | 'PHYSICS' | 'CHEMISTRY' | 'MATHEMATICS'>('overall')
+  const [gamifiedLeaderboard, setGamifiedLeaderboard] = useState<
+    Array<{ rank: number; studentId: string; username: string; fullName: string; xp: number; level: number }>
+  >([])
+
+  const [activeCelebration, setActiveCelebration] = useState<{
+    type: 'LEVEL_UP' | 'MEDAL'
+    title: string
+    subtitle?: string
+    description: string
+    points?: number
+    iconName: string
+  } | null>(null)
 
   const location = useLocation()
   const [selectedReportSubmissionId, setSelectedReportSubmissionId] = useState<string | null>(null)
@@ -250,6 +271,30 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
     void loadData()
   }, [token, user?.username, reloadTrigger])
+
+  useEffect(() => {
+    const fetchGamified = async () => {
+      if (!token) return
+      if (import.meta.env.VITE_UI_ONLY === 'true') {
+        setGamifiedLeaderboard([
+          { rank: 1, studentId: 'ui-1', username: 'Aarav', fullName: 'Aarav Sharma', xp: 1450, level: 3 },
+          { rank: 2, studentId: 'you', username: user?.username ?? 'You', fullName: user?.fullName ?? 'You', xp: 1200, level: 3 },
+          { rank: 3, studentId: 'ui-3', username: 'Riya', fullName: 'Riya Sen', xp: 950, level: 2 },
+        ])
+        return
+      }
+      try {
+        const rows = await apiRequest<any[]>(`/leaderboards/gamified?subject=${leaderboardSubject}`, {
+          method: 'GET',
+          token,
+        })
+        setGamifiedLeaderboard(rows)
+      } catch (err) {
+        console.error('Failed to load gamified leaderboard:', err)
+      }
+    }
+    void fetchGamified()
+  }, [token, leaderboardSubject, reloadTrigger, user?.username, user?.fullName])
 
   const handleReattempt = async (testId: string) => {
     if (!token) return
@@ -786,28 +831,75 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
   const renderLeaderboard = () => (
     <>
-      <div className="two-col">
-        <Card title="Class Leaderboard" subtitle="Top students in your class" variant="glass">
-          {classLeaderboard.length === 0 ? (
-            <div className="empty-state">Leaderboard data not available yet.</div>
+      <div className="leaderboard-tabs-nav">
+        <button
+          className={`leaderboard-tab-btn ${leaderboardSubject === 'overall' ? 'active' : ''}`}
+          onClick={() => setLeaderboardSubject('overall')}
+        >
+          🏆 Overall Ranks
+        </button>
+        <button
+          className={`leaderboard-tab-btn ${leaderboardSubject === 'PHYSICS' ? 'active' : ''}`}
+          onClick={() => setLeaderboardSubject('PHYSICS')}
+        >
+          ⚛️ Physics Board
+        </button>
+        <button
+          className={`leaderboard-tab-btn ${leaderboardSubject === 'CHEMISTRY' ? 'active' : ''}`}
+          onClick={() => setLeaderboardSubject('CHEMISTRY')}
+        >
+          🧪 Chemistry Board
+        </button>
+        <button
+          className={`leaderboard-tab-btn ${leaderboardSubject === 'MATHEMATICS' ? 'active' : ''}`}
+          onClick={() => setLeaderboardSubject('MATHEMATICS')}
+        >
+          🔢 Mathematics Board
+        </button>
+      </div>
+
+      <div className="two-col" style={{ alignItems: 'start' }}>
+        <Card 
+          title={`${leaderboardSubject === 'overall' ? 'Overall' : leaderboardSubject.charAt(0) + leaderboardSubject.slice(1).toLowerCase()} Leaderboard`}
+          subtitle="Top students ranked by earned experience points (XP)" 
+          variant="gradient"
+        >
+          {gamifiedLeaderboard.length === 0 ? (
+            <div className="empty-state">No rankings available yet. Start solving homework/drills to top the board!</div>
           ) : (
-            <div className="premium-list">
-              {classLeaderboard.slice(0, 8).map((entry) => (
-                <div key={`${entry.rank}-${entry.username}`} className="premium-item">
-                  <div>
-                    <strong>
-                      #{entry.rank} {entry.username} {entry.username === user?.username ? '(You)' : ''}
-                    </strong>
-                    <div className="muted">Score {(entry.normalizedScore * 100).toFixed(1)}%</div>
+            <div className="gamified-leader-list">
+              {gamifiedLeaderboard.map((entry) => {
+                const isCurrentUser = entry.username === user?.username
+                const rankClass = entry.rank === 1 ? 'leader-rank-1' : entry.rank === 2 ? 'leader-rank-2' : entry.rank === 3 ? 'leader-rank-3' : 'leader-rank-other'
+                
+                return (
+                  <div key={entry.studentId} className={`gamified-leader-row ${isCurrentUser ? 'highlighted' : ''}`}>
+                    <div className={`leader-rank-box ${rankClass}`}>
+                      {entry.rank === 1 ? '👑' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : entry.rank}
+                    </div>
+                    
+                    <div className="leader-avatar-letter">
+                      {entry.fullName.charAt(0).toUpperCase()}
+                    </div>
+                    
+                    <div className="leader-info">
+                      <span className="leader-name">
+                        {entry.fullName} {isCurrentUser ? '(You)' : ''}
+                      </span>
+                      <span className="leader-level">LVL {entry.level}</span>
+                    </div>
+                    
+                    <div className="leader-score-value">
+                      {entry.xp} <span className="leader-score-unit">XP</span>
+                    </div>
                   </div>
-                  <span className="status-pill status-upcoming">Rank {entry.rank}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </Card>
 
-        <Card title="Batch Leaderboard" subtitle="Batch level performance comparison" variant="glass">
+        <Card title="Batch Power Comparison" subtitle="Comparing average batch mastery rates" variant="glass">
           <ComparisonBarChart
             data={batchLeaderboard.map((entry) => ({
               label: `${entry.name} (${entry.medium.slice(0, 3)})`,
@@ -862,74 +954,190 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
     </>
   )
 
-  const renderProfile = () => (
-    <>
-      <div className="two-col">
-        <Card title="Student Profile" subtitle="Account and classroom identity" variant="glass">
-          <ul className="plain-list">
-            <li>
-              <strong>Name:</strong> {(user?.fullName || user?.username) ?? '—'}
-            </li>
-            <li>
-              <strong>Email:</strong> {user?.email ?? 'Not provided'}
-            </li>
-            <li>
-              <strong>Role:</strong> Student
-            </li>
-            <li>
-              <strong>Student ID (Short ID):</strong> {user?.shortId || user?.username || 'N/A'}
-            </li>
-            <li>
-              <strong>Institute ID (Long ID):</strong> {user?.longId || 'N/A'}
-            </li>
-            <li>
-              <strong>Phone Number:</strong> {user?.phone || 'N/A'}
-            </li>
-            <li>
-              <strong>Class Level:</strong> {user?.classLevel ? `Class ${user.classLevel}` : 'N/A'}
-            </li>
-            <li>
-              <strong>Enrolled Batches:</strong>
-              {user?.batchLinks && user.batchLinks.length > 0 ? (
-                <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
-                  {user.batchLinks.map((link, idx) => (
-                    <li key={idx} style={{ padding: '2px 0' }}>
-                      {link.batch.name} <span className="muted" style={{ fontSize: '0.85em' }}>(by {link.batch.teacher.user.fullName || 'Teacher'})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                ' No batches assigned'
-              )}
-            </li>
-          </ul>
-        </Card>
+  const MEDALS_LIST = [
+    { id: 'QUICK_LEARNER', title: 'First Step', desc: 'Completed your first assignment or drill!', points: 50, icon: 'first_step', category: 'General' },
+    { id: 'CONSISTENCY_BONUS', title: 'Consistent Scholar', desc: 'Maintained a 3-day streak in daily homework!', points: 100, icon: 'consistent_scholar', category: 'General' },
+    { id: 'STREAK_MILESTONE', title: 'Daily Champion', desc: 'Reached a 5-day daily homework streak!', points: 200, icon: 'daily_champion', category: 'General' },
+    { id: 'PERFECT_SCORE', title: 'Perfect Scholar', desc: 'Scored 100% accuracy on any assignment!', points: 150, icon: 'perfect_scholar', category: 'General' },
+    { id: 'SUBJECT_MASTERY', title: 'Academic Titan', desc: 'Reached Level 5 in overall progress!', points: 300, icon: 'academic_titan', category: 'General' },
 
-        <Card title="Quick Actions" subtitle="Security and policy references" variant="glass">
-          <div className="inline-actions">
-            <Link to="/change-password">
-              <Button variant="secondary">Change Password</Button>
-            </Link>
-            <Link to="/reward-explanation">
-              <Button variant="secondary">Rewards Guide</Button>
-            </Link>
-            <Link to="/student/performance">
-              <Button>Open Performance</Button>
-            </Link>
+    { id: 'Newtonian Pioneer_BRONZE_PHYSICS', title: 'Newtonian Pioneer', desc: 'Submitted your first Physics assignment!', points: 50, icon: 'newtonian_pioneer', category: 'Physics' },
+    { id: 'Galileo\'s Observer_SILVER_PHYSICS', title: 'Galileo\'s Observer', desc: 'Completed 3 practice drills in Physics!', points: 75, icon: 'galileos_observer', category: 'Physics' },
+    { id: 'Quantum Leap_GOLD_PHYSICS', title: 'Quantum Leap', desc: 'Achieved 100% accuracy on a Physics test!', points: 100, icon: 'quantum_leap', category: 'Physics' },
+    { id: 'Cosmic Explorer_PLATINUM_PHYSICS', title: 'Cosmic Explorer', desc: 'Scored >= 90% on a Physics Monthly/Weekly exam!', points: 200, icon: 'cosmic_explorer', category: 'Physics' },
+
+    { id: 'Molecular Apprentice_BRONZE_CHEMISTRY', title: 'Molecular Apprentice', desc: 'Submitted your first Chemistry assignment!', points: 50, icon: 'molecular_apprentice', category: 'Chemistry' },
+    { id: 'Alchemist\'s Trial_SILVER_CHEMISTRY', title: 'Alchemist\'s Trial', desc: 'Completed 3 practice drills in Chemistry!', points: 75, icon: 'alchemists_trial', category: 'Chemistry' },
+    { id: 'Covalent Bond_GOLD_CHEMISTRY', title: 'Covalent Bond', desc: 'Achieved 100% accuracy on a Chemistry test!', points: 100, icon: 'covalent_bond', category: 'Chemistry' },
+    { id: 'Noble Gas Status_PLATINUM_CHEMISTRY', title: 'Noble Gas Status', desc: 'Scored >= 90% on a Chemistry Monthly/Weekly exam!', points: 200, icon: 'noble_gas_status', category: 'Chemistry' },
+
+    { id: 'Arithmetic Ace_BRONZE_MATHEMATICS', title: 'Arithmetic Ace', desc: 'Submitted your first Mathematics assignment!', points: 50, icon: 'arithmetic_ace', category: 'Mathematics' },
+    { id: 'Euler\'s Disciple_SILVER_MATHEMATICS', title: 'Euler\'s Disciple', desc: 'Completed 3 practice drills in Mathematics!', points: 75, icon: 'eulers_disciple', category: 'Mathematics' },
+    { id: 'Pythagorean Explorer_GOLD_MATHEMATICS', title: 'Pythagorean Explorer', desc: 'Achieved 100% accuracy on a Mathematics test!', points: 100, icon: 'pythagorean_explorer', category: 'Mathematics' },
+    { id: 'Fields Medalist_PLATINUM_MATHEMATICS', title: 'Fields Medalist', desc: 'Scored >= 90% on a Mathematics Monthly/Weekly exam!', points: 200, icon: 'fields_medalist', category: 'Mathematics' },
+  ]
+
+  const renderProfile = () => {
+    const totalXP = overview?.totalXP ?? 0
+    const currentLevel = overview?.currentLevel ?? 1
+    const xpInCurrentLevel = totalXP % 500
+    const xpPercent = (xpInCurrentLevel / 500) * 100
+    const streakCount = overview?.streakCount ?? 0
+
+    const physicsXp = overview?.physicsXp ?? 0
+    const physicsLevel = Math.floor(physicsXp / 500) + 1
+    
+    const chemistryXp = overview?.chemistryXp ?? 0
+    const chemistryLevel = Math.floor(chemistryXp / 500) + 1
+    
+    const mathematicsXp = overview?.mathematicsXp ?? 0
+    const mathLevel = Math.floor(mathematicsXp / 500) + 1
+
+    return (
+      <>
+        <div className="gamified-profile-container">
+          <div className="profile-hero-card">
+            <div className="profile-avatar-wrapper">
+              <div className="profile-avatar-circle">
+                {(user?.fullName || user?.username || 'S').charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-avatar-level">
+                {currentLevel}
+              </div>
+            </div>
+
+            <h3 className="profile-name">{user?.fullName || user?.username}</h3>
+            <span className="profile-role-badge">STUDENT ACCOUNT</span>
+            
+            <div className="streak-badge justify-center py-2.5 mb-6 animate-pulse" style={{ width: '100%' }}>
+              <Flame size={16} fill="currentColor" /> {streakCount} Day Homework Streak!
+            </div>
+
+            <div className="profile-xp-bar-container">
+              <div className="xp-bar-label">
+                <span>XP Level progress</span>
+                <span>{xpInCurrentLevel} / 500 XP</span>
+              </div>
+              <div className="xp-bar-track">
+                <div className="xp-bar-fill" style={{ width: `${xpPercent}%` }} />
+              </div>
+              <span className="xp-next-level">{500 - xpInCurrentLevel} XP left to Level {currentLevel + 1}</span>
+            </div>
+          </div>
+
+          <div className="bento-mastery-grid">
+            <div className="subject-mastery-card subject-physics">
+              <div className="subject-mastery-header">
+                <span className="subject-mastery-title">Physics Mastery</span>
+                <div className="subject-mastery-icon-box">⚛️</div>
+              </div>
+              <div className="subject-mastery-xp">{physicsXp} XP</div>
+              <div className="subject-mastery-rank">Rank: LVL {physicsLevel}</div>
+            </div>
+
+            <div className="subject-mastery-card subject-chemistry">
+              <div className="subject-mastery-header">
+                <span className="subject-mastery-title">Chemistry Mastery</span>
+                <div className="subject-mastery-icon-box">🧪</div>
+              </div>
+              <div className="subject-mastery-xp">{chemistryXp} XP</div>
+              <div className="subject-mastery-rank">Rank: LVL {chemistryLevel}</div>
+            </div>
+
+            <div className="subject-mastery-card subject-mathematics">
+              <div className="subject-mastery-header">
+                <span className="subject-mastery-title">Math Mastery</span>
+                <div className="subject-mastery-icon-box">🔢</div>
+              </div>
+              <div className="subject-mastery-xp">{mathematicsXp} XP</div>
+              <div className="subject-mastery-rank">Rank: LVL {mathLevel}</div>
+            </div>
+          </div>
+        </div>
+
+        <Card title="🎓 Student Medal Case & Achievements" subtitle="Click on any unlocked medal to celebrate your achievement!" variant="gradient">
+          <div className="medal-case-grid">
+            {MEDALS_LIST.map((item) => {
+              const isUnlocked = item.category === 'General'
+                ? overview?.achievements?.some(a => a.achievementType === item.id)
+                : overview?.medals?.some(m => `${m.medalName}_${m.medalType}_${m.subject}` === item.id)
+
+              const subjectClass = item.category === 'Physics' ? 'subject-physics' : item.category === 'Chemistry' ? 'subject-chemistry' : item.category === 'Mathematics' ? 'subject-mathematics' : ''
+
+              return (
+                <div 
+                  key={item.id} 
+                  className={`medal-slot ${isUnlocked ? 'unlocked animate-pulse' : 'locked'} ${subjectClass}`}
+                  onClick={() => {
+                    if (isUnlocked) {
+                      setActiveCelebration({
+                        type: 'MEDAL',
+                        title: item.title,
+                        subtitle: `${item.category} Achievement`,
+                        description: item.desc,
+                        points: item.points,
+                        iconName: item.icon
+                      })
+                    }
+                  }}
+                >
+                  <div className="medal-icon-wrapper">
+                    {renderBadgeIcon(item.icon, 36)}
+                  </div>
+                  <div className="medal-slot-title">{item.title}</div>
+                  <div className="medal-slot-points">+{item.points} XP</div>
+
+                  <div className="medal-tooltip">
+                    <h5>{item.title}</h5>
+                    <p>{item.desc}</p>
+                    <div className={`medal-tooltip-status ${isUnlocked ? 'unlocked' : 'locked'}`}>
+                      {isUnlocked ? '🔓 UNLOCKED' : '🔒 LOCKED'}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </Card>
-      </div>
 
-      <Card title="Learning Summary Card" subtitle="Your current academic heartbeat" variant="glass">
-        <div className="stats-grid">
-          <StatCard label="Active Homework" value={overview?.active ?? 0} icon={<ListChecks size={18} />} />
-          <StatCard label="Completed Tests" value={results.length} icon={<CircleCheckBig size={18} />} tone="success" />
-          <StatCard label="Average Score" value={`${averageScore.toFixed(1)}%`} icon={<Sparkles size={18} />} />
-          <StatCard label="Class Position" value={classRank ? `#${classRank}` : '-'} icon={<UserRound size={18} />} />
+        <div className="two-col mt-6">
+          <Card title="Quick Actions" subtitle="Security and reference links" variant="glass">
+            <div className="inline-actions">
+              <Link to="/change-password">
+                <Button variant="secondary">Change Password</Button>
+              </Link>
+              <Link to="/reward-explanation">
+                <Button variant="secondary">Rewards Guide</Button>
+              </Link>
+              <Link to="/student/performance">
+                <Button>Open Performance</Button>
+              </Link>
+            </div>
+          </Card>
+
+          <Card title="Learning Summary Details" subtitle="Enrolled batches and classroom context" variant="glass">
+            <ul className="plain-list">
+              <li><strong>Email:</strong> {user?.email ?? 'Not provided'}</li>
+              <li><strong>Student ID:</strong> {user?.shortId || user?.username || 'N/A'}</li>
+              <li><strong>Class Level:</strong> {user?.classLevel ? `Class ${user.classLevel}` : 'N/A'}</li>
+              <li>
+                <strong>Assigned Batches:</strong>
+                {user?.batchLinks && user.batchLinks.length > 0 ? (
+                  <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
+                    {user.batchLinks.map((link, idx) => (
+                      <li key={idx} style={{ padding: '2px 0' }}>
+                        {link.batch.name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : ' No batches assigned'}
+              </li>
+            </ul>
+          </Card>
         </div>
-      </Card>
-    </>
-  )
+      </>
+    )
+  }
 
   const contentBySection: Record<DashboardSection, ReactElement> = {
     homework: renderHomework(),
@@ -948,9 +1156,9 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
 
         <Card title={sectionTitle[section]} subtitle={sectionSubtitle[section]} variant="gradient">
           <div className="inline-actions">
-            <span className="status-pill status-upcoming">Active: {overview?.active ?? 0}</span>
-            <span className="status-pill status-completed">Completed: {overview?.completed ?? 0}</span>
-            <span className="status-pill status-draft">Rank: {classRank ? `#${classRank}` : '-'}</span>
+            <span className="status-pill status-upcoming">XP: {overview?.totalXP ?? 0}</span>
+            <span className="status-pill status-completed">Level: {overview?.currentLevel ?? 1}</span>
+            <span className="status-pill status-draft">Streak: {overview?.streakCount ?? 0} Days</span>
           </div>
         </Card>
 
@@ -968,6 +1176,20 @@ export const StudentPortalPage = ({ section }: StudentPortalPageProps) => {
               setSelectedReportSubmissionId(null)
               void handleReattempt(testId)
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {activeCelebration && (
+          <GamificationCelebration
+            type={activeCelebration.type}
+            title={activeCelebration.title}
+            subtitle={activeCelebration.subtitle}
+            description={activeCelebration.description}
+            points={activeCelebration.points}
+            iconName={activeCelebration.iconName}
+            onClose={() => setActiveCelebration(null)}
           />
         )}
       </AnimatePresence>

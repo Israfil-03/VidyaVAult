@@ -1,0 +1,687 @@
+/* Premium Gamification System Stylesheet */
+
+/* Celebrate / Level Up Animation Keyframes */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes pop-up {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-fade {
+  from {
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    background-color: rgba(6, 6, 12, 0.85);
+    backdrop-filter: blur(12px);
+  }
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+@keyframes float-badge {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(var(--badge-glow-rgb), 0.15);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(var(--badge-glow-rgb), 0.35);
+  }
+}
+
+/* Confetti Styles */
+.confetti-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-particle {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall 4s linear infinite;
+}
+
+/* Celebration Overlay / Modal Container */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+  animation: overlay-fade 0.4s ease forwards;
+  padding: 20px;
+}
+
+.celebration-card {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.15);
+  border-radius: 28px;
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: pop-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  backdrop-filter: blur(20px);
+}
+
+.celebration-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(var(--badge-glow-rgb), 0.2) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.celebration-content {
+  position: relative;
+  z-index: 1;
+}
+
+.celebration-badge-container {
+  width: 130px;
+  height: 130px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: float-badge 4s ease-in-out infinite, glow-pulse 3s infinite;
+}
+
+.celebration-title {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.celebration-subtitle {
+  color: #818cf8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.celebration-desc {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.celebration-xp {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  padding: 8px 18px;
+  border-radius: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+}
+
+/* Gamified Widgets (Student Dashboard Profile & Account) */
+.gamified-profile-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 1024px) {
+  .gamified-profile-container {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+/* Left Profile Hero Card */
+.profile-hero-card {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 20px;
+}
+
+.profile-avatar-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #818cf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #fff;
+  border: 4px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+}
+
+.profile-avatar-level {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #f59e0b;
+  border: 3px solid #100e23;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+}
+
+.profile-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.profile-role-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 50px;
+  display: inline-block;
+  margin-bottom: 24px;
+}
+
+/* XP Tracker Bar */
+.profile-xp-bar-container {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.xp-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.xp-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #e0a96d);
+  border-radius: 10px;
+  animation: progress-fill 1s ease-out forwards;
+}
+
+.xp-next-level {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 8px;
+  text-align: right;
+  display: block;
+}
+
+/* Right Bento Grid Stats */
+.bento-mastery-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .bento-mastery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.subject-mastery-card {
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.subject-mastery-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Subject Colors */
+.subject-physics {
+  --badge-glow-rgb: 245, 158, 11;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(217, 119, 6, 0.02) 100%);
+}
+.subject-physics:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.subject-chemistry {
+  --badge-glow-rgb: 16, 185, 129;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.02) 100%);
+}
+.subject-chemistry:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.subject-mathematics {
+  --badge-glow-rgb: 59, 130, 246;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%);
+}
+.subject-mathematics:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.subject-mastery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.subject-mastery-title {
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.subject-mastery-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(var(--badge-glow-rgb), 0.1);
+  border: 1px solid rgba(var(--badge-glow-rgb), 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(var(--badge-glow-rgb));
+}
+
+.subject-mastery-xp {
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.subject-mastery-rank {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Medal Showcase Case */
+.medal-case-container {
+  margin-top: 24px;
+}
+
+.medal-case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (min-width: 480px) {
+  .medal-case-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .medal-case-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.medal-slot {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.medal-slot.locked {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.medal-slot.unlocked {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.medal-slot.unlocked:hover {
+  transform: translateY(-4px) scale(1.03);
+  border-color: rgba(var(--badge-glow-rgb), 0.3);
+  box-shadow: 0 8px 25px rgba(var(--badge-glow-rgb), 0.15);
+}
+
+.medal-icon-wrapper {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.medal-slot.unlocked:hover .medal-icon-wrapper {
+  animation: float-badge 3s ease-in-out infinite;
+}
+
+.medal-slot-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.medal-slot-points {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+/* Medal Tooltip card style on hover */
+.medal-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  background: #111022;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+  border-radius: 12px;
+  width: 200px;
+  z-index: 50;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+  pointer-events: none;
+}
+
+.medal-slot:hover .medal-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+.medal-tooltip h5 {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.medal-tooltip p {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.medal-tooltip-status {
+  font-size: 0.6rem;
+  font-weight: 800;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.medal-tooltip-status.unlocked {
+  color: #10b981;
+}
+
+.medal-tooltip-status.locked {
+  color: #ef4444;
+}
+
+/* Leaderboard Navigation Tab Filters */
+.leaderboard-tabs-nav {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.leaderboard-tab-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.leaderboard-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.leaderboard-tab-btn.active {
+  color: #fff;
+  background: var(--color-primary-500, #4f46e5);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Gamified Leaderboard premium card lists */
+.gamified-leader-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gamified-leader-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+  transition: all 0.2s ease;
+}
+
+.gamified-leader-row:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.gamified-leader-row.highlighted {
+  border-color: rgba(79, 70, 229, 0.35);
+  background: linear-gradient(90deg, rgba(79, 70, 229, 0.08) 0%, rgba(79, 70, 229, 0.02) 100%);
+}
+
+.leader-rank-box {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 900;
+  border-radius: 50%;
+  margin-right: 16px;
+}
+
+.leader-rank-1 {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+}
+
+.leader-rank-2 {
+  background: rgba(156, 163, 175, 0.15);
+  color: #e5e7eb;
+  border: 1.5px solid rgba(156, 163, 175, 0.4);
+}
+
+.leader-rank-3 {
+  background: rgba(180, 83, 9, 0.15);
+  color: #d97706;
+  border: 1.5px solid rgba(180, 83, 9, 0.4);
+}
+
+.leader-rank-other {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.leader-avatar-letter {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #312e81;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #818cf8;
+  margin-right: 16px;
+}
+
+.leader-info {
+  flex: 1;
+}
+
+.leader-name {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.leader-level {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 8px;
+  border-radius: 50px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 8px;
+  font-weight: 700;
+}
+
+.leader-score-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.leader-score-unit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+}

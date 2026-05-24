@@ -11,57 +11,66 @@ model User {
   id                  String          @id @default(cuid())
   email               String?         @unique
   username            String          @unique
-  fullName            String?
   passwordHash        String
   role                UserRole
   forcePasswordChange Boolean         @default(false)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   isTestAccount       Boolean         @default(false)
+  fullName            String?
   studentProfile      StudentProfile?
   teacherProfile      TeacherProfile?
 }
 
 model TeacherProfile {
-  id              String           @id @default(cuid())
-  userId          String           @unique
-  subject         Subject
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  batches         Batch[]
-  rewardCycles    RewardCycle[]
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  teacherStudents TeacherStudent[]
-  tests           Test[]
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  subject             Subject
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  batches             Batch[]
   questionBankEntries QuestionBankEntry[]
+  rewardCycles        RewardCycle[]
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherStudents     TeacherStudent[]
+  tests               Test[]
 }
 
 model StudentProfile {
-  id                String           @id @default(cuid())
-  userId            String           @unique
-  board             Board
-  medium            Medium
-  classLevel        String
-  rollNo            String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  lastHomeworkDate  DateTime?
-  streakCount       Int              @default(0)
-  batchNo           String?
-  batchSerialNo     Int?
-  isTestAccount     Boolean          @default(false)
-  longId            String?          @unique
-  overallSerial     Int?             @unique
-  phone             String?
-  shortId           String?          @unique
-  subjects          Subject[]
-  year              Int?
-  batchLinks        BatchStudent[]
-  badges            StudentBadge[]
-  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  submissions       Submission[]
-  teacherLinks      TeacherStudent[]
-  directAssignments TestAssignment[] @relation("StudentAssignments")
+  id                   String                @id @default(cuid())
+  userId               String                @unique
+  board                Board
+  medium               Medium
+  classLevel           String
+  rollNo               String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  lastHomeworkDate     DateTime?
+  streakCount          Int                   @default(0)
+  batchNo              String?
+  batchSerialNo        Int?
+  isTestAccount        Boolean               @default(false)
+  longId               String?               @unique
+  overallSerial        Int?                  @unique
+  phone                String?
+  shortId              String?               @unique
+  subjects             Subject[]
+  year                 Int?
+  currentLevel         Int                   @default(1)
+  lastAchievementAt    DateTime?
+  totalXP              Int                   @default(0)
+  physicsXp            Int                   @default(0)
+  chemistryXp          Int                   @default(0)
+  mathematicsXp        Int                   @default(0)
+  batchLinks           BatchStudent[]
+  achievements         StudentAchievement[]
+  badges               StudentBadge[]
+  StudentLevelProgress StudentLevelProgress?
+  StudentMedal         StudentMedal[]
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submissions          Submission[]
+  teacherLinks         TeacherStudent[]
+  directAssignments    TestAssignment[]      @relation("StudentAssignments")
 }
 
 model RegistrationRequest {
@@ -152,9 +161,9 @@ model Question {
   marks       Int            @default(1)
   source      QuestionSource @default(MANUAL)
   explanation String?
-  imageUrl    String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  imageUrl    String?
   answers     Answer[]
   options     Option[]
   test        Test           @relation(fields: [testId], references: [id], onDelete: Cascade)
@@ -166,8 +175,8 @@ model Option {
   id         String   @id @default(cuid())
   questionId String
   text       String
-  imageUrl   String?
   isCorrect  Boolean  @default(false)
+  imageUrl   String?
   answers    Answer[]
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
@@ -175,24 +184,24 @@ model Option {
 }
 
 model QuestionBankEntry {
-  id          String       @id @default(cuid())
+  id          String          @id @default(cuid())
+  text        String
+  subject     Subject
+  chapter     String?
+  concept     String?
+  difficulty  Difficulty      @default(MEDIUM)
+  explanation String?
+  imageUrl    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   teacherId   String?
   /// isPublic controls question visibility:
   /// - false (default): Only creator teacher can view (private)
   /// - true: All teachers can view regardless of subject (global/shared)
   /// Note: Admins can always view all questions regardless of isPublic setting
-  isPublic    Boolean      @default(false)
-  text        String
-  subject     Subject
-  chapter     String?
-  concept     String?
-  difficulty  Difficulty   @default(MEDIUM)
-  explanation String?
-  imageUrl    String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  isPublic    Boolean         @default(false)
   options     BankOption[]
-  teacher     TeacherProfile? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  teacher     TeacherProfile? @relation(fields: [teacherId], references: [id])
 
   @@index([subject, chapter])
   @@index([teacherId])
@@ -302,6 +311,77 @@ model StudentBadge {
   @@index([studentId, type, periodStart, periodEnd])
 }
 
+model StudentAchievement {
+  id              String          @id @default(cuid())
+  studentId       String
+  subject         Subject?
+  achievementType AchievementType
+  createdAt       DateTime        @default(now())
+  description     String
+  metadata        Json?
+  triggeredAt     DateTime        @default(now())
+  xpRewarded      Int             @default(0)
+  student         StudentProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, achievementType])
+  @@index([studentId, triggeredAt])
+}
+
+model GlobalAchievementConfig {
+  id              String          @id
+  achievementType AchievementType @unique
+  displayName     String
+  description     String
+  baseXpReward    Int
+  subject         Subject?
+  iconName        String
+  rarity          String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+}
+
+model MedalConfig {
+  id                String   @id
+  subject           Subject  @unique
+  bronzeThreshold   Int      @default(60)
+  silverThreshold   Int      @default(75)
+  goldThreshold     Int      @default(85)
+  platinumThreshold Int      @default(95)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+}
+
+model StudentLevelProgress {
+  id             String         @id
+  studentId      String         @unique
+  totalXP        Int            @default(0)
+  currentLevel   Int            @default(1)
+  levelXP        Int            @default(0)
+  levelThreshold Int            @default(1000)
+  lastLevelUpAt  DateTime?
+  lastActivityAt DateTime       @default(now())
+  updatedAt      DateTime
+  StudentProfile StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model StudentMedal {
+  id             String         @id
+  studentId      String
+  medalName      String
+  medalType      MedalTier
+  subject        Subject
+  description    String
+  iconName       String
+  unlockedAt     DateTime       @default(now())
+  isVisible      Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  StudentProfile StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, medalName, medalType, subject])
+  @@index([studentId, subject])
+  @@index([studentId, unlockedAt])
+}
+
 enum RequestStatus {
   PENDING
   APPROVED
@@ -373,4 +453,26 @@ enum StudentBadgeType {
   TOP_IMPROVER
   CONSISTENCY_STAR
   SUBJECT_STAR
+}
+
+enum AchievementType {
+  PERFECT_SCORE
+  CONSISTENCY_BONUS
+  SUBJECT_MASTERY
+  QUICK_LEARNER
+  COMEBACK_KID
+  DAILY_GOAL
+  STREAK_MILESTONE
+  ACCURACY_CHAMPION
+  SPEED_DEMON
+  KNOWLEDGE_SEEKER
+  VERSATILITY_AWARD
+  FIRST_ATTEMPT_WIN
+}
+
+enum MedalTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
 }

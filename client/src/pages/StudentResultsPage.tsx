@@ -10,6 +10,7 @@ import { DashboardLayout } from '../components/DashboardLayout'
 import { useAuth } from '../hooks/useAuth'
 import { apiRequest } from '../services/api'
 import { getDashboardNavigation } from './shared/dashboardNavigation'
+import { Confetti } from '../components/Confetti'
 
 interface ResultListItem {
   id: string
@@ -96,8 +97,13 @@ export const StudentResultsPage = () => {
     ? (((detail.scoreTotal ?? 0) / detail.maxScore) * 100).toFixed(1)
     : '0'
 
+  const isPerfectScore = useMemo(() => {
+    return detail && detail.scoreTotal !== null && detail.maxScore !== null && detail.scoreTotal === detail.maxScore && detail.maxScore > 0
+  }, [detail])
+
   return (
     <DashboardLayout title="Student Performance Details" navigation={navigation}>
+      {isPerfectScore && <Confetti />}
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
         {error ? <p className="error-text">{error}</p> : null}
 

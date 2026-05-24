@@ -176,3 +176,66 @@ export const getBatchLeaderboard = async (req: Request, res: Response): Promise<
     data: leaderboard,
   })
 }
+
+export const getGamifiedLeaderboard = async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    throw new ApiError('Unauthorized', 401)
+  }
+
+  const { subject, classLevel } = z.object({
+    subject: z.enum(['overall', 'PHYSICS', 'CHEMISTRY', 'MATHEMATICS']).optional().default('overall'),
+    classLevel: z.string().optional(),
+  }).parse(req.query)
+
+  let filterClassLevel = classLevel
+  if (req.user.role === 'student' && !filterClassLevel) {
+    const student = await prisma.studentProfile.findUnique({
+      where: { id: req.user.studentId },
+      select: { classLevel: true },
+    })
+    filterClassLevel = student?.classLevel
+  }
+
+  const students = await prisma.studentProfile.findMany({
+    where: {
+      classLevel: filterClassLevel ? filterClassLevel : undefined,
+    },
+    include: {
+      user: {
+        select: {
+          username: true,
+          fullName: true,
+        },
+      },
+    },
+  })
+
+  let sortFn = (a: any, b: any) => b.totalXP - a.totalXP
+  if (subject === 'PHYSICS') {
+    sortFn = (a: any, b: any) => b.physicsXp - a.physicsXp
+  } else if (subject === 'CHEMISTRY') {
+    sortFn = (a: any, b: any) => b.chemistryXp - a.chemistryXp
+  } else if (subject === 'MATHEMATICS') {
+    sortFn = (a: any, b: any) => b.mathematicsXp - a.mathematicsXp
+  }
+
+  const sorted = students
+    .sort(sortFn)
+    .map((student, idx) => ({
+      rank: idx + 1,
+      studentId: student.id,
+      username: student.user.username,
+      fullName: student.user.fullName || student.user.username,
+      xp: subject === 'overall' ? student.totalXP
+        : subject === 'PHYSICS' ? student.physicsXp
+        : subject === 'CHEMISTRY' ? student.chemistryXp
+        : student.mathematicsXp,
+      level: student.currentLevel,
+    }))
+
+  res.json({
+    success: true,
+    data: sorted,
+  })
+}
+
