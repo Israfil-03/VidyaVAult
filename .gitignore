@@ -15,3 +15,8 @@ server/node_modules
 server/dist
 server/.turbo
 server/prisma/dev.db
+
+# Mobile App
+compiled_app/
+*.keystore
+client/.env.production
